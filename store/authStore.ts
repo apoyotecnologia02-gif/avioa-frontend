@@ -1,0 +1,87 @@
+'use client'
+
+import { create } from 'zustand'
+import type { AuthState, LoginCredentials, User, LoginResponse } from '@/types/auth.types'
+import { api } from '@/lib/axios'
+
+const TOKEN_KEY = 'portal_access_token'
+const USER_KEY = 'portal_user'
+
+function setAuthCookie(token: string | null) {
+  if (typeof document === 'undefined') return
+  if (token) {
+    document.cookie = `${TOKEN_KEY}=${token}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`
+  } else {
+    document.cookie = `${TOKEN_KEY}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`
+  }
+}
+
+export const useAuthStore = create<AuthState>((set, get) => ({
+  user: null,
+  token: null,
+  isAuthenticated: false,
+  isLoading: true,
+
+  login: async (credentials: LoginCredentials) => {
+    const response = await api.post<LoginResponse>('/auth/login', credentials)
+    const { accessToken, user } = response.data
+
+    localStorage.setItem(TOKEN_KEY, accessToken)
+    localStorage.setItem(USER_KEY, JSON.stringify(user))
+    setAuthCookie(accessToken)
+
+    set({
+      user,
+      token: accessToken,
+      isAuthenticated: true,
+      isLoading: false,
+    })
+  },
+
+  logout: () => {
+    localStorage.removeItem(TOKEN_KEY)
+    localStorage.removeItem(USER_KEY)
+    setAuthCookie(null)
+
+    set({
+      user: null,
+      token: null,
+      isAuthenticated: false,
+      isLoading: false,
+    })
+  },
+
+  setUser: (user: User | null) => set({ user }),
+
+  setToken: (token: string | null) => {
+    setAuthCookie(token)
+    set({ token, isAuthenticated: !!token })
+  },
+
+  hydrate: () => {
+    if (typeof window === 'undefined') {
+      set({ isLoading: false })
+      return
+    }
+
+    const token = localStorage.getItem(TOKEN_KEY)
+    const userJson = localStorage.getItem(USER_KEY)
+
+    if (token && userJson) {
+      try {
+        const user = JSON.parse(userJson) as User
+        setAuthCookie(token)
+        set({
+          user,
+          token,
+          isAuthenticated: true,
+          isLoading: false,
+        })
+      } catch {
+        set({ isLoading: false })
+      }
+    } else {
+      set({ isLoading: false })
+    }
+  },
+}))
