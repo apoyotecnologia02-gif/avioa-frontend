@@ -10,6 +10,7 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
+  Coins,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { href: "/dashboard", label: "Inicio", icon: Home },
   { href: "/forms", label: "Formularios", icon: FileText },
+  { href: "/points", label: "Puntos", icon: Coins }
 ];
 
 export function Sidebar() {

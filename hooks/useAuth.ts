@@ -13,6 +13,11 @@ export function useAuth() {
   }, [hydrate])
 
   const handleLogout = () => {
+
+    localStorage.removeItem('portal_access_token')
+    localStorage.removeItem('portal_user')
+    document.cookie = 'portal_access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+
     logout()
     router.push('/login')
   }
