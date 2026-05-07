@@ -1,3 +1,5 @@
+import { Area } from "./user.types"
+
 export type UserRole = 'employee' | 'manager' | 'admin'
 
 export interface User {
@@ -5,6 +7,8 @@ export interface User {
   name: string
   email: string
   role: UserRole
+  area: Area
+  leaderId?: string
 }
 
 export interface AuthTokens {

@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { AppShell } from '@/components/layout/AppShell'
 import { useAuth } from '@/hooks/useAuth'
+import { SocketProvider } from '@/components/providers/SocketProvider'
 
 export default function PortalLayout({
   children,
@@ -31,5 +32,9 @@ export default function PortalLayout({
     return null
   }
 
-  return <AppShell>{children}</AppShell>
+  return (
+    <SocketProvider>
+      <AppShell>{children}</AppShell>
+    </SocketProvider>
+  )
 }

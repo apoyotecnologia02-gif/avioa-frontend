@@ -5,6 +5,20 @@ export enum Role {
   ADMIN = 'ADMIN',
 }
 
+export enum Area {
+  COMERCIAL = 'Comercial',
+  AUXILIAR = 'Auxiliar',
+  OPERACIONES = 'Operaciones',
+  MERCADEO = 'Mercadeo',
+  TECNOLOGIA = 'Tecnología',
+  DIRECCION_GERENCIA = 'Dirección / Gerencia',
+  RECURSOS_HUMANOS = 'Recursos Humanos',
+  CONTABILIDAD = 'Contabilidad',
+  SERVICIO_AL_CLIENTE = 'Servicio al cliente',
+  PRODUCTO = 'Producto',
+  MAYORISTA = 'Mayorista',
+}
+
 export enum UserStatus {
   ACTIVE = 'ACTIVE',
   INACTIVE = 'INACTIVE',
@@ -34,6 +48,7 @@ export interface CreateUserDto {
   email: string
   role: Role
   department?: string
+  area?: string
   position?: string
   leaderId?: string
   managerId?: string

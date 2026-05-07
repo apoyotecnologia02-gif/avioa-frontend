@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { useAuth } from '@/hooks/useAuth'
+import { useNotificationStore } from '@/store/notificationStore'
 
 interface Breadcrumb {
   label: string
@@ -50,6 +51,7 @@ function getBreadcrumbs(pathname: string): Breadcrumb[] {
 export function Header() {
   const pathname = usePathname()
   const { user, logout } = useAuth()
+  const { unreadCount, notifications, markAllAsRead, markAsRead } = useNotificationStore()
   const breadcrumbs = getBreadcrumbs(pathname)
 
   const getInitials = (name: string) => {
@@ -87,12 +89,60 @@ export function Header() {
       {/* Right side actions */}
       <div className="flex items-center gap-2">
         {/* Notifications */}
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5" />
-          <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
-            3
-          </span>
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="relative outline-none">
+              <Bell className="h-5 w-5" />
+              {unreadCount > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-80">
+            <div className="flex items-center justify-between px-4 py-2 border-b">
+              <span className="font-semibold text-sm">Notificaciones</span>
+              {unreadCount > 0 && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-auto p-0 text-xs text-muted-foreground hover:text-primary" 
+                  onClick={(e) => { 
+                    e.preventDefault(); 
+                    markAllAsRead(); 
+                  }}
+                >
+                  Marcar todas como leídas
+                </Button>
+              )}
+            </div>
+            <div className="max-h-[300px] overflow-y-auto">
+              {notifications.length === 0 ? (
+                <div className="p-4 text-center text-sm text-muted-foreground">
+                  No tienes notificaciones
+                </div>
+              ) : (
+                notifications.map((notification) => (
+                  <DropdownMenuItem 
+                    key={notification.id} 
+                    className={`flex flex-col items-start gap-1 p-4 cursor-pointer border-b last:border-0 ${!notification.isRead ? 'bg-primary/5' : ''}`} 
+                    onClick={(e) => { 
+                      e.preventDefault(); 
+                      markAsRead(notification.id); 
+                    }}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <span className="font-medium text-sm">{notification.title}</span>
+                      {!notification.isRead && <span className="h-2 w-2 rounded-full bg-primary" />}
+                    </div>
+                    <span className="text-xs text-muted-foreground line-clamp-2">{notification.message}</span>
+                  </DropdownMenuItem>
+                ))
+              )}
+            </div>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         {/* User menu */}
         <DropdownMenu>

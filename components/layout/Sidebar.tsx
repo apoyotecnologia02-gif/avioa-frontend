@@ -11,11 +11,12 @@ import {
   ChevronRight,
   LogOut,
   Coins,
+  ClipboardPen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
-import { isAdminRole } from "@/lib/roles";
+import { isAdminRole, isLeaderOrManagerOrAdminRole } from "@/lib/roles";
 import { ADMIN_ENTRY } from "@/lib/admin/modules";
 import {
   Tooltip,
@@ -36,6 +37,8 @@ const navItems: NavItem[] = [
   { href: "/points", label: "Puntos", icon: Coins }
 ];
 
+const PointRequestNavItems: NavItem = { href: '/points-request', label: 'Solicitudes de puntos', icon: ClipboardPen }
+
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
@@ -43,7 +46,10 @@ export function Sidebar() {
   const adminNavItems = isAdminRole(user?.role)
     ? [{ href: ADMIN_ENTRY.href, label: ADMIN_ENTRY.label, icon: ADMIN_ENTRY.icon }]
     : [];
-  const allNavItems = [...navItems, ...adminNavItems];
+  const pointRequestsNavItems = isLeaderOrManagerOrAdminRole(user?.role)
+    ? [{ href: PointRequestNavItems.href, label: PointRequestNavItems.label, icon: PointRequestNavItems.icon }]
+    : [];
+  const allNavItems = [...navItems, ...adminNavItems, ...pointRequestsNavItems];
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -90,7 +96,7 @@ export function Sidebar() {
         {/* Navigation */}
         <nav className="flex-1 space-y-1 p-2">
           {allNavItems.map((item) => {
-            const isActive = pathname.startsWith(item.href);
+            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
             const Icon = item.icon;
 
             const linkContent = (

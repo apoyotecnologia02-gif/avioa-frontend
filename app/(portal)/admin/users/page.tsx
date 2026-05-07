@@ -47,13 +47,14 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Role, type CreateUserDto, type User, UserStatus } from '@/types/user.types'
+import { Role, type CreateUserDto, type User, UserStatus, Area } from '@/types/user.types'
 
 const createUserSchema = z.object({
   name: z.string().min(2, 'El nombre es requerido'),
   email: z.string().email('Ingresa un correo válido'),
   role: z.nativeEnum(Role),
   department: z.string().optional().or(z.literal('')),
+  area: z.string().optional().or(z.literal('')),
   position: z.string().optional().or(z.literal('')),
   leaderId: z.string().optional(),
   managerId: z.string().optional(),
@@ -82,12 +83,14 @@ export default function AdminUsersPage() {
       role: Role.EMPLOYEE,
       department: '',
       position: '',
+      area: '',
       leaderId: undefined,
       managerId: undefined,
     },
   })
 
   const selectedRole = watch('role')
+  const selectedArea = watch('area')
 
   const leaders = users.filter((user) => user.role === Role.LEADER && user.status === UserStatus.ACTIVE)
   const managers = users.filter((user) => user.role === Role.MANAGER && user.status === UserStatus.ACTIVE)
@@ -133,6 +136,7 @@ export default function AdminUsersPage() {
         email: data.email,
         role: data.role,
         department: data.department || undefined,
+        area: data.area || undefined,
         position: data.position || undefined,
         leaderId: data.role === Role.EMPLOYEE ? data.leaderId || undefined : undefined,
         managerId: data.role === Role.LEADER ? data.managerId || undefined : undefined,
@@ -303,13 +307,36 @@ export default function AdminUsersPage() {
                         </SelectContent>
                       </Select>
                     </Field>
-                    <Field>
+                    {/* <Field>
                       <FieldLabel htmlFor="department">Departamento</FieldLabel>
                       <Input id="department" placeholder="Tecnologia" {...register('department')} />
                     </Field>
                     <Field>
                       <FieldLabel htmlFor="position">Posición</FieldLabel>
                       <Input id="position" placeholder="Analista" {...register('position')} />
+                    </Field> */}
+                    <Field>
+                      <FieldLabel htmlFor='area'>Área</FieldLabel>
+                      <Select
+                        value={selectedArea}
+                        onValueChange={(value) => setValue('area', value as Area, { shouldValidate: true })}
+                      >
+                        <SelectTrigger id='area'>
+                          <SelectValue placeholder="Seleccione un área" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={Area.COMERCIAL}>{Area.COMERCIAL}</SelectItem>
+                          <SelectItem value={Area.AUXILIAR}>{Area.AUXILIAR}</SelectItem>
+                          <SelectItem value={Area.OPERACIONES}>{Area.OPERACIONES}</SelectItem>
+                          <SelectItem value={Area.MERCADEO}>{Area.MERCADEO}</SelectItem>
+                          <SelectItem value={Area.TECNOLOGIA}>{Area.TECNOLOGIA}</SelectItem>
+                          <SelectItem value={Area.DIRECCION_GERENCIA}>{Area.DIRECCION_GERENCIA}</SelectItem>
+                          <SelectItem value={Area.RECURSOS_HUMANOS}>{Area.RECURSOS_HUMANOS}</SelectItem>
+                          <SelectItem value={Area.CONTABILIDAD}>{Area.CONTABILIDAD}</SelectItem>
+                          <SelectItem value={Area.SERVICIO_AL_CLIENTE}>{Area.SERVICIO_AL_CLIENTE}</SelectItem>
+                          <SelectItem value={Area.PRODUCTO}>{Area.PRODUCTO}</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </Field>
 
                     {selectedRole === Role.EMPLOYEE && (
@@ -380,7 +407,7 @@ export default function AdminUsersPage() {
                   <TableHead>Nombre</TableHead>
                   <TableHead>Correo</TableHead>
                   <TableHead>Rol</TableHead>
-                  <TableHead>Departamento</TableHead>
+                  <TableHead>Área</TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead>Fecha creación</TableHead>
                   <TableHead className="text-right">Acciones</TableHead>

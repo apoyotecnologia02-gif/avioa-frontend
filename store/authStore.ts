@@ -16,6 +16,21 @@ function setAuthCookie(token: string | null) {
   }
 }
 
+function decodeJwt(token: string) {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      window.atob(base64).split('').map(function(c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join('')
+    );
+    return JSON.parse(jsonPayload);
+  } catch (e) {
+    return null;
+  }
+}
+
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   token: null,
@@ -26,12 +41,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const response = await api.post<LoginResponse>('/auth/login', credentials)
     const { accessToken, user } = response.data
 
+    let fullUser = { ...user };
+    const payload = decodeJwt(accessToken);
+    if (payload && payload.area) {
+      fullUser.area = payload.area;
+    }
+
+    if (payload && payload.leaderId) {
+      fullUser.leaderId = payload.leaderId;
+    }
+
     localStorage.setItem(TOKEN_KEY, accessToken)
-    localStorage.setItem(USER_KEY, JSON.stringify(user))
+    localStorage.setItem(USER_KEY, JSON.stringify(fullUser))
     setAuthCookie(accessToken)
 
     set({
-      user,
+      user: fullUser,
       token: accessToken,
       isAuthenticated: true,
       isLoading: false,
@@ -69,7 +94,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     if (token && userJson) {
       try {
-        const user = JSON.parse(userJson) as User
+        let user = JSON.parse(userJson) as User
+        
+        // Recover area from token if it wasn't saved in localStorage
+        const payload = decodeJwt(token);
+        if (payload && payload.area && !user.area) {
+          user.area = payload.area;
+          localStorage.setItem(USER_KEY, JSON.stringify(user));
+        }
+
         setAuthCookie(token)
         set({
           user,

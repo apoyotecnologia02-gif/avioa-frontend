@@ -7,10 +7,10 @@ import { toast } from "sonner";
 export function useRequestPoints(onSuccess?: () => void) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleRequestPoints = async (reason: string, amount: number) => {
+  const handleRequestPoints = async (reason: string, amount: number, leaderId?: string) => {
     try {
       setIsSubmitting(true);
-      const res = await api.post("/points/request", { reason, amount });
+      const res = await api.post("/points/request", { reason, amount, leaderId });
 
       if (res.data.success) {
         toast.success(res.data.message);
