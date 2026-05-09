@@ -12,6 +12,7 @@ import {
   LogOut,
   Coins,
   ClipboardPen,
+  Clock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -34,7 +35,8 @@ interface NavItem {
 const navItems: NavItem[] = [
   { href: "/dashboard", label: "Inicio", icon: Home },
   { href: "/forms", label: "Formularios", icon: FileText },
-  { href: "/points", label: "Puntos", icon: Coins }
+  { href: "/points", label: "Puntos", icon: Coins },
+  { href: "/overtime", label: "Control de Horas", icon: Clock },
 ];
 
 const PointRequestNavItems: NavItem = { href: '/points-request', label: 'Solicitudes de puntos', icon: ClipboardPen }

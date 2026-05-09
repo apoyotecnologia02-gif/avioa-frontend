@@ -13,6 +13,14 @@ interface SocketContextType {
 
 const SocketContext = createContext<SocketContextType>({ socket: null })
 
+/** JWT que el backend lee en handshake.auth.token (Bearer recomendado, o mismo token plano). */
+function handshakeAuthToken(rawToken: string) {
+  const t = rawToken.trim()
+  if (!t) return t
+  if (/^Bearer\s+/i.test(t)) return t
+  return `Bearer ${t}`
+}
+
 export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   const socketRef = useRef<Socket | null>(null)
   const { user, token, isAuthenticated } = useAuthStore()
@@ -44,11 +52,11 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     const socket = io(`${socketUrl}/points`, {
+      // handshake.auth debe incluir JWT en `token`; sin esto el servidor desconecta por seguridad.
       auth: {
-        token, // Pasamos el token en 'auth' en vez de extraHeaders (evita problemas de CORS en Polling)
-        userId: (user as any).userId || user.id
+        token: handshakeAuthToken(token),
+        userId: (user as { userId?: string }).userId ?? user.id,
       },
-      // Eliminamos el force de 'websocket' para permitir el fallback a 'polling' si el backend lo requiere inicialmente
     })
 
     socketRef.current = socket
@@ -77,6 +85,8 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     socket.on('point_request_received', handleNotification)
     socket.on('point_request_approved', handleNotification)
     socket.on('point_request_rejected', handleNotification)
+    socket.on('overtime_request_approved', handleNotification)
+    socket.on('overtime_request_rejected', handleNotification)
 
     return () => {
       // La limpieza solo ocurre si el componente se desmonta por completo (ej: saliendo de la app)
