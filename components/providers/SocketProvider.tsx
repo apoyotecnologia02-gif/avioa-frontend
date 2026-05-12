@@ -13,7 +13,7 @@ interface SocketContextType {
 
 const SocketContext = createContext<SocketContextType>({ socket: null })
 
-/** JWT que el backend lee en handshake.auth.token (Bearer recomendado, o mismo token plano). */
+/** JWT que el backend lee en handshake.auth.token */
 function handshakeAuthToken(rawToken: string) {
   const t = rawToken.trim()
   if (!t) return t
@@ -87,6 +87,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     socket.on('point_request_rejected', handleNotification)
     socket.on('overtime_request_approved', handleNotification)
     socket.on('overtime_request_rejected', handleNotification)
+    socket.on('overtime_request_received', handleNotification)
 
     return () => {
       // La limpieza solo ocurre si el componente se desmonta por completo (ej: saliendo de la app)

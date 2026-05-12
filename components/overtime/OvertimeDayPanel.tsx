@@ -61,9 +61,9 @@ export function OvertimeDayPanel({
               </p>
             </div>
           ) : (
-            records.map((record) => (
+            records.map((record, idx) => (
               <div
-                key={record.id}
+                key={`record.id-${idx}`}
                 className="rounded-xl border border-border bg-background p-4 space-y-3 shadow-sm"
               >
                 {/* Time range + total */}

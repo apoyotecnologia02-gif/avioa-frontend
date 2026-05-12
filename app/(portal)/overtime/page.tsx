@@ -15,7 +15,7 @@ import { OvertimeDayPanel } from '@/components/overtime/OvertimeDayPanel'
 import { OvertimeSummaryCards } from '@/components/overtime/OvertimeSummaryCards'
 import { RegisterOvertimeModal } from '@/components/overtime/RegisterOvertimeModal'
 import { ReviewOvertimeModal } from '@/components/overtime/ReviewOvertimeModal'
-import type { OvertimeRecord } from '@/types/overtime.types'
+import type { OvertimeRecord, OvertimeStatus } from '@/types/overtime.types'
 
 function toDateOnly(value: string) {
   if (!value) return ''
@@ -66,6 +66,22 @@ export default function OvertimePage() {
     summaryDay?.records && summaryDay.records.length > 0
       ? (summaryDay.records as OvertimeRecord[])
       : dayRecords
+
+
+  const daysToColor = summary?.days.map((d) => {
+    let status = "REJECTED";
+
+    if (d.entries?.some((e) => e.status === "APPROVED")) {
+      status = "APPROVED"
+    } else if (d.entries?.some((e) => e.status === "PENDING")) {
+      status = "PENDING"
+    }
+
+    return {
+      date: d.date,
+      status: status as OvertimeStatus
+    }
+  }) || [];
 
   const handleSelectDate = (date: string) => {
     setSelectedDate(date)
@@ -130,6 +146,7 @@ export default function OvertimePage() {
             selectedDate={selectedDate}
             onSelectDate={handleSelectDate}
             isLoading={summaryLoading}
+            daysToColor={daysToColor}
           />
         </div>
 

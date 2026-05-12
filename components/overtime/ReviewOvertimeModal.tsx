@@ -188,8 +188,8 @@ export function ReviewOvertimeModal({
             </TabsList>
 
             {TAB_ITEMS.map((tab) => (
-              <TabsContent key={tab.value} value={tab.value} className="flex-1 min-h-0 mt-3">
-                <ScrollArea className="h-[420px] pr-1">
+              <TabsContent key={tab.value} value={tab.value} className="flex-1 min-h-0 mt-3 data-[state=active]:flex data-[state=active]:flex-col">
+                <ScrollArea className="h-[420px] shrink min-h-0 pr-1">
                   <div className="space-y-3 pb-2">
                     {isLoading ? (
                       Array.from({ length: 3 }).map((_, i) => (

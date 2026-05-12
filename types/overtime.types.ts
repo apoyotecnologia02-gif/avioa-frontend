@@ -20,6 +20,7 @@ export interface OvertimeDaySummary {
   totalApproved: number
   totalRejected: number
   records?: OvertimeRecord[]
+  entries?: OvertimeRecord[]
 }
 
 export interface OvertimeSummary {

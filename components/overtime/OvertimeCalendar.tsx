@@ -34,6 +34,11 @@ const STATUS_DOT: Record<OvertimeStatus, string> = {
   REJECTED: 'bg-red-500',
 }
 
+interface DaysToColor {
+  date: string
+  status: OvertimeStatus
+}
+
 interface OvertimeCalendarProps {
   currentDate: Date
   onMonthChange: (date: Date) => void
@@ -41,6 +46,7 @@ interface OvertimeCalendarProps {
   selectedDate: string | null
   onSelectDate: (date: string) => void
   isLoading: boolean
+  daysToColor: DaysToColor[]
 }
 
 export function OvertimeCalendar({
@@ -50,6 +56,7 @@ export function OvertimeCalendar({
   selectedDate,
   onSelectDate,
   isLoading,
+  daysToColor,
 }: OvertimeCalendarProps) {
   const monthStart = startOfMonth(currentDate)
   const monthEnd = endOfMonth(currentDate)
@@ -59,6 +66,12 @@ export function OvertimeCalendar({
   const summaryMap = new Map<string, OvertimeDaySummary>()
   for (const ds of daySummaries) {
     summaryMap.set(ds.date, ds)
+  }
+
+  const daysToColorMap = new Map<string, OvertimeStatus>();
+
+  for (const day of daysToColor) {
+    daysToColorMap.set(day.date, day.status)
   }
 
   // Leading empty cells for first week
@@ -118,6 +131,8 @@ export function OvertimeCalendar({
               const dateStr = format(day, 'yyyy-MM-dd')
               const summary = summaryMap.get(dateStr)
               const dominant = summary ? getDominantStatus(summary) : null
+              const status = daysToColorMap.get(dateStr);
+
               const isSelected = selectedDate === dateStr
               const todayDay = isToday(day)
 
@@ -125,15 +140,39 @@ export function OvertimeCalendar({
                 <button
                   key={dateStr}
                   onClick={() => onSelectDate(isSelected ? '' : dateStr)}
+                  // className={cn(
+                  //   'relative flex flex-col items-center justify-start gap-1 rounded-xl border p-2 min-h-[4rem] transition-all text-sm font-medium',
+                  //   'hover:bg-accent hover:border-accent-foreground/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+
+                  //   isSelected
+                  //     ? 'bg-primary text-primary-foreground border-primary shadow-md'
+                  //     : todayDay
+                  //       ? 'border-primary/50 bg-primary/5'
+                  //       : 'border-border bg-background',
+
+                  //   !isSameMonth(day, currentDate) && 'opacity-30',
+
+                  //   status === "APPROVED" && 'bg-emerald-50 border-emerald-300',
+                  //   status === "PENDING" && 'bg-amber-50 border-amber-300',
+                  //   status === "REJECTED" && 'bg-red-50 border-red-300'
+                  // )}
                   className={cn(
                     'relative flex flex-col items-center justify-start gap-1 rounded-xl border p-2 min-h-[4rem] transition-all text-sm font-medium',
                     'hover:bg-accent hover:border-accent-foreground/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+
                     isSelected
                       ? 'bg-primary text-primary-foreground border-primary shadow-md'
                       : todayDay
                         ? 'border-primary/50 bg-primary/5'
-                        : 'border-border bg-background',
-                    !isSameMonth(day, currentDate) && 'opacity-30',
+                        : status === 'APPROVED'
+                          ? 'bg-emerald-50 border-emerald-300'
+                          : status === "PENDING"
+                            ? 'bg-amber-50 border-amber-300'
+                            : status === "REJECTED"
+                              ? 'bg-red-50 border-red-300'
+                              : 'border-border bg-background',
+                    
+                    !isSameMonth(day, currentDate) && 'opacity-30'
                   )}
                   aria-label={`${dateStr}${summary ? ` - ${summary.totalHours} hrs` : ''}`}
                   aria-pressed={isSelected}
