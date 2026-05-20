@@ -34,7 +34,7 @@ const inviteSchema = z
 type InviteFormData = z.infer<typeof inviteSchema>;
 type InvitePreview = { name: string; email: string };
 
-function InvitePageContent() {
+function InviteContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = useMemo(() => searchParams.get("token") ?? "", [searchParams]);
@@ -210,7 +210,7 @@ export default function InvitePage() {
         </div>
       }
     >
-      <InvitePageContent />
+      <InviteContent />
     </Suspense>
   );
 }
