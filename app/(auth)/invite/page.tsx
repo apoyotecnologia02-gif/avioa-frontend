@@ -1,110 +1,109 @@
-"use client";
+// "use client";
 
-export const dynamic = "force-dynamic";
-
-import { Suspense, useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { Suspense } from "react";
+// import { useRouter, useSearchParams } from "next/navigation";
+// import { useForm } from "react-hook-form";
+// import { zodResolver } from "@hookform/resolvers/zod";
+// import { z } from "zod";
 import { Loader2 } from "lucide-react";
-import { api } from "@/lib/axios";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
-import type { AcceptInviteDto } from "@/types/user.types";
+// import { api } from "@/lib/axios";
+// import type { AcceptInviteDto } from "@/types/user.types";
+import InviteForm from "./invite-form";
 
-const inviteSchema = z
-  .object({
-    password: z
-      .string()
-      .min(8, "La contraseña debe tener al menos 8 caracteres"),
-    confirmPassword: z.string().min(8, "Confirma tu contraseña"),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Las contraseñas no coinciden",
-    path: ["confirmPassword"],
-  });
+// const inviteSchema = z
+//   .object({
+//     password: z
+//       .string()
+//       .min(8, "La contraseña debe tener al menos 8 caracteres"),
+//     confirmPassword: z.string().min(8, "Confirma tu contraseña"),
+//   })
+//   .refine((data) => data.password === data.confirmPassword, {
+//     message: "Las contraseñas no coinciden",
+//     path: ["confirmPassword"],
+//   });
 
-type InviteFormData = z.infer<typeof inviteSchema>;
-type InvitePreview = { name: string; email: string };
+// type InviteFormData = z.infer<typeof inviteSchema>;
+// type InvitePreview = { name: string; email: string };
 
-function InviteContent() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const token = useMemo(() => searchParams.get("token") ?? "", [searchParams]);
+export default function InvitePage() {
+  // const router = useRouter();
+  // const searchParams = useSearchParams();
+  // const token = useMemo(() => searchParams.get("token") ?? "", [searchParams]);
 
-  const [preview, setPreview] = useState<InvitePreview | null>(null);
-  const [isValidating, setIsValidating] = useState(true);
-  const [fatalError, setFatalError] = useState<string | null>(null);
+  // const [preview, setPreview] = useState<InvitePreview | null>(null);
+  // const [isValidating, setIsValidating] = useState(true);
+  // const [fatalError, setFatalError] = useState<string | null>(null);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<InviteFormData>({
-    resolver: zodResolver(inviteSchema),
-  });
+  // const {
+  //   register,
+  //   handleSubmit,
+  //   formState: { errors, isSubmitting },
+  // } = useForm<InviteFormData>({
+  //   resolver: zodResolver(inviteSchema),
+  // });
 
-  useEffect(() => {
-    const validateToken = async () => {
-      if (!token) {
-        setFatalError("La invitación no es válida. Contacta al administrador.");
-        setIsValidating(false);
-        return;
-      }
+  // useEffect(() => {
+  //   const validateToken = async () => {
+  //     if (!token) {
+  //       setFatalError("La invitación no es válida. Contacta al administrador.");
+  //       setIsValidating(false);
+  //       return;
+  //     }
 
-      try {
-        const response = await api.get<InvitePreview>("/auth/invite/validate", {
-          params: { token },
-          skip401Redirect: true,
-        });
-        setPreview(response.data);
-      } catch (err) {
-        setFatalError(
-          err instanceof Error
-            ? err.message
-            : "La invitación es inválida o expiró. Contacta al administrador.",
-        );
-      } finally {
-        setIsValidating(false);
-      }
-    };
+  //     try {
+  //       const response = await api.get<InvitePreview>("/auth/invite/validate", {
+  //         params: { token },
+  //         skip401Redirect: true,
+  //       });
+  //       setPreview(response.data);
+  //     } catch (err) {
+  //       setFatalError(
+  //         err instanceof Error
+  //           ? err.message
+  //           : "La invitación es inválida o expiró. Contacta al administrador.",
+  //       );
+  //     } finally {
+  //       setIsValidating(false);
+  //     }
+  //   };
 
-    validateToken();
-  }, [token]);
+  //   validateToken();
+  // }, [token]);
 
-  const onSubmit = async (data: InviteFormData) => {
-    const payload: AcceptInviteDto = {
-      token,
-      password: data.password,
-      confirmPassword: data.confirmPassword,
-    };
+  // const onSubmit = async (data: InviteFormData) => {
+  //   const payload: AcceptInviteDto = {
+  //     token,
+  //     password: data.password,
+  //     confirmPassword: data.confirmPassword,
+  //   };
 
-    try {
-      await api.post("/auth/invite/accept", payload, { skip401Redirect: true });
-      router.push(
-        "/login?message=Contrasena%20creada%2C%20ya%20puedes%20iniciar%20sesion",
-      );
-    } catch (err) {
-      setFatalError(
-        err instanceof Error
-          ? err.message
-          : "No fue posible completar el registro. Contacta al administrador.",
-      );
-    }
-  };
+  //   try {
+  //     await api.post("/auth/invite/accept", payload, { skip401Redirect: true });
+  //     router.push(
+  //       "/login?message=Contrasena%20creada%2C%20ya%20puedes%20iniciar%20sesion",
+  //     );
+  //   } catch (err) {
+  //     setFatalError(
+  //       err instanceof Error
+  //         ? err.message
+  //         : "No fue posible completar el registro. Contacta al administrador.",
+  //     );
+  //   }
+  // };
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
-      <Card className="w-full max-w-md">
+      <Suspense
+        fallback={
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Cargando invitación...
+          </div>
+        }
+      >
+        <InviteForm />
+      </Suspense>
+      {/* <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Activar cuenta</CardTitle>
           <CardDescription>
@@ -180,24 +179,24 @@ function InviteContent() {
             </form>
           ) : null}
         </CardContent>
-      </Card>
+      </Card> */}
     </div>
   );
 }
 
-export default function InvitePage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Cargando invitación...
-          </div>
-        </div>
-      }
-    >
-      <InviteContent />
-    </Suspense>
-  );
-}
+// export default function InvitePage() {
+//   return (
+//     <Suspense
+//       fallback={
+//         <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
+//           <div className="flex items-center gap-2 text-sm text-muted-foreground">
+//             <Loader2 className="h-4 w-4 animate-spin" />
+//             Cargando invitación...
+//           </div>
+//         </div>
+//       }
+//     >
+//       <InviteContent />
+//     </Suspense>
+//   );
+// }
