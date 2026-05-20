@@ -183,16 +183,33 @@ function InvitePageContent() {
   );
 }
 
+// export default function InvitePage() {
+//   return (
+//     <Suspense fallback={
+//       <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
+//         <div className="flex items-center gap-2 text-sm text-muted-foreground">
+//           <Loader2 className="h-4 w-4 animate-spin" />
+//           Cargando invitación...
+//         </div>
+//       </div>
+//     }>
+//       <InvitePageContent />
+//     </Suspense>
+//   );
+// }
+
 export default function InvitePage() {
   return (
-    <Suspense fallback={
-      <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          Cargando invitación...
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Cargando invitación...
+          </div>
         </div>
-      </div>
-    }>
+      }
+    >
       <InvitePageContent />
     </Suspense>
   );
