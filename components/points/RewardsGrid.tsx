@@ -49,8 +49,6 @@ export function RewardsGrid({
   // Ordenar recompensas por costo (de menor a mayor)
   const sortedRewards = [...rewards].sort((a, b) => a.cost - b.cost);
 
-  console.log("sortedRewards", sortedRewards);
-
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {sortedRewards.map(

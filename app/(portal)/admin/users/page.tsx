@@ -256,7 +256,7 @@ export default function AdminUsersPage() {
     } catch (err) {
       toast({
         title: "No se pudo eliminar el usuario",
-        description: err instanceof Error ? err.message : "Intenta nuevamente.",
+        // description: err instanceof Error ? err.message : "Intenta nuevamente.",
         variant: "destructive",
       });
     } finally {

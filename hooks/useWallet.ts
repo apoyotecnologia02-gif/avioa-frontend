@@ -21,8 +21,6 @@ export function useWallet() {
         },
       });
 
-      console.log("Wallet response:", res);
-
       setWallet(res.data);
     } catch (error: any) {
       console.error("Error loading wallet:", error);

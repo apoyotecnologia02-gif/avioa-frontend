@@ -1,12 +1,12 @@
-'use client'
+"use client";
 
-import { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { format } from 'date-fns'
-import { es } from 'date-fns/locale'
-import { CalendarIcon, Clock } from 'lucide-react'
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import { CalendarIcon, Clock } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -14,51 +14,69 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Calendar } from '@/components/ui/calendar'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
-import { cn } from '@/lib/utils'
-import type { CreateOvertimeDto } from '@/types/overtime.types'
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { cn } from "@/lib/utils";
+import type { CreateOvertimeDto } from "@/types/overtime.types";
+import { LeadersData } from "@/hooks/useGetLeaders";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 
 const overtimeSchema = z
   .object({
-    date: z.string().min(1, 'La fecha es requerida'),
+    date: z.string().min(1, "La fecha es requerida"),
     startTime: z
       .string()
-      .min(1, 'La hora de inicio es requerida')
-      .regex(/^\d{2}:\d{2}$/, 'Formato HH:mm'),
+      .min(1, "La hora de inicio es requerida")
+      .regex(/^\d{2}:\d{2}$/, "Formato HH:mm"),
     endTime: z
       .string()
-      .min(1, 'La hora de fin es requerida')
-      .regex(/^\d{2}:\d{2}$/, 'Formato HH:mm'),
-    description: z.string().min(3, 'La descripción es requerida'),
+      .min(1, "La hora de fin es requerida")
+      .regex(/^\d{2}:\d{2}$/, "Formato HH:mm"),
+    description: z.string().min(3, "La descripción es requerida"),
+    leaderId: z.string().optional(),
   })
   .refine(
     (d) => {
-      if (!d.startTime || !d.endTime) return true
-      return d.endTime > d.startTime
+      if (!d.startTime || !d.endTime) return true;
+      return d.endTime > d.startTime;
     },
-    { message: 'La hora de fin debe ser mayor a la hora de inicio', path: ['endTime'] },
-  )
+    {
+      message: "La hora de fin debe ser mayor a la hora de inicio",
+      path: ["endTime"],
+    },
+  );
 
-type OvertimeFormData = z.infer<typeof overtimeSchema>
+type OvertimeFormData = z.infer<typeof overtimeSchema>;
 
 function calcHours(start: string, end: string): number {
-  if (!start || !end || end <= start) return 0
-  const [sh, sm] = start.split(':').map(Number)
-  const [eh, em] = end.split(':').map(Number)
-  return (eh * 60 + em - (sh * 60 + sm)) / 60
+  if (!start || !end || end <= start) return 0;
+  const [sh, sm] = start.split(":").map(Number);
+  const [eh, em] = end.split(":").map(Number);
+  return (eh * 60 + em - (sh * 60 + sm)) / 60;
 }
 
 interface RegisterOvertimeModalProps {
-  isOpen: boolean
-  onClose: () => void
-  onSubmit: (dto: CreateOvertimeDto) => Promise<void>
-  isSubmitting: boolean
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (dto: CreateOvertimeDto) => Promise<void>;
+  isSubmitting: boolean;
+  leaders: LeadersData[];
+  leaderId?: string;
 }
 
 export function RegisterOvertimeModal({
@@ -66,9 +84,11 @@ export function RegisterOvertimeModal({
   onClose,
   onSubmit,
   isSubmitting,
+  leaders,
+  leaderId,
 }: RegisterOvertimeModalProps) {
-  const [calendarOpen, setCalendarOpen] = useState(false)
-  const [serverError, setServerError] = useState<string | null>(null)
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
 
   const {
     register,
@@ -79,32 +99,34 @@ export function RegisterOvertimeModal({
     formState: { errors, isValid },
   } = useForm<OvertimeFormData>({
     resolver: zodResolver(overtimeSchema),
-    defaultValues: { date: '', startTime: '', endTime: '', description: '' },
-    mode: 'onChange',
-  })
+    defaultValues: { date: "", startTime: "", endTime: "", description: "" },
+    mode: "onChange",
+  });
 
-  const watchDate = watch('date')
-  const watchStart = watch('startTime')
-  const watchEnd = watch('endTime')
-  const totalHours = calcHours(watchStart, watchEnd)
+  const watchDate = watch("date");
+  const watchStart = watch("startTime");
+  const watchEnd = watch("endTime");
+  const totalHours = calcHours(watchStart, watchEnd);
 
   useEffect(() => {
     if (isOpen) {
-      reset({ date: '', startTime: '', endTime: '', description: '' })
-      setServerError(null)
+      reset({ date: "", startTime: "", endTime: "", description: "" });
+      setServerError(null);
     }
-  }, [isOpen, reset])
+  }, [isOpen, reset]);
 
   const onFormSubmit = async (data: OvertimeFormData) => {
     try {
-      setServerError(null)
-      await onSubmit(data as CreateOvertimeDto)
+      setServerError(null);
+      await onSubmit(data as CreateOvertimeDto);
     } catch (err) {
-      setServerError(err instanceof Error ? err.message : 'Error al guardar')
+      setServerError(err instanceof Error ? err.message : "Error al guardar");
     }
-  }
+  };
 
-  const selectedDate = watchDate ? new Date(watchDate + 'T12:00:00') : undefined
+  const selectedDate = watchDate
+    ? new Date(watchDate + "T12:00:00")
+    : undefined;
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -112,7 +134,8 @@ export function RegisterOvertimeModal({
         <DialogHeader>
           <DialogTitle>Registrar Horas Extra</DialogTitle>
           <DialogDescription>
-            Completa los datos para registrar tus horas extra. Tu líder recibirá la solicitud para revisión.
+            Completa los datos para registrar tus horas extra. Tu líder recibirá
+            la solicitud para revisión.
           </DialogDescription>
         </DialogHeader>
 
@@ -127,14 +150,16 @@ export function RegisterOvertimeModal({
                     id="date"
                     variant="outline"
                     className={cn(
-                      'w-full justify-start text-left font-normal',
-                      !watchDate && 'text-muted-foreground',
+                      "w-full justify-start text-left font-normal",
+                      !watchDate && "text-muted-foreground",
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {watchDate
-                      ? format(selectedDate!, "d 'de' MMMM yyyy", { locale: es })
-                      : 'Selecciona una fecha'}
+                      ? format(selectedDate!, "d 'de' MMMM yyyy", {
+                          locale: es,
+                        })
+                      : "Selecciona una fecha"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -143,8 +168,10 @@ export function RegisterOvertimeModal({
                     selected={selectedDate}
                     onSelect={(d) => {
                       if (d) {
-                        setValue('date', format(d, 'yyyy-MM-dd'), { shouldValidate: true })
-                        setCalendarOpen(false)
+                        setValue("date", format(d, "yyyy-MM-dd"), {
+                          shouldValidate: true,
+                        });
+                        setCalendarOpen(false);
                       }
                     }}
                     initialFocus
@@ -152,7 +179,9 @@ export function RegisterOvertimeModal({
                 </PopoverContent>
               </Popover>
               {errors.date && (
-                <p className="text-xs text-destructive mt-1">{errors.date.message}</p>
+                <p className="text-xs text-destructive mt-1">
+                  {errors.date.message}
+                </p>
               )}
             </Field>
 
@@ -160,24 +189,20 @@ export function RegisterOvertimeModal({
             <div className="grid grid-cols-2 gap-4">
               <Field>
                 <FieldLabel htmlFor="startTime">Hora de inicio</FieldLabel>
-                <Input
-                  id="startTime"
-                  type="time"
-                  {...register('startTime')}
-                />
+                <Input id="startTime" type="time" {...register("startTime")} />
                 {errors.startTime && (
-                  <p className="text-xs text-destructive mt-1">{errors.startTime.message}</p>
+                  <p className="text-xs text-destructive mt-1">
+                    {errors.startTime.message}
+                  </p>
                 )}
               </Field>
               <Field>
                 <FieldLabel htmlFor="endTime">Hora de fin</FieldLabel>
-                <Input
-                  id="endTime"
-                  type="time"
-                  {...register('endTime')}
-                />
+                <Input id="endTime" type="time" {...register("endTime")} />
                 {errors.endTime && (
-                  <p className="text-xs text-destructive mt-1">{errors.endTime.message}</p>
+                  <p className="text-xs text-destructive mt-1">
+                    {errors.endTime.message}
+                  </p>
                 )}
               </Field>
             </div>
@@ -194,17 +219,44 @@ export function RegisterOvertimeModal({
 
             {/* Description */}
             <Field>
-              <FieldLabel htmlFor="description">Descripción / Actividad</FieldLabel>
+              <FieldLabel htmlFor="description">
+                Descripción / Actividad
+              </FieldLabel>
               <Textarea
                 id="description"
                 placeholder="Describe la actividad o motivo de las horas extra..."
                 className="min-h-[90px] resize-none"
-                {...register('description')}
+                {...register("description")}
               />
               {errors.description && (
-                <p className="text-xs text-destructive mt-1">{errors.description.message}</p>
+                <p className="text-xs text-destructive mt-1">
+                  {errors.description.message}
+                </p>
               )}
             </Field>
+
+            {/* SELECTOR DE LIDERES */}
+            {!leaderId && (
+              <Field>
+                <FieldLabel>Selecciona a tu lider</FieldLabel>
+                <Select
+                  onValueChange={(leaderId) => {
+                    setValue("leaderId", leaderId);
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona un lider" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {leaders.map((leader) => (
+                      <SelectItem key={leader.userId} value={leader.userId}>
+                        {leader.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+            )}
 
             {/* Server error */}
             {serverError && (
@@ -215,15 +267,20 @@ export function RegisterOvertimeModal({
           </FieldGroup>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={isSubmitting}
+            >
               Cancelar
             </Button>
             <Button type="submit" disabled={isSubmitting || !isValid}>
-              {isSubmitting ? 'Guardando...' : 'Guardar'}
+              {isSubmitting ? "Guardando..." : "Guardar"}
             </Button>
           </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
