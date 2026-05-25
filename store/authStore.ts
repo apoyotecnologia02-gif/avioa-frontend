@@ -31,6 +31,13 @@ function decodeJwt(token: string) {
   }
 }
 
+function isTokenExpired(token: string | null): boolean {
+  if (!token) return true;
+  const payload = decodeJwt(token);
+  if (!payload || !payload.exp) return true;
+  return payload.exp * 1000 < Date.now();
+}
+
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   token: null,
@@ -93,6 +100,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const userJson = localStorage.getItem(USER_KEY)
 
     if (token && userJson) {
+      if (isTokenExpired(token)) {
+        localStorage.removeItem(TOKEN_KEY)
+        localStorage.removeItem(USER_KEY)
+        setAuthCookie(null)
+        set({
+          user: null,
+          token: null,
+          isAuthenticated: false,
+          isLoading: false,
+        })
+        return
+      }
+
       try {
         let user = JSON.parse(userJson) as User
         
@@ -111,7 +131,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           isLoading: false,
         })
       } catch {
-        set({ isLoading: false })
+        localStorage.removeItem(TOKEN_KEY)
+        localStorage.removeItem(USER_KEY)
+        setAuthCookie(null)
+        set({
+          user: null,
+          token: null,
+          isAuthenticated: false,
+          isLoading: false,
+        })
       }
     } else {
       set({ isLoading: false })

@@ -1,15 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import Image from "next/image";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
@@ -17,22 +8,36 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useAuth } from "@/hooks/useAuth";
-import { FieldGroup, Field, FieldLabel } from "@/components/ui/field";
-import Link from "next/link";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { api } from "@/lib/axios";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Eye, EyeOff, Link, Loader2 } from "lucide-react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 
-const loginSchema = z.object({
-  email: z.string().email("Ingresa un correo electrónico válido"),
-  password: z.string().min(1, "La contraseña es requerida"),
-});
+const forgotPasswordFormSchema = z
+  .object({
+    email: z.string().email("Ingresa un correo electrónico válido"),
+    password: z
+      .string()
+      .min(8, "La contraseña debe tener al menos 8 caracteres"),
+    confirmPassword: z.string().min(1, "Confirma tu contraseña"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Las contraseñas no coinciden",
+    path: ["confirmPassword"],
+  });
 
-type LoginFormData = z.infer<typeof loginSchema>;
+type ForgotPasswordFormValues = z.infer<typeof forgotPasswordFormSchema>;
 
-function LoginPageContent() {
+function ForgotPasswordContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const { login, isAuthenticated, isLoading: authLoading } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -40,44 +45,26 @@ function LoginPageContent() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
+  } = useForm<ForgotPasswordFormValues>({
+    resolver: zodResolver(forgotPasswordFormSchema),
   });
 
-  useEffect(() => {
-    if (!authLoading && isAuthenticated) {
-      const from = searchParams.get("from") || "/dashboard";
-      router.push(from);
-    }
-  }, [isAuthenticated, authLoading, router, searchParams]);
-
-  useEffect(() => {
-    const message = searchParams.get("message");
-    setSuccessMessage(message);
-  }, [searchParams]);
-
-  const onSubmit = async (data: LoginFormData) => {
+  const onSubmit = async (data: ForgotPasswordFormValues) => {
     setError(null);
     try {
-      await login(data);
-      const from = searchParams.get("from") || "/dashboard";
-      router.push(from);
+      await api.patch("/auth/forgot-password", data);
+      setSuccessMessage("Contrasena creada, ya puedes iniciar sesion");
+      setTimeout(() => {
+        router.push("/login");
+      }, 2000);
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError("Error al iniciar sesión. Verifica tus credenciales.");
+        setError("Error al restablecer la contraseña. Intenta de nuevo.");
       }
     }
   };
-
-  if (authLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
@@ -93,11 +80,12 @@ function LoginPageContent() {
               priority
             />
           </div>
-          <CardTitle className="text-2xl">Portal Empresarial</CardTitle>
+          <CardTitle className="text-2xl">Restablecer contraseña</CardTitle>
           <CardDescription>
-            Ingresa tus credenciales para acceder al portal
+            Ingresa tu correo y tu nueva contraseña
           </CardDescription>
         </CardHeader>
+
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             {successMessage && (
@@ -113,11 +101,13 @@ function LoginPageContent() {
 
             <FieldGroup>
               <Field>
-                <FieldLabel htmlFor="email">Correo electrónico</FieldLabel>
+                <FieldLabel htmlFor="email">
+                  Correo electr&oacute;nico
+                </FieldLabel>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="tu@empresa.com"
+                  placeholder="Correo electr&oacute;nico"
                   {...register("email")}
                   aria-invalid={!!errors.email}
                 />
@@ -129,12 +119,12 @@ function LoginPageContent() {
               </Field>
 
               <Field>
-                <FieldLabel htmlFor="password">Contraseña</FieldLabel>
+                <FieldLabel htmlFor="password">Contrase&ntilde;a</FieldLabel>
                 <div className="relative">
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
+                    placeholder="Contrase&ntilde;a"
                     {...register("password")}
                     aria-invalid={!!errors.password}
                   />
@@ -148,7 +138,7 @@ function LoginPageContent() {
                     {showPassword ? (
                       <EyeOff className="h-4 w-4 text-muted-foreground" />
                     ) : (
-                      <Eye className="h-4 w-4 text-muted-foreground" />
+                      <Eye className="h-4 w-4 text-muted-foregroud" />
                     )}
                   </Button>
                 </div>
@@ -158,28 +148,60 @@ function LoginPageContent() {
                   </p>
                 )}
               </Field>
+
+              <Field>
+                <FieldLabel htmlFor="confirmPassword">
+                  Confirmar contrase&ntilde;a
+                </FieldLabel>
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="Confirmar contrase&ntilde;a"
+                    {...register("confirmPassword")}
+                    aria-invalid={!!errors.confirmPassword}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-muted-foregroud" />
+                    )}
+                  </Button>
+                </div>
+                {errors.confirmPassword && (
+                  <p className="text-sm text-destructive">
+                    {errors.confirmPassword.message}
+                  </p>
+                )}
+              </Field>
             </FieldGroup>
 
             <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Iniciando sesión...
+                  Restableciendo...
                 </>
               ) : (
-                "Iniciar sesión"
+                "Restablecer contraseña"
               )}
             </Button>
           </form>
 
-          {/* Parte de olvide la contraseña */}
           <div className="text-center text-sm text-muted-foreground">
             <Button
               variant="link"
               asChild
               className="text-sm text-muted-foreground"
             >
-              <Link href="/forgot-password">¿Olvidaste tu contraseña?</Link>
+              <Link href="/login">Volver al inicio de sesión</Link>
             </Button>
           </div>
         </CardContent>
@@ -188,7 +210,7 @@ function LoginPageContent() {
   );
 }
 
-export default function LoginPage() {
+export default function ForgotPasswordPage() {
   return (
     <Suspense
       fallback={
@@ -197,7 +219,7 @@ export default function LoginPage() {
         </div>
       }
     >
-      <LoginPageContent />
+      <ForgotPasswordContent />
     </Suspense>
   );
 }

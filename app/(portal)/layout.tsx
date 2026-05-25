@@ -11,7 +11,7 @@ export default function PortalLayout({
 }: {
   children: React.ReactNode
 }) {
-  const { isAuthenticated, isLoading } = useAuth()
+  const { isAuthenticated, isLoading, token, logout } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
@@ -19,6 +19,45 @@ export default function PortalLayout({
       router.push('/login')
     }
   }, [isAuthenticated, isLoading, router])
+
+  // Monitor token expiration actively
+  useEffect(() => {
+    if (!isAuthenticated || !token) return
+
+    const checkTokenExpiration = () => {
+      try {
+        const payloadSegment = token.split('.')[1]
+        if (!payloadSegment) return
+        const base64 = payloadSegment.replace(/-/g, '+').replace(/_/g, '/')
+        const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=')
+        const decoded = JSON.parse(window.atob(padded)) as { exp?: number }
+        
+        if (decoded.exp && decoded.exp * 1000 < Date.now()) {
+          logout()
+        }
+      } catch {
+        logout()
+      }
+    }
+
+    // Check immediately
+    checkTokenExpiration()
+
+    // Check every 5 seconds
+    const interval = setInterval(checkTokenExpiration, 5000)
+
+    // Check on window focus and visibility change
+    const handleFocus = () => checkTokenExpiration()
+    
+    window.addEventListener('focus', handleFocus)
+    window.addEventListener('visibilitychange', checkTokenExpiration)
+
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('focus', handleFocus)
+      window.removeEventListener('visibilitychange', checkTokenExpiration)
+    }
+  }, [isAuthenticated, token, logout])
 
   if (isLoading) {
     return (

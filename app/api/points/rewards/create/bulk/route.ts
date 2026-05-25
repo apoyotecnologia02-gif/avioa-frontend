@@ -22,6 +22,8 @@ export async function POST(request: Request) {
       fetchHeaders["Content-Type"] = "application/json";
     }
 
+    console.log(fetchBody);
+
     const response = await fetch(REWARDS_URL, {
       method: "POST",
       headers: fetchHeaders,
