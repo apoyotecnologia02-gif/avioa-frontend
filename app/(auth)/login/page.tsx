@@ -179,7 +179,9 @@ function LoginPageContent() {
               asChild
               className="text-sm text-muted-foreground"
             >
-              <Link href="/forgot-password">¿Olvidaste tu contraseña?</Link>
+              <Link href="/send-forgot-password">
+                ¿Olvidaste tu contraseña?
+              </Link>
             </Button>
           </div>
         </CardContent>

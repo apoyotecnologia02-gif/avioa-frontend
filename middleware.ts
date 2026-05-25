@@ -2,7 +2,13 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { isAdminRole } from "@/lib/roles";
 
-const PUBLIC_PATHS = ["/login", "/api/auth", "/invite", "/forgot-password"];
+const PUBLIC_PATHS = [
+  "/login",
+  "/api/auth",
+  "/invite",
+  "/forgot-password",
+  "/send-forgot-password",
+];
 const TOKEN_KEY = "portal_access_token";
 const ADMIN_PATH_PREFIX = "/admin";
 

@@ -14,14 +14,14 @@ import { api } from "@/lib/axios";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, Link, Loader2 } from "lucide-react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 const forgotPasswordFormSchema = z
   .object({
-    email: z.string().email("Ingresa un correo electrónico válido"),
+    // email: z.string().email("Ingresa un correo electrónico válido"),
     password: z
       .string()
       .min(8, "La contraseña debe tener al menos 8 caracteres"),
@@ -36,6 +36,8 @@ type ForgotPasswordFormValues = z.infer<typeof forgotPasswordFormSchema>;
 
 function ForgotPasswordContent() {
   const router = useRouter();
+  const params = useParams();
+  const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -52,7 +54,10 @@ function ForgotPasswordContent() {
   const onSubmit = async (data: ForgotPasswordFormValues) => {
     setError(null);
     try {
-      await api.patch("/auth/forgot-password", data);
+      await api.patch("/auth/forgot-password", {
+        email: searchParams.get("email"),
+        ...data,
+      });
       setSuccessMessage("Contrasena creada, ya puedes iniciar sesion");
       setTimeout(() => {
         router.push("/login");
@@ -81,9 +86,7 @@ function ForgotPasswordContent() {
             />
           </div>
           <CardTitle className="text-2xl">Restablecer contraseña</CardTitle>
-          <CardDescription>
-            Ingresa tu correo y tu nueva contraseña
-          </CardDescription>
+          <CardDescription>Ingresa tu nueva contraseña</CardDescription>
         </CardHeader>
 
         <CardContent>
@@ -100,7 +103,7 @@ function ForgotPasswordContent() {
             )}
 
             <FieldGroup>
-              <Field>
+              {/* <Field>
                 <FieldLabel htmlFor="email">
                   Correo electr&oacute;nico
                 </FieldLabel>
@@ -116,7 +119,7 @@ function ForgotPasswordContent() {
                     {errors.email.message}
                   </p>
                 )}
-              </Field>
+              </Field> */}
 
               <Field>
                 <FieldLabel htmlFor="password">Contrase&ntilde;a</FieldLabel>
