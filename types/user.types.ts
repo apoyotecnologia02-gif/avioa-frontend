@@ -50,6 +50,7 @@ export interface CreateUserDto {
   role: Role;
   department?: string;
   area?: string;
+  birthDate?: Date;
   position?: string;
   leaderId?: string;
   managerId?: string;
