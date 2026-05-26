@@ -35,6 +35,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
+import { useAuthStore } from "@/store/authStore";
 
 const overtimeSchema = z
   .object({
@@ -87,6 +88,7 @@ export function RegisterOvertimeModal({
   leaders,
   leaderId,
 }: RegisterOvertimeModalProps) {
+  const { user } = useAuthStore();
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -130,7 +132,7 @@ export function RegisterOvertimeModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Registrar Horas Extra</DialogTitle>
           <DialogDescription>
@@ -140,7 +142,7 @@ export function RegisterOvertimeModal({
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-5 py-2">
-          <FieldGroup className="grid grid-cols-1 gap-5">
+          <FieldGroup className="flex flex-col gap-5">
             {/* Date */}
             <Field>
               <FieldLabel htmlFor="date">Fecha</FieldLabel>
@@ -235,28 +237,43 @@ export function RegisterOvertimeModal({
               )}
             </Field>
 
+            <div className="md:col-span-2">
+              {user?.leaderName ? (
+                <p className="text-sm text-muted-foreground">
+                  Tu líder asociado es{" "}
+                  <span className="font-semibold text-foreground">
+                    {user.leaderName}.{" "}
+                  </span>
+                  Puedes seleccionar otro líder si lo deseas.
+                </p>
+              ) : (
+                <p className="text-sm text-destructive font-medium">
+                  No tienes un líder asignado. Por favor selecciona uno para
+                  enviar tu solicitud.
+                </p>
+              )}
+            </div>
+
             {/* SELECTOR DE LIDERES */}
-            {!leaderId && (
-              <Field>
-                <FieldLabel>Selecciona a tu lider</FieldLabel>
-                <Select
-                  onValueChange={(leaderId) => {
-                    setValue("leaderId", leaderId);
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona un lider" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {leaders.map((leader) => (
-                      <SelectItem key={leader.userId} value={leader.userId}>
-                        {leader.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </Field>
-            )}
+            <Field>
+              <FieldLabel>Selecciona a tu lider</FieldLabel>
+              <Select
+                onValueChange={(leaderId) => {
+                  setValue("leaderId", leaderId);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona un lider" />
+                </SelectTrigger>
+                <SelectContent>
+                  {leaders.map((leader) => (
+                    <SelectItem key={leader.userId} value={leader.userId}>
+                      {leader.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
 
             {/* Server error */}
             {serverError && (
@@ -275,7 +292,14 @@ export function RegisterOvertimeModal({
             >
               Cancelar
             </Button>
-            <Button type="submit" disabled={isSubmitting || !isValid}>
+            <Button
+              type="submit"
+              disabled={
+                isSubmitting ||
+                !isValid ||
+                (!user?.leaderId && !watch("leaderId"))
+              }
+            >
               {isSubmitting ? "Guardando..." : "Guardar"}
             </Button>
           </DialogFooter>

@@ -160,8 +160,7 @@ export default function AdminRewardsPage() {
   const deleteReward = async (rewardId: string) => {
     setActionLoadingId(rewardId);
     try {
-      await api.delete("/points/rewards/delete", {
-        data: { rewardId },
+      await api.delete(`/points/rewards/delete/${rewardId}`, {
         skip401Redirect: true,
       });
       toast({ title: "Recompensa eliminada" });
