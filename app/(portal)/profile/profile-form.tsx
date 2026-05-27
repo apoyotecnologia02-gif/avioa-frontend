@@ -20,65 +20,108 @@ import { ChangeEvent, useRef, useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import z from "zod";
 import { api } from "@/lib/axios";
+
 const profileFormSchema = z.object({
-  name: z.string().min(2, "El nombre es requerido").optional(),
-  email: z.string().email("Ingresa un correo válido").optional(),
-  area: z.nativeEnum(Area).optional(),
+  name: z
+    .string()
+    .min(2, "El nombre es requerido")
+    .optional()
+    .or(z.literal("")),
+  email: z
+    .string()
+    .email("Ingresa un correo válido")
+    .optional()
+    .or(z.literal("")),
+  // area: z.nativeEnum(Area).optional().or(z.literal("")),
+  birthDate: z.string().optional().or(z.literal("")),
+  // avatar: z.any().optional().or(z.literal("")),
 });
+
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
+
 export function ProfileForm() {
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
   const { toast } = useToast();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const hasResetRef = useRef(false);
+
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
       name: user?.name || "",
       email: user?.email || "",
-      area: user?.area,
+      // area: user?.area || "",
+      birthDate: "",
     },
   });
 
-  const formData = new FormData();
+  // const avatarRegister = useMemo(() => form.register("avatar"), [form]);
+  // const {
+  //   ref: avatarRef,
+  //   onChange: avatarOnChange,
+  //   ...avatarRest
+  // } = avatarRegister;
 
   useEffect(() => {
-    if (user) {
+    if (user && !hasResetRef.current) {
       form.reset({
         name: user.name || "",
         email: user.email || "",
-        area: user.area,
+        // area: user.area,
+        birthDate: "",
       });
+      hasResetRef.current = true;
     }
   }, [user, form]);
+
   function handleAvatarChange(e: ChangeEvent<HTMLInputElement>) {
+    // avatarOnChange(e);
     const file = e.target.files?.[0];
     if (file) {
+      setAvatarFile(file);
       setAvatarUrl(URL.createObjectURL(file));
-      formData.append("file", file);
     }
   }
+
   async function onSubmit(data: ProfileFormValues) {
     try {
-      setIsLoading(true);
       setError(null);
 
-      await api.patch("/");
+      const formData = new FormData();
+      if (data.name) formData.append("name", data.name);
+      if (data.email) formData.append("email", data.email);
+      // if (data.area) formData.append("area", data.area);
+      if (data.birthDate) formData.append("birthDate", data.birthDate);
+      if (avatarFile) formData.append("file", avatarFile);
+
+      const response = await api.patch(
+        "/admin/users/update-profile",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        },
+      );
+
+      setUser({ ...user, ...response.data });
+
+      toast({
+        title: "Perfil actualizado",
+        description: "Los cambios han sido guardados exitosamente.",
+      });
     } catch (err: any) {
       setError(
         err?.response?.data?.message ||
           err?.message ||
           "No fue posible actualizar el perfil",
       );
-    } finally {
-      toast({
-        title: "Perfil actualizado",
-        description: "Los cambios han sido guardados exitosamente.",
-      });
     }
   }
+
   return (
     <Form {...form}>
       <form
@@ -173,6 +216,15 @@ export function ProfileForm() {
               </FormItem>
             )}
           />
+
+          <FormItem>
+            <FormLabel>Fecha de nacimiento</FormLabel>
+            <Input
+              type="date"
+              className="bg-background"
+              {...form.register("birthDate")}
+            />
+          </FormItem>
         </div>
         <div className="flex items-center justify-end">
           <Button type="submit" disabled={form.formState.isSubmitting}>
