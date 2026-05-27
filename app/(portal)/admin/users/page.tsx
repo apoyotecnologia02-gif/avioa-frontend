@@ -68,6 +68,7 @@ const createUserSchema = z.object({
   department: z.string().optional().or(z.literal("")),
   area: z.string().optional().or(z.literal("")),
   position: z.string().optional().or(z.literal("")),
+  birthDate: z.string().optional(),
   leaderId: z.string().optional(),
   managerId: z.string().optional(),
 });
@@ -154,6 +155,7 @@ export default function AdminUsersPage() {
   const onSubmit = async (data: CreateUserFormData) => {
     setIsSaving(true);
     try {
+      console.log(data);
       const payload: CreateUserDto = {
         name: data.name,
         email: data.email,
@@ -161,6 +163,7 @@ export default function AdminUsersPage() {
         department: data.department || undefined,
         area: data.area || undefined,
         position: data.position || undefined,
+        birthDate: data.birthDate || undefined,
         leaderId:
           data.role === Role.EMPLOYEE ? data.leaderId || undefined : undefined,
         managerId:
@@ -178,6 +181,7 @@ export default function AdminUsersPage() {
         role: Role.EMPLOYEE,
         department: "",
         position: "",
+        birthDate: undefined,
         leaderId: undefined,
         managerId: undefined,
       });
@@ -380,14 +384,19 @@ export default function AdminUsersPage() {
                         </SelectContent>
                       </Select>
                     </Field>
-                    {/* <Field>
-                      <FieldLabel htmlFor="department">Departamento</FieldLabel>
-                      <Input id="department" placeholder="Tecnologia" {...register('department')} />
-                    </Field>
+
                     <Field>
-                      <FieldLabel htmlFor="position">Posición</FieldLabel>
-                      <Input id="position" placeholder="Analista" {...register('position')} />
-                    </Field> */}
+                      <FieldLabel htmlFor="birthDate">
+                        Fecha de nacimiento
+                      </FieldLabel>
+                      <Input
+                        id="birthDate"
+                        type="date"
+                        {...register("birthDate")}
+                        placeholder="Fecha de nacimiento"
+                      />
+                    </Field>
+
                     <Field>
                       <FieldLabel htmlFor="area">Área</FieldLabel>
                       <Select

@@ -10,6 +10,7 @@ export interface User {
   area: Area;
   leaderId?: string;
   leaderName?: string;
+  avatarUrl?: string;
 }
 
 export interface AuthTokens {
