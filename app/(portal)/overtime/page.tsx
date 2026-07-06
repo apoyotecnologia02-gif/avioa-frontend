@@ -1,6 +1,7 @@
+// app/(portal)/overtime/page.tsx
+
 "use client";
 
-import { useState } from "react";
 import { Plus, ClipboardCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
@@ -17,6 +18,8 @@ import { RegisterOvertimeModal } from "@/components/overtime/RegisterOvertimeMod
 import { ReviewOvertimeModal } from "@/components/overtime/ReviewOvertimeModal";
 import type { OvertimeRecord, OvertimeStatus } from "@/types/overtime.types";
 import { useGetLeaders } from "@/hooks/useGetLeaders";
+import { useEffect, useState } from 'react';
+import { useOvertimeStore } from '@/store/overtimeStore'; 
 
 function toDateOnly(value: string) {
   if (!value) return "";
@@ -29,10 +32,13 @@ export default function OvertimePage() {
   const { user } = useAuth();
   const isLeaderOrManager = isLeaderOrManagerOrAdminRole(user?.role);
 
+  //obtener el estado del store (zustand)
+  const { shouldOpenModal, clearModalTrigger } = useOvertimeStore();
+
   // Calendar navigation state
   const [currentDate, setCurrentDate] = useState(new Date());
   const year = currentDate.getFullYear();
-  const month = currentDate.getMonth() + 1; // date-fns months are 0-indexed
+  const month = currentDate.getMonth() + 1;
 
   // Selected day state
   const [selectedDate, setSelectedDate] = useState<string>("");
@@ -40,6 +46,13 @@ export default function OvertimePage() {
   // Modal visibility
   const [registerOpen, setRegisterOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
+
+  useEffect(() => {
+    if (shouldOpenModal) {
+      setReviewOpen(true);
+      clearModalTrigger();
+    }
+  }, [shouldOpenModal, clearModalTrigger]); 
 
   // Data hooks
   const {
@@ -189,7 +202,7 @@ export default function OvertimePage() {
         )}
       </div>
 
-      {/* Modals */}
+      {/* 🪟 Modales */}
       <RegisterOvertimeModal
         isOpen={registerOpen}
         onClose={() => setRegisterOpen(false)}
@@ -201,7 +214,7 @@ export default function OvertimePage() {
 
       {isLeaderOrManager && (
         <ReviewOvertimeModal
-          isOpen={reviewOpen}
+          isOpen={reviewOpen}      
           onClose={() => setReviewOpen(false)}
           records={teamRecords}
           myRecords={myRecords}
