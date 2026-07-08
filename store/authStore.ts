@@ -9,8 +9,8 @@ import type {
 } from "@/types/auth.types";
 import { api } from "@/lib/axios";
 
-const TOKEN_KEY = "portal_access_token";
-const USER_KEY = "portal_user";
+export const TOKEN_KEY = "portal_access_token";
+export const USER_KEY = "portal_user";
 
 function setAuthCookie(token: string | null) {
   if (typeof document === "undefined") return;

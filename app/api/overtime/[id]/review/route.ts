@@ -22,6 +22,8 @@ export async function PATCH(
       body: JSON.stringify(body),
     })
 
+    
+
     const data = await parseResponseData(response)
     return NextResponse.json(data, { status: response.status })
   } catch {
