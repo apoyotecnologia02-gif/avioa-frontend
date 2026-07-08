@@ -9,8 +9,6 @@ export interface OvertimeRecord {
   description: string
   status: OvertimeStatus
   comment?: string       // leader comment after review
-  createdAt: string
-  updatedAt: string
 }
 
 export interface OvertimeDaySummary {

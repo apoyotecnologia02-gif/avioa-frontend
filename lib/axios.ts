@@ -1,5 +1,6 @@
 "use client";
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
+//import {TOKEN_KEY} from "@/store/authStore"
 
 declare module "axios" {
   interface AxiosRequestConfig {
@@ -69,6 +70,9 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
+    
+
+
     const backendMessage = getBackendErrorMessage(error);
     if (backendMessage) {
       error.message = backendMessage;
@@ -86,3 +90,5 @@ api.interceptors.response.use(
     return Promise.reject(error);
   },
 );
+
+
