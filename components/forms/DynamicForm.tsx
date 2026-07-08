@@ -1,77 +1,91 @@
-'use client'
+"use client";
 
-import { useMemo } from 'react'
-import { useRouter } from 'next/navigation'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { Loader2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Checkbox } from '@/components/ui/checkbox'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { useMemo } from "react";
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { FieldGroup, Field, FieldLabel } from '@/components/ui/field'
-import { useToast } from '@/hooks/use-toast'
-import { useSubmitForm } from '@/hooks/useForms'
-import type { FormSchema, FormField as FormFieldType } from '@/types/form.types'
+} from "@/components/ui/select";
+import { FieldGroup, Field, FieldLabel } from "@/components/ui/field";
+import { useToast } from "@/hooks/use-toast";
+import { useSubmitForm } from "@/hooks/useForms";
+import type {
+  FormSchema,
+  FormField as FormFieldType,
+} from "@/types/form.types";
 
 interface DynamicFormProps {
-  formId: string
-  schema: FormSchema
+  formId: string;
+  schema: FormSchema;
 }
 
 function buildZodSchema(fields: FormFieldType[]) {
-  const shape: Record<string, z.ZodTypeAny> = {}
+  const shape: Record<string, z.ZodTypeAny> = {};
 
   fields.forEach((field) => {
-    let fieldSchema: z.ZodTypeAny
+    let fieldSchema: z.ZodTypeAny;
 
     switch (field.type) {
-      case 'email':
-        fieldSchema = z.string().email('Ingresa un correo válido')
-        break
-      case 'number':
-        fieldSchema = z.coerce.number({ invalid_type_error: 'Ingresa un número válido' })
-        break
-      case 'checkbox':
-        fieldSchema = z.boolean()
-        break
+      case "email":
+        fieldSchema = z.string().email("Ingresa un correo válido");
+        break;
+      case "number":
+        fieldSchema = z.coerce.number({
+          invalid_type_error: "Ingresa un número válido",
+        });
+        break;
+      case "checkbox":
+        fieldSchema = z.boolean();
+        break;
       default:
-        fieldSchema = z.string()
+        fieldSchema = z.string();
     }
 
     if (field.required) {
-      if (field.type === 'checkbox') {
-        fieldSchema = (fieldSchema as z.ZodBoolean).refine((val) => val === true, {
-          message: 'Este campo es requerido',
-        })
+      if (field.type === "checkbox") {
+        fieldSchema = (fieldSchema as z.ZodBoolean).refine(
+          (val) => val === true,
+          {
+            message: "Este campo es requerido",
+          },
+        );
       } else {
-        fieldSchema = (fieldSchema as z.ZodString).min(1, 'Este campo es requerido')
+        fieldSchema = (fieldSchema as z.ZodString).min(
+          1,
+          "Este campo es requerido",
+        );
       }
     } else {
-      fieldSchema = fieldSchema.optional()
+      fieldSchema = fieldSchema.optional();
     }
 
-    shape[field.name] = fieldSchema
-  })
+    shape[field.name] = fieldSchema;
+  });
 
-  return z.object(shape)
+  return z.object(shape);
 }
 
 export function DynamicForm({ formId, schema }: DynamicFormProps) {
-  const router = useRouter()
-  const { toast } = useToast()
-  const submitForm = useSubmitForm()
+  const router = useRouter();
+  const { toast } = useToast();
+  const submitForm = useSubmitForm();
 
-  const zodSchema = useMemo(() => buildZodSchema(schema.fields), [schema.fields])
+  const zodSchema = useMemo(
+    () => buildZodSchema(schema.fields),
+    [schema.fields],
+  );
 
   const {
     register,
@@ -83,41 +97,44 @@ export function DynamicForm({ formId, schema }: DynamicFormProps) {
     resolver: zodResolver(zodSchema),
     defaultValues: schema.fields.reduce(
       (acc, field) => {
-        acc[field.name] = field.type === 'checkbox' ? false : ''
-        return acc
+        acc[field.name] = field.type === "checkbox" ? false : "";
+        return acc;
       },
-      {} as Record<string, unknown>
+      {} as Record<string, unknown>,
     ),
-  })
+  });
 
   const onSubmit = async (data: Record<string, unknown>) => {
     try {
-      await submitForm.mutateAsync({ formId, data })
+      console.log("dynamic form data", data);
+      await submitForm.mutateAsync({ formId, data });
       toast({
-        title: 'Formulario enviado',
-        description: 'Tu respuesta ha sido registrada correctamente.',
-      })
-      router.push('/forms')
+        title: "Formulario enviado",
+        description: "Tu respuesta ha sido registrada correctamente.",
+      });
+      router.push("/forms");
     } catch (error) {
       toast({
-        title: 'Error al enviar',
-        description: 'No se pudo enviar el formulario. Intenta de nuevo.',
-        variant: 'destructive',
-      })
+        title: "Error al enviar",
+        description: "No se pudo enviar el formulario. Intenta de nuevo.",
+        variant: "destructive",
+      });
     }
-  }
+  };
 
   const renderField = (field: FormFieldType) => {
-    const error = errors[field.name]
-    const errorMessage = error?.message as string | undefined
+    const error = errors[field.name];
+    const errorMessage = error?.message as string | undefined;
 
     switch (field.type) {
-      case 'textarea':
+      case "textarea":
         return (
           <Field key={field.name}>
             <FieldLabel htmlFor={field.name}>
               {field.label}
-              {field.required && <span className="text-destructive ml-1">*</span>}
+              {field.required && (
+                <span className="text-destructive ml-1">*</span>
+              )}
             </FieldLabel>
             <Textarea
               id={field.name}
@@ -129,14 +146,16 @@ export function DynamicForm({ formId, schema }: DynamicFormProps) {
               <p className="text-sm text-destructive">{errorMessage}</p>
             )}
           </Field>
-        )
+        );
 
-      case 'select':
+      case "select":
         return (
           <Field key={field.name}>
             <FieldLabel htmlFor={field.name}>
               {field.label}
-              {field.required && <span className="text-destructive ml-1">*</span>}
+              {field.required && (
+                <span className="text-destructive ml-1">*</span>
+              )}
             </FieldLabel>
             <Select
               onValueChange={(value) => setValue(field.name, value)}
@@ -157,9 +176,9 @@ export function DynamicForm({ formId, schema }: DynamicFormProps) {
               <p className="text-sm text-destructive">{errorMessage}</p>
             )}
           </Field>
-        )
+        );
 
-      case 'checkbox':
+      case "checkbox":
         return (
           <Field key={field.name}>
             <div className="flex items-center gap-2">
@@ -170,21 +189,25 @@ export function DynamicForm({ formId, schema }: DynamicFormProps) {
               />
               <FieldLabel htmlFor={field.name} className="mb-0 cursor-pointer">
                 {field.label}
-                {field.required && <span className="text-destructive ml-1">*</span>}
+                {field.required && (
+                  <span className="text-destructive ml-1">*</span>
+                )}
               </FieldLabel>
             </div>
             {errorMessage && (
               <p className="text-sm text-destructive">{errorMessage}</p>
             )}
           </Field>
-        )
+        );
 
-      case 'radio':
+      case "radio":
         return (
           <Field key={field.name}>
             <FieldLabel>
               {field.label}
-              {field.required && <span className="text-destructive ml-1">*</span>}
+              {field.required && (
+                <span className="text-destructive ml-1">*</span>
+              )}
             </FieldLabel>
             <RadioGroup
               onValueChange={(value) => setValue(field.name, value)}
@@ -192,7 +215,10 @@ export function DynamicForm({ formId, schema }: DynamicFormProps) {
             >
               {field.options?.map((option) => (
                 <div key={option.value} className="flex items-center gap-2">
-                  <RadioGroupItem value={option.value} id={`${field.name}-${option.value}`} />
+                  <RadioGroupItem
+                    value={option.value}
+                    id={`${field.name}-${option.value}`}
+                  />
                   <label
                     htmlFor={`${field.name}-${option.value}`}
                     className="text-sm cursor-pointer"
@@ -206,14 +232,16 @@ export function DynamicForm({ formId, schema }: DynamicFormProps) {
               <p className="text-sm text-destructive">{errorMessage}</p>
             )}
           </Field>
-        )
+        );
 
-      case 'date':
+      case "date":
         return (
           <Field key={field.name}>
             <FieldLabel htmlFor={field.name}>
               {field.label}
-              {field.required && <span className="text-destructive ml-1">*</span>}
+              {field.required && (
+                <span className="text-destructive ml-1">*</span>
+              )}
             </FieldLabel>
             <Input
               id={field.name}
@@ -225,14 +253,16 @@ export function DynamicForm({ formId, schema }: DynamicFormProps) {
               <p className="text-sm text-destructive">{errorMessage}</p>
             )}
           </Field>
-        )
+        );
 
-      case 'number':
+      case "number":
         return (
           <Field key={field.name}>
             <FieldLabel htmlFor={field.name}>
               {field.label}
-              {field.required && <span className="text-destructive ml-1">*</span>}
+              {field.required && (
+                <span className="text-destructive ml-1">*</span>
+              )}
             </FieldLabel>
             <Input
               id={field.name}
@@ -245,14 +275,16 @@ export function DynamicForm({ formId, schema }: DynamicFormProps) {
               <p className="text-sm text-destructive">{errorMessage}</p>
             )}
           </Field>
-        )
+        );
 
-      case 'email':
+      case "email":
         return (
           <Field key={field.name}>
             <FieldLabel htmlFor={field.name}>
               {field.label}
-              {field.required && <span className="text-destructive ml-1">*</span>}
+              {field.required && (
+                <span className="text-destructive ml-1">*</span>
+              )}
             </FieldLabel>
             <Input
               id={field.name}
@@ -265,14 +297,16 @@ export function DynamicForm({ formId, schema }: DynamicFormProps) {
               <p className="text-sm text-destructive">{errorMessage}</p>
             )}
           </Field>
-        )
+        );
 
       default:
         return (
           <Field key={field.name}>
             <FieldLabel htmlFor={field.name}>
               {field.label}
-              {field.required && <span className="text-destructive ml-1">*</span>}
+              {field.required && (
+                <span className="text-destructive ml-1">*</span>
+              )}
             </FieldLabel>
             <Input
               id={field.name}
@@ -285,9 +319,9 @@ export function DynamicForm({ formId, schema }: DynamicFormProps) {
               <p className="text-sm text-destructive">{errorMessage}</p>
             )}
           </Field>
-        )
+        );
     }
-  }
+  };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -306,10 +340,10 @@ export function DynamicForm({ formId, schema }: DynamicFormProps) {
               Enviando...
             </>
           ) : (
-            'Enviar formulario'
+            "Enviar formulario"
           )}
         </Button>
       </div>
     </form>
-  )
+  );
 }

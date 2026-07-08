@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus, ClipboardCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
@@ -17,6 +17,7 @@ import { RegisterOvertimeModal } from "@/components/overtime/RegisterOvertimeMod
 import { ReviewOvertimeModal } from "@/components/overtime/ReviewOvertimeModal";
 import type { OvertimeRecord, OvertimeStatus } from "@/types/overtime.types";
 import { useGetLeaders } from "@/hooks/useGetLeaders";
+import { useSearchParams } from "next/navigation";
 
 function toDateOnly(value: string) {
   if (!value) return "";
@@ -40,6 +41,8 @@ export default function OvertimePage() {
   // Modal visibility
   const [registerOpen, setRegisterOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
+
+  const searchParams = useSearchParams();
 
   // Data hooks
   const {
@@ -115,6 +118,14 @@ export default function OvertimePage() {
     setCurrentDate(date);
     setSelectedDate("");
   };
+
+  useEffect(() => {
+    const requestId = searchParams.get("review");
+
+    if (requestId && isLeaderOrManager) {
+      setReviewOpen(true);
+    }
+  }, [searchParams, isLeaderOrManager]);
 
   return (
     <div className="container mx-auto py-8 px-4 max-w-7xl space-y-6 animate-in fade-in duration-500">

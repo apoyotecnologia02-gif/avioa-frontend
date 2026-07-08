@@ -15,6 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
 import { useNotificationStore } from "@/store/notificationStore";
 import { useRouter } from "next/navigation";
+import { NotificationType } from "@/types/notification.types";
 
 interface Breadcrumb {
   label: string;
@@ -138,6 +139,14 @@ export function Header() {
                     onClick={(e) => {
                       e.preventDefault();
                       markAsRead(notification.id);
+
+                      console.log(notification);
+
+                      if (
+                        notification.type === NotificationType.OVERTIME_REQUEST
+                      ) {
+                        router.push(`/overtime?review=${notification.id}`);
+                      }
                     }}
                   >
                     <div className="flex items-center justify-between w-full">
