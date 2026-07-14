@@ -120,6 +120,7 @@ export default function AdminUsersPage() {
       const response = await api.get<User[]>("/admin/users", {
         skip401Redirect: true,
       });
+
       setUsers(response.data);
     } catch (err) {
       toast({
