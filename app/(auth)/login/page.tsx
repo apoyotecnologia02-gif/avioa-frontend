@@ -44,12 +44,18 @@ function LoginPageContent() {
     resolver: zodResolver(loginSchema),
   });
 
-  useEffect(() => {
-    if (!authLoading && isAuthenticated) {
-      const from = searchParams.get("from") || "/dashboard";
-      router.push(from);
-    }
-  }, [isAuthenticated, authLoading, router, searchParams]);
+  // useEffect(() => {
+  //   if (!authLoading && isAuthenticated) {
+  //     const from = searchParams.get("from") || "/dashboard";
+  //     router.push(from);
+  //   }
+  // }, [isAuthenticated, authLoading, router, searchParams]);
+
+  function safeFrom(raw: string | null): string {
+    if (!raw) return "/dashboard";
+    if (!raw.startsWith("/") || raw.startsWith("//")) return "/dashboard";
+    return raw;
+  }
 
   useEffect(() => {
     const message = searchParams.get("message");
@@ -60,14 +66,15 @@ function LoginPageContent() {
     setError(null);
     try {
       await login(data);
-      const from = searchParams.get("from") || "/dashboard";
-      router.push(from);
+      // const from = searchParams.get("from") || "/dashboard";
+      // router.push(from);
+      router.replace(safeFrom(searchParams.get("from")));
     } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Error al iniciar sesión. Verifica tus credenciales.");
-      }
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Error al iniciar sesión. Verifica tus credenciales.",
+      );
     }
   };
 

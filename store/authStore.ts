@@ -7,10 +7,16 @@ import type {
   User,
   LoginResponse,
 } from "@/types/auth.types";
-import { api } from "@/lib/axios";
+import {
+  api,
+  setSession,
+  ACCESS_KEY,
+  REFRESH_KEY,
+  USER_KEY,
+} from "@/lib/axios";
 
 export const TOKEN_KEY = "portal_access_token";
-export const USER_KEY = "portal_user";
+// export const USER_KEY = "portal_user";
 
 function setAuthCookie(token: string | null) {
   if (typeof document === "undefined") return;
@@ -55,25 +61,37 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   login: async (credentials: LoginCredentials) => {
     const response = await api.post<LoginResponse>("/auth/login", credentials);
-    const { accessToken, user } = response.data;
+    const { accessToken, user, refreshToken } = response.data;
 
-    let fullUser = { ...user };
+    if (!refreshToken) {
+      console.error("El backend no devolvió un refresh token");
+    }
+
     const payload = decodeJwt(accessToken);
-    if (payload && payload.area) {
-      fullUser.area = payload.area;
-    }
+    let fullUser = {
+      ...user,
+      ...(payload?.area && { area: payload.area }),
+      ...(payload?.leaderId && { leaderId: payload.leaderId }),
+      ...(payload?.leaderName && { leaderName: payload.leaderName }),
+    };
 
-    if (payload && payload.leaderId) {
-      fullUser.leaderId = payload.leaderId;
-    }
+    // if (payload && payload.area) {
+    //   fullUser.area = payload.area;
+    // }
 
-    if (payload && payload.leaderName) {
-      fullUser.leaderName = payload.leaderName;
-    }
+    // if (payload && payload.leaderId) {
+    //   fullUser.leaderId = payload.leaderId;
+    // }
 
-    localStorage.setItem(TOKEN_KEY, accessToken);
+    // if (payload && payload.leaderName) {
+    //   fullUser.leaderName = payload.leaderName;
+    // }
+
+    setSession(accessToken, refreshToken);
+    localStorage.setItem(REFRESH_KEY, refreshToken);
     localStorage.setItem(USER_KEY, JSON.stringify(fullUser));
-    setAuthCookie(accessToken);
+    // localStorage.setItem("portal_refresh_token", refreshToken);
+    // setAuthCookie(accessToken);
 
     set({
       user: fullUser,
@@ -83,7 +101,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     });
   },
 
-  logout: () => {
+  logout: async () => {
+    // await api.post("/auth/logout");
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
     setAuthCookie(null);
