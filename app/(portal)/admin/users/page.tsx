@@ -676,11 +676,27 @@ export default function AdminUsersPage() {
                         <FieldLabel htmlFor="documentNumber">
                           Número de documento
                         </FieldLabel>
-                        <Input
+                        {/* <Input
                           id="documentNumber"
                           type="text"
                           {...register("documentNumber")}
                           placeholder="Número de documento"
+                        /> */}
+                        <Controller
+                          control={control}
+                          name="documentNumber"
+                          render={({ field }) => (
+                            <NumericFormat
+                              customInput={Input}
+                              thousandSeparator="."
+                              decimalSeparator=","
+                              allowNegative={false}
+                              onValueChange={(values) =>
+                                field.onChange(values.floatValue)
+                              }
+                              placeholder="Número de documento"
+                            />
+                          )}
                         />
                       </Field>
                     )}
