@@ -36,11 +36,9 @@ interface User {
   avatar?: string;
 }
 
-
 export function UsersInfo() {
   const [searchTerm, setSearchTerm] = useState("");
 
-  
   const { data: users, isLoading, isError, error } = useGetUsers();
 
   const filteredUsers = users?.filter((user: User) => {
@@ -52,9 +50,8 @@ export function UsersInfo() {
       user.area?.toLowerCase().includes(searchLower) ||
       false
     );
-
   });
-  
+
   //estado de carga
   if (isLoading) {
     return (
@@ -80,7 +77,6 @@ export function UsersInfo() {
     );
   }
 
- 
   if (isError) {
     return (
       <Card className="col-span-full">
@@ -104,7 +100,7 @@ export function UsersInfo() {
     );
   }
 
-  //Cuando no hay usuarios 
+  //Cuando no hay usuarios
   if (!users || users.length === 0) {
     return (
       <Card className="col-span-full">
@@ -130,7 +126,6 @@ export function UsersInfo() {
       </Card>
     );
   }
-
 
   return (
     <Card className="col-span-full">
@@ -191,7 +186,10 @@ export function UsersInfo() {
                 </TableRow>
               ) : (
                 filteredUsers?.map((user: User) => (
-                  <TableRow key={user.name} className="hover:bg-muted/50 cursor-pointer">
+                  <TableRow
+                    key={user.name}
+                    className="hover:bg-muted/50 cursor-pointer"
+                  >
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="h-9 w-9">
@@ -242,7 +240,6 @@ export function UsersInfo() {
             </TableBody>
           </Table>
         </div>
-        
 
         {/* Versión Mobile - Cards */}
         <div className="md:hidden space-y-4">
@@ -252,7 +249,10 @@ export function UsersInfo() {
             </div>
           ) : (
             filteredUsers?.map((user: User) => (
-              <Card key={user.name} className="hover:bg-muted/50 cursor-pointer">
+              <Card
+                key={user.name}
+                className="hover:bg-muted/50 cursor-pointer"
+              >
                 <CardContent className="pt-6">
                   <div className="flex items-start gap-3">
                     <Avatar className="h-12 w-12">
@@ -307,4 +307,3 @@ export function UsersInfo() {
     </Card>
   );
 }
-
