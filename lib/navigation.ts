@@ -11,7 +11,7 @@ import {
   History,
   ClipboardList,
   UserPlus,
-  Users
+  Users,
 } from "lucide-react";
 
 /**
@@ -96,7 +96,7 @@ export const NAV_SECTIONS: NavSection[] = [
         items: [
           { href: "/overtime", label: "Horas extra" },
           // PROXIMAMENTE
-          // { href: "/leaves", label: "Vacaciones y ausencias" }
+          { href: "/leaves", label: "Vacaciones y ausencias" },
         ],
       },
       {
@@ -128,7 +128,6 @@ export const NAV_SECTIONS: NavSection[] = [
       //       { href: "/org-chart", label: "Organigrama" },
       //     ],
       //   },
-
     ],
   },
   {
