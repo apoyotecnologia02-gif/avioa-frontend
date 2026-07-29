@@ -7,10 +7,17 @@ import type {
   User,
   LoginResponse,
 } from "@/types/auth.types";
-import { api } from "@/lib/axios";
+import {
+  api,
+  setSession,
+  ACCESS_KEY,
+  REFRESH_KEY,
+  USER_KEY,
+} from "@/lib/axios";
+import router from "next/router";
 
-const TOKEN_KEY = "portal_access_token";
-const USER_KEY = "portal_user";
+export const TOKEN_KEY = "portal_access_token";
+// export const USER_KEY = "portal_user";
 
 function setAuthCookie(token: string | null) {
   if (typeof document === "undefined") return;
@@ -55,35 +62,29 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   login: async (credentials: LoginCredentials) => {
     const response = await api.post<LoginResponse>("/auth/login", credentials);
-    const { accessToken, user } = response.data;
 
-    let fullUser = { ...user };
-    const payload = decodeJwt(accessToken);
-    if (payload && payload.area) {
-      fullUser.area = payload.area;
+    if (response.data.twoFactorEnabled) {
+      return {
+        twoFactorEnabled: true,
+        temporaryToken: response.data.temporaryToken as string,
+      };
     }
 
-    if (payload && payload.leaderId) {
-      fullUser.leaderId = payload.leaderId;
+    const { accessToken, user, refreshToken } = response.data;
+
+    if (!refreshToken) {
+      console.error("El backend no devolvió un refresh token");
     }
 
-    if (payload && payload.leaderName) {
-      fullUser.leaderName = payload.leaderName;
-    }
+    get().setAuth(accessToken, refreshToken, user);
 
-    localStorage.setItem(TOKEN_KEY, accessToken);
-    localStorage.setItem(USER_KEY, JSON.stringify(fullUser));
-    setAuthCookie(accessToken);
-
-    set({
-      user: fullUser,
-      token: accessToken,
-      isAuthenticated: true,
-      isLoading: false,
-    });
+    return {
+      twoFactorEnabled: false,
+    };
   },
 
-  logout: () => {
+  logout: async () => {
+    // await api.post("/auth/logout");
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
     setAuthCookie(null);
@@ -108,6 +109,32 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   setToken: (token: string | null) => {
     setAuthCookie(token);
     set({ token, isAuthenticated: !!token });
+  },
+
+  setAuth: (accessToken: string, refreshToken: string, user: User) => {
+    const payload = decodeJwt(accessToken);
+
+    const fullUser = {
+      ...user,
+      ...(payload?.area && { area: payload.area }),
+      ...(payload?.leaderId && { leaderId: payload.leaderId }),
+      ...(payload?.leaderName && { leaderName: payload.leaderName }),
+      ...(payload?.twoFactorEnabled && {
+        twoFactorEnabled: payload.twoFactorEnabled,
+      }),
+    };
+
+    setSession(accessToken, refreshToken);
+
+    localStorage.setItem(REFRESH_KEY, refreshToken);
+    localStorage.setItem(USER_KEY, JSON.stringify(fullUser));
+
+    set({
+      user: fullUser,
+      token: accessToken,
+      isAuthenticated: true,
+      isLoading: false,
+    });
   },
 
   hydrate: () => {

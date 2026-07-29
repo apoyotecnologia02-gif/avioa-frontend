@@ -20,14 +20,22 @@ export async function POST(request: Request) {
       return NextResponse.json(data, { status: response.status });
     }
 
+    if (data.twoFactorEnabled) {
+      return NextResponse.json(data, { status: response.status });
+    }
+
     return NextResponse.json({
-      accessToken: data.access_token,
-      refreshToken: "",
+      accessToken: data.accessToken,
+      refreshToken: data.refreshToken,
       user: {
-        id: data.userId,
-        email: data.email,
-        name: data.name,
-        role: normalizeRole(data.role),
+        id: data.user?.userId,
+        email: data.user?.email,
+        name: data.user?.name,
+        avatar: data.user?.avatar,
+        role: normalizeRole(data.user?.role),
+        area: data.user?.area,
+        leaderId: data.user?.leaderId,
+        leaderName: data.user?.leaderName,
       },
     });
   } catch (error) {

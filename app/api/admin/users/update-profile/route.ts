@@ -22,8 +22,6 @@ export async function PATCH(request: Request) {
       fetchHeaders["Content-Type"] = "application/json";
     }
 
-    console.log("fetchBody", fetchBody);
-
     const response = await fetch(UPDATE_PROFILE_URL, {
       method: "PATCH",
       headers: fetchHeaders,

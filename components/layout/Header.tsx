@@ -1,6 +1,5 @@
 "use client";
 
-import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { Bell, ChevronRight, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,7 +13,9 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
 import { useNotificationStore } from "@/store/notificationStore";
-import { useRouter } from "next/navigation";
+import { NotificationType } from "@/types/notification.types";
+import { useOvertimeStore } from "@/store/overtimeStore";
+import { usePathname, useRouter } from "next/navigation";
 
 interface Breadcrumb {
   label: string;
@@ -54,6 +55,7 @@ export function Header() {
   const router = useRouter();
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const { triggerModal } = useOvertimeStore();
   const { unreadCount, notifications, markAllAsRead, markAsRead } =
     useNotificationStore();
   const breadcrumbs = getBreadcrumbs(pathname);
@@ -138,6 +140,26 @@ export function Header() {
                     onClick={(e) => {
                       e.preventDefault();
                       markAsRead(notification.id);
+
+                      switch (notification.type) {
+                        case "POINT_REQUEST":
+                          let target = `/points-request`;
+                          if (pathname !== target) router.push(target);
+                          break;
+
+                        case "OVERTIME_REQUEST":
+                          let target1 = `overtime`;
+
+                          if (pathname !== target1) {
+                            router.push(target1);
+
+                            setTimeout(() => {
+                              triggerModal();
+                            }, 300);
+                          } else {
+                            triggerModal();
+                          }
+                      }
                     }}
                   >
                     <div className="flex items-center justify-between w-full">

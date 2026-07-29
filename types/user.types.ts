@@ -1,3 +1,5 @@
+import { NumberFormatState } from "react-number-format/types/types";
+
 export enum Role {
   EMPLOYEE = "EMPLOYEE",
   LEADER = "LEADER",
@@ -54,10 +56,52 @@ export interface CreateUserDto {
   position?: string;
   leaderId?: string;
   managerId?: string;
+  startDate?: Date;
+  documentType?: DocumentType;
+  documentNumber?: string;
+  office?: string;
+  contractType?: ContractType;
+  eps?: string;
+  afp?: string;
+  arl?: string;
+  salary?: number;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  emergencyContactRel?: string;
 }
 
 export interface AcceptInviteDto {
   token: string;
   password: string;
   confirmPassword: string;
+}
+
+export enum DocumentType {
+  CC = "CC", // Cedula de ciudadania
+  CE = "CE", // Cedula de extranjeria
+  PA = "PA", // Pasaporte
+  PEP = "PEP", // Permiso especial de permanencia
+  TI = "TI", // Tarjeta de identidad
+}
+
+export enum ContractType {
+  INDEFINIDO = "INDEFINIDO",
+  FIJO = "FIJO",
+  OBRA_LABOR = "OBRA_LABOR",
+  APRENDIZAJE = "APRENDIZAJE",
+  PRESTACION = "PRESTACION",
+}
+
+export enum Office {
+  BOGOTA = "BOGOTA",
+  GUARNE = "GUARNE",
+  NUEVA_AVENIDA = "NUEVA AVENIDA",
+  EL_PENOL = "EL PEÑOL",
+  MARINILLA_PARQUE = "MARINILLA PARQUE",
+  MARINILLA_INDUSTRIAL = "MARINILLA INDUSTRIAL",
+  MEDELLIN = "MEDELLIN",
+  SAN_ANTONIO = "SAN ANTONIO",
+  SANTUARIO_PARQUE = "SANTUARIO PARQUE",
+  SANTUARIO_CALLE_DEL_COMERCIO = "SANTUARIO CALLE DEL COMERCIO",
+  TELETRABAJO = "TELETRABAJO",
 }

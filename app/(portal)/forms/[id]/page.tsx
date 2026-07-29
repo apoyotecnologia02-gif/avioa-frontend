@@ -1,28 +1,34 @@
-'use client'
+"use client";
 
-import { use } from 'react'
-import Link from 'next/link'
-import { ArrowLeft, Loader2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { EmbeddedForm } from '@/components/forms/EmbeddedForm'
-import { DynamicForm } from '@/components/forms/DynamicForm'
-import { useForm } from '@/hooks/useForms'
+import { use } from "react";
+import Link from "next/link";
+import { ArrowLeft, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { EmbeddedForm } from "@/components/forms/EmbeddedForm";
+import { DynamicForm } from "@/components/forms/DynamicForm";
+import { useForm } from "@/hooks/useForms";
 
 interface FormPageProps {
-  params: Promise<{ id: string }>
+  params: Promise<{ id: string }>;
 }
 
 export default function FormPage({ params }: FormPageProps) {
-  const { id } = use(params)
-  const { data: form, isLoading, error } = useForm(id)
+  const { id } = use(params);
+  const { data: form, isLoading, error } = useForm(id);
 
   if (isLoading) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
-    )
+    );
   }
 
   if (error || !form) {
@@ -43,7 +49,7 @@ export default function FormPage({ params }: FormPageProps) {
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   return (
@@ -61,10 +67,10 @@ export default function FormPage({ params }: FormPageProps) {
           <CardDescription>{form.description}</CardDescription>
         </CardHeader>
         <CardContent>
-          {form.type === 'embedded' && form.embedUrl ? (
+          {form.type === "EMBEDDED" && form.embedUrl ? (
             <EmbeddedForm url={form.embedUrl} title={form.title} />
-          ) : form.type === 'native' && form.schema ? (
-            <DynamicForm formId={form.id} schema={form.schema} />
+          ) : form.type === "NATIVE" && form.schema ? (
+            <DynamicForm formId={form.formId} schema={form.schema} />
           ) : (
             <p className="text-center text-muted-foreground">
               Tipo de formulario no soportado.
@@ -73,5 +79,5 @@ export default function FormPage({ params }: FormPageProps) {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

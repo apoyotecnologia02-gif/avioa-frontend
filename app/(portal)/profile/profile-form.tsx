@@ -20,6 +20,44 @@ import { ChangeEvent, useRef, useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import z from "zod";
 import { api } from "@/lib/axios";
+import TwoFactorModal from "@/components/two-factor/two-factor-modal";
+import router from "next/router";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { toast } from "sonner";
+
+function GoogleIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        fill="#4285F4"
+        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M5.84 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.18a11 11 0 0 0 0 9.88l3.66-2.84z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+      />
+    </svg>
+  );
+}
 
 const profileFormSchema = z.object({
   name: z
@@ -45,6 +83,18 @@ export function ProfileForm() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isConnectingGoogle, setIsConnectingGoogle] = useState(false);
+  const [openTwoFactorModal, setOpenTwoFactorModal] = useState(false);
+  const [twoFactorData, setTwoFactorData] = useState<{
+    otpauthUrl: string;
+    secret: string;
+    enabled: boolean;
+  }>();
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(
+    user?.twoFactorEnabled,
+  );
+  const [disabledDialogOpen, setDisabledDialogOpen] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const hasResetRef = useRef(false);
 
@@ -58,13 +108,6 @@ export function ProfileForm() {
     },
   });
 
-  // const avatarRegister = useMemo(() => form.register("avatar"), [form]);
-  // const {
-  //   ref: avatarRef,
-  //   onChange: avatarOnChange,
-  //   ...avatarRest
-  // } = avatarRegister;
-
   useEffect(() => {
     if (user && !hasResetRef.current) {
       form.reset({
@@ -76,6 +119,17 @@ export function ProfileForm() {
       hasResetRef.current = true;
     }
   }, [user, form]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("google") === "connected") {
+      toast({
+        title: "Cuenta vinculada",
+        description: "Tu cuenta de Google se conectó correctamente.",
+      });
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, [toast]);
 
   function handleAvatarChange(e: ChangeEvent<HTMLInputElement>) {
     // avatarOnChange(e);
@@ -122,6 +176,38 @@ export function ProfileForm() {
     }
   }
 
+  async function handleConnectGoogle() {
+    try {
+      setIsConnectingGoogle(true);
+      const { data } = await api.get("/auth/google/connect");
+      window.location.href = data.url;
+    } catch (err: any) {
+      setIsConnectingGoogle(false);
+      toast({
+        title: "Error",
+        description: "No fue posible iniciar la vinculación con Google.",
+        variant: "destructive",
+      });
+    }
+  }
+
+  async function handleEnable2FA() {
+    try {
+      const { data } = await api.post("/auth/2fa/setup", {
+        skip401Redirect: true,
+      });
+      setTwoFactorData(data);
+      setOpenTwoFactorModal(true);
+    } catch (err: any) {
+      toast({
+        title: "Error",
+        description:
+          "No fue posible habilitar la autenticación de dos factores.",
+        variant: "destructive",
+      });
+    }
+  }
+
   return (
     <Form {...form}>
       <form
@@ -155,7 +241,7 @@ export function ProfileForm() {
             <p className="text-sm text-muted-foreground">
               Recomendamos una imagen de al menos 400x400px.
             </p>
-            <div className="pt-1">
+            <div className="pt-1 flex items-center gap-2">
               <input
                 ref={fileInputRef}
                 type="file"
@@ -170,6 +256,41 @@ export function ProfileForm() {
                 onClick={() => fileInputRef.current?.click()}
               >
                 Subir nueva foto
+              </Button>
+
+              {twoFactorEnabled ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setDisabledDialogOpen(true)}
+                >
+                  Deshabilitar 2FA
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleEnable2FA}
+                >
+                  Habilitar 2FA
+                </Button>
+              )}
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleConnectGoogle}
+                disabled={isConnectingGoogle}
+                className="gap-2 hover:bg-gray-100 data-[state=active]:bg-gray-200"
+              >
+                {isConnectingGoogle ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <GoogleIcon className="size-4" />
+                )}
               </Button>
             </div>
           </div>
@@ -239,6 +360,62 @@ export function ProfileForm() {
           </Button>
         </div>
       </form>
+
+      {/* two factor authentication */}
+      <TwoFactorModal
+        qrCode={twoFactorData?.otpauthUrl as string}
+        open={openTwoFactorModal}
+        onOpenChange={setOpenTwoFactorModal}
+        secret={twoFactorData?.secret as string}
+        onContinue={() => router.push("/profile")}
+        setTwoFactorEnabled={setTwoFactorEnabled}
+      />
+
+      <TwoFactorDisabledDialog
+        open={disabledDialogOpen}
+        onOpenChange={setDisabledDialogOpen}
+        onTwoFactorEnable={setTwoFactorEnabled}
+      />
     </Form>
+  );
+}
+
+function TwoFactorDisabledDialog({
+  open,
+  onOpenChange,
+  onTwoFactorEnable,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onTwoFactorEnable: (enable: boolean) => void;
+}) {
+  async function handleDisable2FA() {
+    try {
+      await api.post("/auth/2fa/disable");
+      toast.success("Autenticación de dos factores desactivada.");
+      onTwoFactorEnable(false);
+      onOpenChange(false);
+    } catch (error) {
+      toast.error("Error al desactivar la autenticación de dos factores.");
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Desactivar 2FA</DialogTitle>
+          <DialogDescription>
+            ¿Estas seguro de querer desactivar la autenticación de dos factores?
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button onClick={() => onOpenChange(false)} variant="destructive">
+            Cancelar
+          </Button>
+          <Button onClick={handleDisable2FA}>Desactivar</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

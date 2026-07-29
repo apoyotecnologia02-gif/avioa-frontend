@@ -3,6 +3,7 @@
 import { FileText, Users, TrendingUp, Clock } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuth } from '@/hooks/useAuth'
+import { UsersInfo } from "@/components/users/UsersInfo"
 
 const stats = [
   {
