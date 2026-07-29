@@ -90,6 +90,9 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     socket.on("overtime_request_approved", handleNotification);
     socket.on("overtime_request_rejected", handleNotification);
     socket.on("overtime_request_received", handleNotification);
+    socket.on("leave_request_received", handleNotification);
+    socket.on("leave_request_approved", handleNotification);
+    socket.on("leave_request_rejected", handleNotification);
 
     return () => {
       // La limpieza solo ocurre si el componente se desmonta por completo (ej: saliendo de la app)
