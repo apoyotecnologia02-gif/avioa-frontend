@@ -95,14 +95,14 @@ export function BalanceRing({ balance, isLoading }: BalanceRingProps) {
         {/* centro */}
         <div className="min-w-0 flex-1 w-full space-y-3">
           <LegendRow color="bg-amber-500" label="En trámite" value={pending} />
-          <div className="mt-2 flex items-start gap-1.5 rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+          {/* <div className="mt-2 flex items-start gap-1.5 rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
             <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
             <span>
               Devengas 15 días hábiles por año trabajado (Art. 186 CST). Has
               acumulado <strong className="text-foreground">{accrued}</strong>{" "}
               días desde tu ingreso.
             </span>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>
