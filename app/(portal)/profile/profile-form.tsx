@@ -20,6 +20,17 @@ import { ChangeEvent, useRef, useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import z from "zod";
 import { api } from "@/lib/axios";
+import TwoFactorModal from "@/components/two-factor/two-factor-modal";
+import router from "next/router";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
@@ -73,6 +84,17 @@ export function ProfileForm() {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isConnectingGoogle, setIsConnectingGoogle] = useState(false);
+  const [openTwoFactorModal, setOpenTwoFactorModal] = useState(false);
+  const [twoFactorData, setTwoFactorData] = useState<{
+    otpauthUrl: string;
+    secret: string;
+    enabled: boolean;
+  }>();
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(
+    user?.twoFactorEnabled,
+  );
+  const [disabledDialogOpen, setDisabledDialogOpen] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const hasResetRef = useRef(false);
 
@@ -158,13 +180,29 @@ export function ProfileForm() {
     try {
       setIsConnectingGoogle(true);
       const { data } = await api.get("/auth/google/connect");
-      console.log("Google Connect URL:", data);
       window.location.href = data.url;
     } catch (err: any) {
       setIsConnectingGoogle(false);
       toast({
         title: "Error",
         description: "No fue posible iniciar la vinculación con Google.",
+        variant: "destructive",
+      });
+    }
+  }
+
+  async function handleEnable2FA() {
+    try {
+      const { data } = await api.post("/auth/2fa/setup", {
+        skip401Redirect: true,
+      });
+      setTwoFactorData(data);
+      setOpenTwoFactorModal(true);
+    } catch (err: any) {
+      toast({
+        title: "Error",
+        description:
+          "No fue posible habilitar la autenticación de dos factores.",
         variant: "destructive",
       });
     }
@@ -219,6 +257,26 @@ export function ProfileForm() {
               >
                 Subir nueva foto
               </Button>
+
+              {twoFactorEnabled ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setDisabledDialogOpen(true)}
+                >
+                  Deshabilitar 2FA
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleEnable2FA}
+                >
+                  Habilitar 2FA
+                </Button>
+              )}
 
               <Button
                 type="button"
@@ -302,6 +360,62 @@ export function ProfileForm() {
           </Button>
         </div>
       </form>
+
+      {/* two factor authentication */}
+      <TwoFactorModal
+        qrCode={twoFactorData?.otpauthUrl as string}
+        open={openTwoFactorModal}
+        onOpenChange={setOpenTwoFactorModal}
+        secret={twoFactorData?.secret as string}
+        onContinue={() => router.push("/profile")}
+        setTwoFactorEnabled={setTwoFactorEnabled}
+      />
+
+      <TwoFactorDisabledDialog
+        open={disabledDialogOpen}
+        onOpenChange={setDisabledDialogOpen}
+        onTwoFactorEnable={setTwoFactorEnabled}
+      />
     </Form>
+  );
+}
+
+function TwoFactorDisabledDialog({
+  open,
+  onOpenChange,
+  onTwoFactorEnable,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onTwoFactorEnable: (enable: boolean) => void;
+}) {
+  async function handleDisable2FA() {
+    try {
+      await api.post("/auth/2fa/disable");
+      toast.success("Autenticación de dos factores desactivada.");
+      onTwoFactorEnable(false);
+      onOpenChange(false);
+    } catch (error) {
+      toast.error("Error al desactivar la autenticación de dos factores.");
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Desactivar 2FA</DialogTitle>
+          <DialogDescription>
+            ¿Estas seguro de querer desactivar la autenticación de dos factores?
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button onClick={() => onOpenChange(false)} variant="destructive">
+            Cancelar
+          </Button>
+          <Button onClick={handleDisable2FA}>Desactivar</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

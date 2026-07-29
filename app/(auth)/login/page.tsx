@@ -51,9 +51,14 @@ function LoginPageContent() {
   const onSubmit = async (data: LoginFormData) => {
     setError(null);
     try {
-      await login(data);
-      const from = searchParams.get("from") || "/dashboard";
-      router.push(from);
+      const result = await login(data);
+
+      if (result.twoFactorEnabled) {
+        router.push(`/two-factor?temporaryToken=${result.temporaryToken}`);
+      } else {
+        const from = searchParams.get("from") || "/dashboard";
+        router.push(from);
+      }
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);

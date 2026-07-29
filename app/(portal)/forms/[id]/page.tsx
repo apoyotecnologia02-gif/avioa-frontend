@@ -23,8 +23,6 @@ export default function FormPage({ params }: FormPageProps) {
   const { id } = use(params);
   const { data: form, isLoading, error } = useForm(id);
 
-  console.log("FormPage", form);
-
   if (isLoading) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
