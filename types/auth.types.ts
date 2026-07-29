@@ -11,6 +11,7 @@ export interface User {
   leaderId?: string;
   leaderName?: string;
   avatarUrl?: string;
+  twoFactorEnabled: boolean;
 }
 
 export interface AuthTokens {
@@ -27,6 +28,13 @@ export interface LoginResponse {
   accessToken: string;
   refreshToken: string;
   user: User;
+  temporaryToken?: string;
+  twoFactorEnabled?: boolean;
+}
+
+export interface Login2FAResponse {
+  twoFactorEnabled: boolean;
+  temporaryToken?: string;
 }
 
 export interface AuthState {
@@ -34,9 +42,10 @@ export interface AuthState {
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (credentials: LoginCredentials) => Promise<void>;
+  login: (credentials: LoginCredentials) => Promise<Login2FAResponse>;
   logout: () => void;
   setUser: (user: User | null) => void;
   setToken: (token: string | null) => void;
+  setAuth: (accessToken: string, refreshToken: string, user: User) => void;
   hydrate: () => void;
 }

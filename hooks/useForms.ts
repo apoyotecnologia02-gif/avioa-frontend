@@ -20,7 +20,6 @@ export function useForm(id: string) {
     queryKey: ["forms", id],
     queryFn: async () => {
       const { data } = await api.get<Form>(`${FORMS_URL}/${id}`);
-      console.log("useForm findOne", data);
       return data;
     },
     enabled: !!id,
