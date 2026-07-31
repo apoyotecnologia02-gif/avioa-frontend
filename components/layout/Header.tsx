@@ -192,7 +192,7 @@ export function Header() {
                     className="object-cover"
                   />
                 )}
-                <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-300 text-xs">
                   {user ? getInitials(user.name) : "U"}
                 </AvatarFallback>
               </Avatar>

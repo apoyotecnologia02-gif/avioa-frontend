@@ -73,6 +73,7 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: User,
         items: [
           { href: "/profile", label: "Mi perfil" },
+          { href: "/", label: "Wall/post"}
           // PROXIMAMENTE
           // { href: "/my-documents", label: "Mis documentos" },
           // { href: "/my requests", label: "Mis solicitudes" }
@@ -143,14 +144,14 @@ export const NAV_SECTIONS: NavSection[] = [
         href: "/points-request",
         visibility: "leader",
       },
-      // PROXIMAMENTE
-      //   {
-      //     key: "mi-equipo",
-      //     label: "Mi equipo",
-      //     icon: Users,
-      //     href: "/my-team",
-      //     visibility: "leader",
-      //   },
+      
+        {
+          key: "Public",
+          label: "Public",
+          icon: Users,
+          href: "/my-team",
+          visibility: "admin",
+        },
     ],
   },
   {
