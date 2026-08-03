@@ -1,7 +1,10 @@
 "use client"
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useRef } from 'react';
+import {useRouter} from 'next/navigation';
 import { 
-  Search, 
+  Search,
+  Lightbulb, 
   Calendar, 
   FileText, 
   Gift, 
@@ -18,20 +21,49 @@ import {
   X,
   Heart,
   Send,
+  Paperclip,
   Clock,
+  Cake,
   Video,
   Camera,
   MessageCircle,
   Calendar as CalendarIcon,
-  Sparkles
+  Sparkles,
+  Upload,
+  Loader2,
+  ThumbsUp,
+  Reply,
+  MoreHorizontal
 } from 'lucide-react';
+import { useGetUsers } from '@/hooks/useGetUsers';
+import { useAuth } from "@/hooks/useAuth";
 
 // ===== TIPOS =====
+interface User {
+  userId: string;
+  name: string;
+  email: string;
+  avatarUrl: string | null;
+  role: string;
+  phone: string | null;
+  department: string | null;
+  area: string | null;
+  position: string | null;
+  lastLoginAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  signature: string | null;
+  manager: string | null;
+  status: string;
+  birth_day: string | null;
+}
+
 interface Employee {
   id: string;
   name: string;
   role: string;
   initials: string;
+  avatarUrl?: string | null;
 }
 
 interface Birthday {
@@ -42,11 +74,24 @@ interface Birthday {
   employee?: Employee;
 }
 
+interface Comment {
+  id: string;
+  author: string;
+  authorAvatar: string;
+  authorId?: string;
+  content: string;
+  timestamp: string;
+  likes: number;
+  liked: boolean;
+  replies?: Comment[];
+}
+
 interface Post {
   id: string;
   author: string;
   authorAvatar: string;
   authorRole: string;
+  authorId?: string;
   content: string;
   image?: string;
   timestamp: string;
@@ -54,34 +99,10 @@ interface Post {
   comments: number;
   shares: number;
   liked: boolean;
+  commentsList?: Comment[];
 }
 
-// ===== DATOS DE EJEMPLO =====
-const employeeData: Employee = {
-  id: '1',
-  name: 'Danna Gabriela Acosta',
-  role: 'DIRECTOR DE VENTAS',
-  initials: 'DA',
-};
-
-const employeesForBirthdays: Employee[] = [
-  { id: '1', name: 'Santiago Lira', role: 'Desarrollador', initials: 'SL' },
-  { id: '2', name: 'Juan Perez', role: 'Diseñador', initials: 'JP' },
-  { id: '3', name: 'Marina Ospina', role: 'Marketing', initials: 'MO' },
-  { id: '4', name: 'Omar Hugo Erazo', role: 'Ventas', initials: 'OHE' },
-  { id: '5', name: 'Martha Rocio H...', role: 'RRHH', initials: 'MRH' },
-  { id: '6', name: 'Néstor Moreno', role: 'Gerente', initials: 'NM' },
-];
-
-const birthdayData: Birthday[] = [
-  { id: '1', name: 'Santiago Lira', day: 'viernes 03', employee: employeesForBirthdays[0] },
-  { id: '2', name: 'Juan Perez', day: 'viernes 03', employee: employeesForBirthdays[1] },
-  { id: '3', name: 'Marina Ospina', day: 'jueves 09', employee: employeesForBirthdays[2] },
-  { id: '4', name: 'Omar Hugo Erazo', day: 'lunes 13', employee: employeesForBirthdays[3] },
-  { id: '5', name: 'Martha Rocio H...', day: 'lunes 20', employee: employeesForBirthdays[4] },
-  { id: '6', name: 'Néstor Moreno', day: 'jueves 23', isWeekend: true, employee: employeesForBirthdays[5] },
-];
-
+// ===== DATOS DE EJEMPLO (SOLO PARA PUBLICACIONES Y SLIDER) =====
 const sliderImages = [
   'https://picsum.photos/seed/central1/800/500',
   'https://picsum.photos/seed/central2/800/500',
@@ -103,6 +124,37 @@ const initialPosts: Post[] = [
     comments: 12,
     shares: 8,
     liked: false,
+    commentsList: [
+      {
+        id: 'c1',
+        author: 'Carlos Rodríguez',
+        authorAvatar: 'CR',
+        content: '¡Excelente noticia! Gran trabajo en equipo.',
+        timestamp: 'Hace 1 hora',
+        likes: 5,
+        liked: false,
+        replies: [
+          {
+            id: 'r1',
+            author: 'María González',
+            authorAvatar: 'MG',
+            content: '¡Gracias Carlos! El esfuerzo de todos fue clave.',
+            timestamp: 'Hace 30 min',
+            likes: 2,
+            liked: false,
+          }
+        ]
+      },
+      {
+        id: 'c2',
+        author: 'Ana Martínez',
+        authorAvatar: 'AM',
+        content: 'Increíble logro, felicidades a todo el equipo.',
+        timestamp: 'Hace 45 min',
+        likes: 3,
+        liked: true,
+      }
+    ]
   },
   {
     id: '2',
@@ -116,6 +168,17 @@ const initialPosts: Post[] = [
     comments: 18,
     shares: 15,
     liked: true,
+    commentsList: [
+      {
+        id: 'c3',
+        author: 'Pedro Ramírez',
+        authorAvatar: 'PR',
+        content: 'Excelente trabajo! La nueva interfaz es mucho más intuitiva.',
+        timestamp: 'Hace 3 horas',
+        likes: 7,
+        liked: false,
+      }
+    ]
   },
   {
     id: '3',
@@ -129,6 +192,7 @@ const initialPosts: Post[] = [
     comments: 9,
     shares: 4,
     liked: false,
+    commentsList: []
   },
   {
     id: '4',
@@ -142,6 +206,7 @@ const initialPosts: Post[] = [
     comments: 7,
     shares: 3,
     liked: false,
+    commentsList: []
   },
   {
     id: '5',
@@ -154,6 +219,7 @@ const initialPosts: Post[] = [
     comments: 23,
     shares: 12,
     liked: true,
+    commentsList: []
   },
   {
     id: '6',
@@ -167,8 +233,21 @@ const initialPosts: Post[] = [
     comments: 11,
     shares: 5,
     liked: false,
+    commentsList: []
   },
 ];
+
+// ===== FUNCIÓN PARA OBTENER INICIALES =====
+const getInitials = (name: string | null | undefined): string => {
+  if (!name) return "U";
+  const parts = name.trim().split(" ");
+  if (parts.length === 1) {
+    return parts[0].charAt(0).toUpperCase();
+  }
+  const first = parts[0].charAt(0);
+  const last = parts[parts.length - 1].charAt(0);
+  return (first + last).toUpperCase();
+};
 
 // ===== COMPONENTE SLIDER =====
 const ImageSlider: React.FC = () => {
@@ -269,25 +348,31 @@ const BirthdayAvatar: React.FC<{ employee: Employee; day: string; isWeekend?: bo
   day, 
   isWeekend 
 }) => {
-  const colors = [
-    'from-pink-500 to-pink-300',
-    'from-purple-500 to-purple-300',
+  const blueGradients = [
+    'from-blue-600 to-blue-400',
     'from-blue-500 to-blue-300',
-    'from-green-500 to-green-300',
-    'from-yellow-500 to-yellow-300',
-    'from-red-500 to-red-300',
-    'from-indigo-500 to-indigo-300',
-    'from-teal-500 to-teal-300',
+    'from-blue-700 to-blue-500',
+    'from-blue-400 to-blue-200',
+    'from-blue-600 to-blue-300',
+    'from-blue-800 to-blue-500',
   ];
   
-  const colorIndex = parseInt(employee.id) % colors.length;
-  const gradientClass = colors[colorIndex];
+  const colorIndex = parseInt(employee.id) % blueGradients.length;
+  const gradientClass = blueGradients[colorIndex];
 
   return (
     <div className="flex items-center gap-3 py-1.5 border-b border-gray-50 last:border-0">
-      <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${gradientClass} text-white flex items-center justify-center font-bold text-[10px] flex-shrink-0`}>
-        {employee.initials}
-      </div>
+      {employee.avatarUrl ? (
+        <img 
+          src={employee.avatarUrl} 
+          alt={employee.name}
+          className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+        />
+      ) : (
+        <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${gradientClass} text-white flex items-center justify-center font-bold text-[10px] flex-shrink-0`}>
+          {employee.initials}
+        </div>
+      )}
       <div className="flex-1 min-w-0">
         <p className="text-sm text-gray-700 font-medium truncate">{employee.name}</p>
       </div>
@@ -304,23 +389,347 @@ const BirthdayAvatar: React.FC<{ employee: Employee; day: string; isWeekend?: bo
   );
 };
 
+// ===== MODAL DE COMENTARIOS =====
+interface CommentsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  postId: string | null;
+  posts: Post[];
+  currentUser: User | null;
+  onAddComment: (postId: string, content: string) => void;
+  onLikeComment: (postId: string, commentId: string) => void;
+  onAddReply: (postId: string, commentId: string, content: string) => void;
+}
+
+const CommentsModal: React.FC<CommentsModalProps> = ({
+  isOpen,
+  onClose,
+  postId,
+  posts,
+  currentUser,
+  onAddComment,
+  onLikeComment,
+  onAddReply
+}) => {
+  const [newComment, setNewComment] = useState('');
+  const [replyTo, setReplyTo] = useState<{ commentId: string, author: string } | null>(null);
+  const [replyContent, setReplyContent] = useState('');
+  const commentsEndRef = useRef<HTMLDivElement>(null);
+  const replyInputRef = useRef<HTMLInputElement>(null);
+
+  // Encontrar el post actual basado en el postId
+  const currentPost = posts.find(p => p.id === postId) || null;
+
+  // Scroll al final cuando se agregan nuevos comentarios
+  useEffect(() => {
+    if (commentsEndRef.current && currentPost) {
+      commentsEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [currentPost?.commentsList?.length]);
+
+  if (!isOpen || !currentPost) return null;
+
+  const handleSubmitComment = () => {
+    if (newComment.trim()) {
+      onAddComment(currentPost.id, newComment);
+      setNewComment('');
+    }
+  };
+
+  const handleSubmitReply = (commentId: string) => {
+    if (replyContent.trim()) {
+      onAddReply(currentPost.id, commentId, replyContent);
+      setReplyContent('');
+      setReplyTo(null);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent, type: 'comment' | 'reply') => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (type === 'comment') {
+        handleSubmitComment();
+      } else {
+        handleSubmitReply(replyTo?.commentId || '');
+      }
+    }
+  };
+
+  const userInitials = currentUser ? getInitials(currentUser.name) : 'U';
+
+  return (
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-white rounded-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 flex-shrink-0">
+          <div className="flex items-center gap-2">
+            <MessageCircle className="w-5 h-5 text-blue-500" />
+            <h2 className="text-lg font-semibold text-gray-800">Comentarios</h2>
+            <span className="text-sm text-gray-400">({currentPost.comments})</span>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+          >
+            <X className="w-6 h-6 text-gray-500" />
+          </button>
+        </div>
+
+        {/* Post original */}
+        <div className="p-4 border-b border-gray-100 flex-shrink-0">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-blue-400 text-white flex items-center justify-center font-bold text-sm flex-shrink-0">
+              {currentPost.authorAvatar}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-800">{currentPost.author}</h4>
+                  <p className="text-xs text-gray-500">{currentPost.authorRole}</p>
+                </div>
+                <span className="text-xs text-gray-400">{currentPost.timestamp}</span>
+              </div>
+              <p className="mt-2 text-sm text-gray-700">{currentPost.content}</p>
+              {currentPost.image && (
+                <div className="mt-2 rounded-lg overflow-hidden">
+                  <img
+                    src={currentPost.image}
+                    alt="Post image"
+                    className="w-full h-auto max-h-[200px] object-cover"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Lista de comentarios */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {currentPost.commentsList && currentPost.commentsList.length > 0 ? (
+            currentPost.commentsList.map((comment) => (
+              <div key={comment.id} className="flex gap-3">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-300 text-white flex items-center justify-center font-bold text-[10px] flex-shrink-0">
+                  {comment.authorAvatar}
+                </div>
+                <div className="flex-1">
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-sm font-semibold text-gray-800">{comment.author}</span>
+                        <span className="text-xs text-gray-400 ml-2">{comment.timestamp}</span>
+                      </div>
+                      <button
+                        onClick={() => onLikeComment(currentPost.id, comment.id)}
+                        className={`flex items-center gap-1 text-xs transition-colors ${
+                          comment.liked ? 'text-blue-500' : 'text-gray-400 hover:text-blue-500'
+                        }`}
+                      >
+                        <ThumbsUp className={`w-3.5 h-3.5 ${comment.liked ? 'fill-blue-500' : ''}`} />
+                        <span>{comment.likes}</span>
+                      </button>
+                    </div>
+                    <p className="text-sm text-gray-700 mt-1">{comment.content}</p>
+                  </div>
+                  
+                  {/* Botón de responder */}
+                  <button
+                    onClick={() => setReplyTo({ commentId: comment.id, author: comment.author })}
+                    className="text-xs text-blue-500 hover:text-blue-700 ml-3 mt-1 font-medium"
+                  >
+                    Responder
+                  </button>
+
+                  {/* Respuestas */}
+                  {comment.replies && comment.replies.length > 0 && (
+                    <div className="ml-8 mt-3 space-y-3">
+                      {comment.replies.map((reply) => (
+                        <div key={reply.id} className="flex gap-3">
+                          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-400 to-blue-200 text-white flex items-center justify-center font-bold text-[8px] flex-shrink-0">
+                            {reply.authorAvatar}
+                          </div>
+                          <div className="flex-1 bg-gray-50 rounded-lg p-2.5">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <span className="text-xs font-semibold text-gray-800">{reply.author}</span>
+                                <span className="text-[10px] text-gray-400 ml-2">{reply.timestamp}</span>
+                              </div>
+                              <button
+                                onClick={() => onLikeComment(currentPost.id, reply.id)}
+                                className={`flex items-center gap-1 text-xs transition-colors ${
+                                  reply.liked ? 'text-blue-500' : 'text-gray-400 hover:text-blue-500'
+                                }`}
+                              >
+                                <ThumbsUp className={`w-3 h-3 ${reply.liked ? 'fill-blue-500' : ''}`} />
+                                <span>{reply.likes}</span>
+                              </button>
+                            </div>
+                            <p className="text-xs text-gray-700 mt-0.5">{reply.content}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Input de respuesta */}
+                  {replyTo && replyTo.commentId === comment.id && (
+                    <div className="ml-8 mt-2 flex items-center gap-2">
+                      {currentUser?.avatarUrl ? (
+                        <img 
+                          src={currentUser.avatarUrl} 
+                          alt={currentUser.name}
+                          className="w-6 h-6 rounded-full object-cover flex-shrink-0"
+                        />
+                      ) : (
+                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-blue-300 text-white flex items-center justify-center font-bold text-[8px] flex-shrink-0">
+                          {userInitials}
+                        </div>
+                      )}
+                      <div className="flex-1 flex items-center gap-2">
+                        <input
+                          ref={replyInputRef}
+                          type="text"
+                          value={replyContent}
+                          onChange={(e) => setReplyContent(e.target.value)}
+                          onKeyPress={(e) => handleKeyPress(e, 'reply')}
+                          placeholder={`Responder a ${replyTo.author}...`}
+                          className="flex-1 px-3 py-1.5 text-sm border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          autoFocus
+                        />
+                        <button
+                          onClick={() => handleSubmitReply(comment.id)}
+                          disabled={!replyContent.trim()}
+                          className={`p-1.5 rounded-full transition-colors ${
+                            replyContent.trim()
+                              ? 'text-blue-500 hover:bg-blue-50'
+                              : 'text-gray-300 cursor-not-allowed'
+                          }`}
+                        >
+                          <Send className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            setReplyTo(null);
+                            setReplyContent('');
+                          }}
+                          className="text-gray-400 hover:text-gray-600 text-xs"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-8">
+              <MessageCircle className="w-12 h-12 text-gray-300 mx-auto mb-2" />
+              <p className="text-gray-500">No hay comentarios aún</p>
+              <p className="text-sm text-gray-400">Sé el primero en comentar</p>
+            </div>
+          )}
+          <div ref={commentsEndRef} />
+        </div>
+
+        {/* Input de comentario */}
+        <div className="p-4 border-t border-gray-100 flex-shrink-0">
+          <div className="flex items-center gap-3">
+            {currentUser?.avatarUrl ? (
+              <img 
+                src={currentUser.avatarUrl} 
+                alt={currentUser.name}
+                className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-blue-400 text-white flex items-center justify-center font-bold text-sm flex-shrink-0">
+                {userInitials}
+              </div>
+            )}
+            <div className="flex-1 flex items-center gap-2">
+              <input
+                type="text"
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                onKeyPress={(e) => handleKeyPress(e, 'comment')}
+                placeholder="Escribe un comentario..."
+                className="flex-1 px-4 py-2.5 text-sm border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <button
+                onClick={handleSubmitComment}
+                disabled={!newComment.trim()}
+                className={`p-2.5 rounded-full transition-colors ${
+                  newComment.trim()
+                    ? 'bg-blue-600 text-white hover:bg-blue-700'
+                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                }`}
+              >
+                <Send className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ===== MODAL PARA CREAR PUBLICACIÓN =====
 interface CreatePostModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreatePost: (content: string) => void;
+  onCreatePost: (content: string, image?: string) => void;
+  currentUser: User | null;
 }
 
-const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onCreatePost }) => {
+const CreatePostModal: React.FC<CreatePostModalProps> = ({ 
+  isOpen, 
+  onClose, 
+  onCreatePost,
+  currentUser 
+}) => {
   const [content, setContent] = useState('');
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setSelectedImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+    setImageFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const handleSubmit = () => {
-    if (content.trim()) {
-      onCreatePost(content);
+    if (content.trim() || selectedImage) {
+      onCreatePost(content, selectedImage || undefined);
       setContent('');
+      setSelectedImage(null);
+      setImageFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
       onClose();
     }
   };
@@ -328,16 +737,17 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onCr
   const options = [
     { icon: Music, label: 'Música' },
     { icon: Users, label: 'Personas' },
-    { icon: MapPin, label: 'Ubicación' },
-    { icon: Smile, label: 'Sentimientos' },
+    { icon: MapPin, label: 'Ubicación' }
   ];
 
   const mediaOptions = [
-    { icon: Image, label: 'Galería' },
+    { icon: Image, label: 'Galería', action: () => fileInputRef.current?.click() },
     { icon: Bot, label: 'Imágenes de IA' },
     { icon: Film, label: 'GIF' },
     { icon: EyeOff, label: 'No publica' },
   ];
+
+  const userInitials = currentUser ? getInitials(currentUser.name) : 'U';
 
   return (
     <div 
@@ -361,12 +771,20 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onCr
 
         {/* Perfil del usuario */}
         <div className="flex items-center gap-3 p-4 border-b border-gray-100">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 to-purple-400 text-white flex items-center justify-center font-bold text-sm flex-shrink-0">
-            {employeeData.initials}
-          </div>
+          {currentUser?.avatarUrl ? (
+            <img 
+              src={currentUser.avatarUrl} 
+              alt={currentUser.name}
+              className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+            />
+          ) : (
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-blue-400 text-white flex items-center justify-center font-bold text-sm flex-shrink-0">
+              {userInitials}
+            </div>
+          )}
           <div>
-            <p className="text-sm font-semibold text-gray-800">{employeeData.name}</p>
-            <p className="text-xs text-gray-500">{employeeData.role}</p>
+            <p className="text-sm font-semibold text-gray-800">{currentUser?.name || 'Usuario'}</p>
+            <p className="text-xs text-gray-500">{currentUser?.position || currentUser?.role || 'Empleado'}</p>
           </div>
         </div>
 
@@ -378,7 +796,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onCr
               onClick={() => setSelectedOption(option.label === selectedOption ? null : option.label)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition-all ${
                 selectedOption === option.label
-                  ? 'bg-purple-100 text-purple-700 border border-purple-300'
+                  ? 'bg-blue-100 text-blue-700 border border-blue-300'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
@@ -394,10 +812,36 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onCr
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder="¿Qué estás pensando?"
-            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none min-h-[120px] text-gray-700 placeholder-gray-400"
+            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none min-h-[120px] text-gray-700 placeholder-gray-400"
             autoFocus
           />
+          
+          {/* Vista previa de imagen */}
+          {selectedImage && (
+            <div className="relative mt-3 rounded-lg overflow-hidden border border-gray-200">
+              <img 
+                src={selectedImage} 
+                alt="Vista previa" 
+                className="w-full h-auto max-h-[300px] object-contain"
+              />
+              <button
+                onClick={handleRemoveImage}
+                className="absolute top-2 right-2 bg-black/70 hover:bg-black/90 text-white rounded-full p-1.5 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
         </div>
+
+        {/* Input de archivo oculto */}
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleImageUpload}
+          accept="image/*"
+          className="hidden"
+        />
 
         {/* Opciones de medios */}
         <div className="flex flex-wrap items-center justify-between gap-2 px-4 pb-4">
@@ -405,6 +849,7 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onCr
             {mediaOptions.map((option) => (
               <button
                 key={option.label}
+                onClick={option.action || (() => console.log(`${option.label} clickeado`))}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
               >
                 <option.icon className="w-4 h-4" />
@@ -414,10 +859,10 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onCr
           </div>
           <button
             onClick={handleSubmit}
-            disabled={!content.trim()}
+            disabled={!content.trim() && !selectedImage}
             className={`px-6 py-2 rounded-full text-sm font-semibold transition-all flex items-center gap-2 ${
-              content.trim()
-                ? 'bg-purple-600 text-white hover:bg-purple-700'
+              (content.trim() || selectedImage)
+                ? 'bg-blue-600 text-white hover:bg-blue-700'
                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'
             }`}
           >
@@ -430,10 +875,52 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onCr
   );
 };
 
+// ===== COMPONENTE LOADING =====
+const LoadingSpinner: React.FC = () => (
+  <div className="flex items-center justify-center h-full min-h-[400px]">
+    <div className="flex flex-col items-center gap-3">
+      <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+      <p className="text-sm text-gray-500">Cargando usuarios...</p>
+    </div>
+  </div>
+);
+
 // ===== COMPONENTE PRINCIPAL =====
 export const WallOfPosts: React.FC = () => {
+  const { data: usersData, isLoading: isLoadingUsers, error } = useGetUsers();
+  const { user: authUser, isLoading: isLoadingAuth } = useAuth();
   const [posts, setPosts] = useState<Post[]>(initialPosts);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
+  const [isCommentsModalOpen, setIsCommentsModalOpen] = useState(false);
+  const router = useRouter();
+  
+  // Usar el usuario autenticado como currentUser
+  const currentUser = authUser || usersData?.[0] || null;
+
+  // Transformar usuarios para cumpleaños
+  const getBirthdayData = (): Birthday[] => {
+    if (!usersData || usersData.length === 0) return [];
+    
+    const days = ['viernes 03', 'viernes 03', 'jueves 09', 'lunes 13', 'lunes 20', 'jueves 23'];
+    const isWeekend = [false, false, false, false, false, true];
+    
+    return usersData.slice(0, 6).map((user: User, index: number) => ({
+      id: user.userId,
+      name: user.name,
+      day: days[index % days.length],
+      isWeekend: isWeekend[index % isWeekend.length],
+      employee: {
+        id: user.userId,
+        name: user.name,
+        role: user.position || user.role || 'Empleado',
+        initials: getInitials(user.name),
+        avatarUrl: user.avatarUrl
+      }
+    }));
+  };
+
+  const birthdayData = getBirthdayData();
 
   const handleLike = (postId: string) => {
     setPosts(prevPosts =>
@@ -449,30 +936,156 @@ export const WallOfPosts: React.FC = () => {
     );
   };
 
-  const handleCreatePost = (content: string) => {
+  const handleCreatePost = (content: string, image?: string) => {
+    if (!currentUser) return;
+    
     const newPostData: Post = {
       id: Date.now().toString(),
-      author: 'Danna Gabriela Acosta',
-      authorAvatar: 'DA',
-      authorRole: 'DIRECTOR DE VENTAS',
-      content: content,
+      author: currentUser.name,
+      authorAvatar: getInitials(currentUser.name),
+      authorRole: currentUser.position || currentUser.role || 'Empleado',
+      authorId: currentUser.userId,
+      content: content || '📷 Nueva publicación con imagen',
+      image: image,
       timestamp: 'Ahora mismo',
       likes: 0,
       comments: 0,
       shares: 0,
       liked: false,
+      commentsList: []
     };
 
     setPosts([newPostData, ...posts]);
   };
 
+  const handleOpenComments = (postId: string) => {
+    setSelectedPostId(postId);
+    setIsCommentsModalOpen(true);
+  };
+
+  const handleAddComment = (postId: string, content: string) => {
+    if (!currentUser) return;
+    
+    setPosts(prevPosts =>
+      prevPosts.map(post => {
+        if (post.id === postId) {
+          const newComment: Comment = {
+            id: `c${Date.now()}`,
+            author: currentUser.name,
+            authorAvatar: getInitials(currentUser.name),
+            authorId: currentUser.userId,
+            content: content,
+            timestamp: 'Ahora mismo',
+            likes: 0,
+            liked: false,
+            replies: []
+          };
+          
+          const updatedCommentsList = [...(post.commentsList || []), newComment];
+          
+          return {
+            ...post,
+            commentsList: updatedCommentsList,
+            comments: updatedCommentsList.length
+          };
+        }
+        return post;
+      })
+    );
+  };
+
+  const handleLikeComment = (postId: string, commentId: string) => {
+    setPosts(prevPosts =>
+      prevPosts.map(post => {
+        if (post.id === postId) {
+          const updatedCommentsList = post.commentsList?.map(comment => {
+            if (comment.id === commentId) {
+              return {
+                ...comment,
+                liked: !comment.liked,
+                likes: comment.liked ? comment.likes - 1 : comment.likes + 1
+              };
+            }
+            if (comment.replies) {
+              const updatedReplies = comment.replies.map(reply => {
+                if (reply.id === commentId) {
+                  return {
+                    ...reply,
+                    liked: !reply.liked,
+                    likes: reply.liked ? reply.likes - 1 : reply.likes + 1
+                  };
+                }
+                return reply;
+              });
+              return { ...comment, replies: updatedReplies };
+            }
+            return comment;
+          });
+          return { ...post, commentsList: updatedCommentsList };
+        }
+        return post;
+      })
+    );
+  };
+
+  const handleAddReply = (postId: string, commentId: string, content: string) => {
+    if (!currentUser) return;
+    
+    setPosts(prevPosts =>
+      prevPosts.map(post => {
+        if (post.id === postId) {
+          const newReply: Comment = {
+            id: `r${Date.now()}`,
+            author: currentUser.name,
+            authorAvatar: getInitials(currentUser.name),
+            authorId: currentUser.userId,
+            content: content,
+            timestamp: 'Ahora mismo',
+            likes: 0,
+            liked: false
+          };
+          
+          const updatedCommentsList = post.commentsList?.map(comment => {
+            if (comment.id === commentId) {
+              return {
+                ...comment,
+                replies: [...(comment.replies || []), newReply]
+              };
+            }
+            return comment;
+          });
+          
+          return { ...post, commentsList: updatedCommentsList };
+        }
+        return post;
+      })
+    );
+  };
+
   // Acciones para el aside izquierdo
   const actions = [
-    { icon: Calendar, label: 'Solicitar Vacaciones', color: 'text-blue-500' },
-    { icon: FileText, label: 'Ver Comprobantes', color: 'text-green-500' },
-    { icon: Gift, label: 'Ver Beneficios', color: 'text-purple-500' },
-    { icon: FileCheck, label: 'Solicitar Documento', color: 'text-orange-500' }
+    { icon: Calendar, label: 'Solicitar Vacaciones', color: 'text-blue-500', href: '/leaves' },
+    { icon: FileText, label: 'Ver Comprobantes', color: 'text-blue-500', href: '/receipts' },
+    { icon: Gift, label: 'Ver Beneficios', color: 'text-blue-500', href: '/points' },
+    { icon: FileCheck, label: 'Solicitar Documento', color: 'text-blue-500', href: '/documents' }
   ];
+
+  const userInitials = currentUser ? getInitials(currentUser.name) : 'U';
+
+  if (isLoadingAuth || isLoadingUsers) {
+    return <LoadingSpinner />;
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-full min-h-[400px]">
+        <div className="text-center">
+          <p className="text-red-500 font-semibold">Error al cargar usuarios</p>
+          <p className="text-sm text-gray-500 mt-2">Por favor, intenta de nuevo más tarde</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -485,33 +1098,41 @@ export const WallOfPosts: React.FC = () => {
             {/* Grid principal */}
             <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr_280px] gap-6 flex-1 min-h-0">
               
-              {/* Aside Izquierdo - Panel de creación de publicaciones */}
+              {/* Aside Izquierdo */}
               <aside className="h-full overflow-hidden">
                 <div className="bg-white rounded-xl shadow-sm p-5 h-full flex flex-col">
                   <h2 className="text-sm font-semibold text-gray-800 mb-4">Crear publicación</h2>
                   
-                  {/* Botón "¿Qué estás pensando?" */}
                   <button
                     onClick={() => setIsModalOpen(true)}
-                    className="w-full flex items-center gap-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-200 hover:border-purple-300"
+                    className="w-full flex items-center gap-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-200 hover:border-blue-300"
                   >
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 to-purple-400 text-white flex items-center justify-center font-bold text-sm flex-shrink-0">
-                      {employeeData.initials}
-                    </div>
+                    {currentUser?.avatarUrl ? (
+                      <img 
+                        src={currentUser.avatarUrl} 
+                        alt={currentUser.name}
+                        className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-blue-400 text-white flex items-center justify-center font-bold text-sm flex-shrink-0">
+                        {userInitials}
+                      </div>
+                    )}
                     <span className="text-sm text-gray-500">¿Qué estás pensando?</span>
                   </button>
 
-                  {/* Separador */}
                   <div className="mt-4 pt-4 border-t border-gray-200">
                     <p className="text-xs text-gray-400 text-center mb-3">Acciones rápidas</p>
                   </div>
 
-                  {/* Acciones rápidas */}
                   <div className="space-y-2">
                     {actions.map((action) => (
                       <button
                         key={action.label}
-                        onClick={() => console.log(`${action.label} clickeado`)}
+                        onClick={() => {
+                          console.log(`${action.label} clickeado`);
+                          router.push(action.href);
+                        }}
                         className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors text-sm text-gray-600 group"
                       >
                         <action.icon className={`w-5 h-5 ${action.color}`} />
@@ -520,10 +1141,27 @@ export const WallOfPosts: React.FC = () => {
                     ))}
                   </div>
 
-                  {/* Separador final */}
-                  <div className="mt-4 pt-4 border-t border-gray-200">
-                    <p className="text-xs text-gray-400 text-center">
-                      Publica contenido para compartir con tu equipo
+                  <div className="mt-auto pt-4 border-t border-gray-200">
+                    <div className="flex items-center gap-2">
+                      {currentUser?.avatarUrl ? (
+                        <img 
+                          src={currentUser.avatarUrl} 
+                          alt={currentUser.name}
+                          className="w-6 h-6 rounded-full object-cover flex-shrink-0"
+                        />
+                      ) : (
+                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-blue-300 text-white flex items-center justify-center font-bold text-[8px] flex-shrink-0">
+                          {userInitials}
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-gray-700 truncate">{currentUser?.name || 'Usuario'}</p>
+                        <p className="text-[10px] text-gray-400 truncate">{currentUser?.email || ''}</p>
+                      </div>
+                      <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
+                    </div>
+                    <p className="text-[10px] text-gray-400 text-center mt-2">
+                      Sesión activa
                     </p>
                   </div>
                 </div>
@@ -531,16 +1169,14 @@ export const WallOfPosts: React.FC = () => {
 
               {/* Contenido Central */}
               <main className="h-full flex flex-col space-y-4 overflow-y-auto pr-1">
-                {/* Slider de imágenes */}
                 <ImageSlider />
 
-                {/* Publicaciones */}
                 <div className="space-y-4 pb-4">
                   {posts.map((post) => (
                     <div key={post.id} className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-300 text-white flex items-center justify-center font-bold text-sm flex-shrink-0">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-blue-400 text-white flex items-center justify-center font-bold text-sm flex-shrink-0">
                             {post.authorAvatar}
                           </div>
                           <div>
@@ -565,18 +1201,20 @@ export const WallOfPosts: React.FC = () => {
                           <button
                             onClick={() => handleLike(post.id)}
                             className={`flex items-center gap-1.5 text-sm transition-colors ${
-                              post.liked ? 'text-red ' : 'text-gray-500'
+                              post.liked ? 'text-red-500' : 'text-gray-500'
                             }`}
                           >
-                            <span>{post.liked ? <Heart fill="red" className="h-4 w-4 text-red stroke-none"  /> : <Heart className="h-4 w-4 border-none" />}</span>
+                            <span>{post.liked ? <Heart fill="red" className="h-4 w-4 text-red-500 stroke-none" /> : <Heart className="h-4 w-4" />}</span>
                             <span>{post.likes}</span>
                           </button>
-                          <button className="flex items-center gap-1.5 text-sm text-gray-500">
+                          <button
+                            onClick={() => handleOpenComments(post.id)}
+                            className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-blue-500 transition-colors"
+                          >
                             <MessageCircle className="h-4 w-4" /> <span>{post.comments}</span>
                           </button>
-                  
                         </div>
-                        <button className="text-sm text-gray-400 hover:text-purple-600 transition-colors">
+                        <button className="text-sm text-gray-400 hover:text-blue-600 transition-colors">
                           ⋮
                         </button>
                       </div>
@@ -588,39 +1226,46 @@ export const WallOfPosts: React.FC = () => {
               {/* Aside Derecho */}
               <aside className="h-full overflow-hidden">
                 <div className="bg-white rounded-xl shadow-sm p-5 h-full overflow-y-auto flex flex-col space-y-4">
-                  {/* Cumpleaños con avatares */}
                   <div className="flex-shrink-0">
                     <div className="flex justify-between items-center mb-3 pb-2 border-b border-gray-200">
-                      <h3 className="text-sm font-semibold text-gray-800">🎂 Cumpleaños</h3>
-                      <span className="text-xs text-gray-500 font-medium">Noviembre</span>
+                      <Cake className="h-5 w-5 text-blue-500" />
+                      <h3 className="text-sm font-semibold text-gray-800"> Cumpleaños</h3>
+                      <span className="text-xs text-gray-500 font-medium">
+                        {new Date().toLocaleString('es', { month: 'long' })}
+                      </span>
                     </div>
                     <div className="space-y-0.5">
-                      {birthdayData.map((birthday) => (
-                        birthday.employee ? (
-                          <BirthdayAvatar 
-                            key={birthday.id}
-                            employee={birthday.employee}
-                            day={birthday.day}
-                            isWeekend={birthday.isWeekend}
-                          />
-                        ) : (
-                          <div key={birthday.id} className="flex justify-between items-center py-1.5 border-b border-gray-50 last:border-0">
-                            <span className="text-sm text-gray-700 font-medium">{birthday.name}</span>
-                            <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-gray-100 text-gray-600">
-                              {birthday.day}
-                            </span>
-                          </div>
-                        )
-                      ))}
+                      {birthdayData.length > 0 ? (
+                        birthdayData.map((birthday) => (
+                          birthday.employee ? (
+                            <BirthdayAvatar 
+                              key={birthday.id}
+                              employee={birthday.employee}
+                              day={birthday.day}
+                              isWeekend={birthday.isWeekend}
+                            />
+                          ) : (
+                            <div key={birthday.id} className="flex justify-between items-center py-1.5 border-b border-gray-50 last:border-0">
+                              <span className="text-sm text-gray-700 font-medium">{birthday.name}</span>
+                              <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-gray-100 text-gray-600">
+                                {birthday.day}
+                              </span>
+                            </div>
+                          )
+                        ))
+                      ) : (
+                        <p className="text-sm text-gray-500 text-center py-4">
+                          No hay cumpleaños este mes
+                        </p>
+                      )}
                     </div>
                   </div>
 
-                  {/* Publicación fijada */}
                   <div className="flex-shrink-0">
                     <div className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                      📌 Publicación fijada
+                      <Paperclip className="w-4 h-4 mr-1 inline-block" /> Publicación fijada
                     </div>
-                    <div className="bg-gray-50 rounded-lg p-3.5 border-l-4 border-purple-600">
+                    <div className="bg-gray-50 rounded-lg p-3.5 border-l-4 border-blue-600">
                       <p className="text-sm text-gray-700">
                         <strong>¡Atención equipo!</strong>
                         <br />
@@ -629,16 +1274,15 @@ export const WallOfPosts: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Tips del día */}
                   <div className="flex-1 flex items-end">
-                    <div className="w-full bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg p-4 border border-purple-100">
+                    <div className="w-full bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
                       <p className="text-xs text-gray-600 text-center">
-                        💡 Tips del día: Recuerda actualizar tu perfil
+                        <Lightbulb className="w-4 h-4 mr-1 inline-block" /> Tips del día: Recuerda actualizar tu perfil
                       </p>
                       <div className="mt-2 flex justify-center gap-2">
-                        <span className="inline-block w-2 h-2 bg-purple-400 rounded-full"></span>
                         <span className="inline-block w-2 h-2 bg-blue-400 rounded-full"></span>
-                        <span className="inline-block w-2 h-2 bg-green-400 rounded-full"></span>
+                        <span className="inline-block w-2 h-2 bg-blue-600 rounded-full"></span>
+                        <span className="inline-block w-2 h-2 bg-blue-300 rounded-full"></span>
                       </div>
                     </div>
                   </div>
@@ -655,6 +1299,22 @@ export const WallOfPosts: React.FC = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onCreatePost={handleCreatePost}
+        currentUser={currentUser}
+      />
+
+      {/* Modal de comentarios */}
+      <CommentsModal
+        isOpen={isCommentsModalOpen}
+        onClose={() => {
+          setIsCommentsModalOpen(false);
+          setSelectedPostId(null);
+        }}
+        postId={selectedPostId}
+        posts={posts}
+        currentUser={currentUser}
+        onAddComment={handleAddComment}
+        onLikeComment={handleLikeComment}
+        onAddReply={handleAddReply}
       />
     </>
   );
