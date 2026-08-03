@@ -147,9 +147,9 @@ export const NAV_SECTIONS: NavSection[] = [
       
         {
           key: "Public",
-          label: "Public",
+          label: "Aprobar Publicaciones",
           icon: Users,
-          href: "/my-team",
+          href: "/approvePost",
           visibility: "admin",
         },
     ],
