@@ -73,7 +73,6 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: User,
         items: [
           { href: "/profile", label: "Mi perfil" },
-          { href: "/", label: "Wall/post"}
           // PROXIMAMENTE
           // { href: "/my-documents", label: "Mis documentos" },
           // { href: "/my requests", label: "Mis solicitudes" }
