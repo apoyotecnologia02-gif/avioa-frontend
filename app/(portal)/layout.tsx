@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { AppShell } from '@/components/layout/AppShell'
 import { useAuth } from '@/hooks/useAuth'
 import { SocketProvider } from '@/components/providers/SocketProvider'
+import { SidebarProvider } from "@/components/ui/sidebar"
+import { ThemeProvider } from '@/components/providers/ThemeProvider'
 
 export default function PortalLayout({
   children,
@@ -73,7 +75,9 @@ export default function PortalLayout({
 
   return (
     <SocketProvider>
-      <AppShell>{children}</AppShell>
+      <SidebarProvider defaultOpen={false}>
+        <AppShell><ThemeProvider>{children}</ThemeProvider></AppShell>
+      </SidebarProvider>
     </SocketProvider>
   )
 }

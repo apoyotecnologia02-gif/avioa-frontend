@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, ChevronRight, User } from "lucide-react";
+import { Bell, Search, ChevronRight, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -16,6 +16,8 @@ import { useNotificationStore } from "@/store/notificationStore";
 import { NotificationType } from "@/types/notification.types";
 import { useOvertimeStore } from "@/store/overtimeStore";
 import { usePathname, useRouter } from "next/navigation";
+import { ThemeToggle } from '@/components/ThemeToggle';
+import { Input } from '@/components/ui/input';
 
 interface Breadcrumb {
   label: string;
@@ -94,6 +96,21 @@ export function Header() {
 
       {/* Right side actions */}
       <div className="flex items-center gap-2">
+        {/* Buscador (opcional) */}
+        {/* <div className="hidden md:flex items-center gap-2">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Buscar..."
+              className="w-[160px] pl-8 bg-muted/50 border-none focus-visible:ring-1 h-9"
+            />
+          </div>
+        </div> */}
+
+        {/* Theme Toggle - Minimalista */}
+        <ThemeToggle />
+
         {/* Notifications */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
