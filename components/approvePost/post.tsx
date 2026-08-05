@@ -212,12 +212,12 @@ export const PublicacionesPanel: React.FC<PublicacionesPanelProps> = ({
   };
 
   return (
-    <div className="w-full h-full bg-gray-100 p-4">
+    <div className="w-full h-full bg-background p-4">
       <div className="h-full max-w-7xl mx-auto">
-        <div className="h-full bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col">
+        <div className="h-full bg-background rounded-2xl shadow-sm border border-gray-200 flex flex-col">
           
           {/* Header con filtros */}
-          <div className="p-4 border-b border-gray-200 flex-shrink-0">
+          <div className="p-4 border-b border-gray-200 flex-shrink-0 bg-background">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
                 <FileText className="w-5 h-5 text-blue-600" />
@@ -229,7 +229,7 @@ export const PublicacionesPanel: React.FC<PublicacionesPanelProps> = ({
               
               <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                 {/* Búsqueda */}
-                <div className="relative">
+                <div className="relative bg-background">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
                     type="text"
@@ -241,11 +241,11 @@ export const PublicacionesPanel: React.FC<PublicacionesPanelProps> = ({
                 </div>
 
                 {/* Filtro de estado */}
-                <div className="relative">
+                <div className="relative bg-background">
                   <select
                     value={filtroEstado}
                     onChange={(e) => setFiltroEstado(e.target.value)}
-                    className="w-full sm:w-auto pl-3 pr-8 py-2 text-sm border border-gray-300 rounded-lg appearance-none bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="w-full sm:w-auto pl-3 pr-8 py-2 text-sm border border-gray-300 rounded-lg appearance-none bg-background focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   >
                     <option value="todos">Todos los estados</option>
                     <option value="Publicado">Publicado</option>
@@ -259,7 +259,7 @@ export const PublicacionesPanel: React.FC<PublicacionesPanelProps> = ({
           </div>
 
           {/* Tabla de publicaciones */}
-          <div className="flex-1 overflow-x-auto overflow-y-auto">
+          <div className="flex-1 overflow-x-auto overflow-y-auto bg-background">
             <table className="w-full min-w-[800px]">
               <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
                 <tr>
