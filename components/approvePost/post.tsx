@@ -1,4 +1,4 @@
- 'use client';
+'use client';
 
 import React, { useState } from 'react';
 import { 
@@ -13,6 +13,7 @@ import {
   User,
   FileText
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 // ===== TIPOS =====
 export interface Publicacion {
@@ -175,17 +176,17 @@ export const PublicacionesPanel: React.FC<PublicacionesPanelProps> = ({
   const renderEstadoBadge = (estado: Publicacion['estado']) => {
     const config = {
       'Publicado': {
-        clase: 'bg-green-100 text-green-700',
+        clase: 'bg-green-100 text-green-700 dark:bg-green-950/50 dark:text-green-400',
         icono: CheckCircle,
         label: 'Publicado'
       },
       'Pendiente': {
-        clase: 'bg-blue-100 text-blue-700',
+        clase: 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400',
         icono: Clock,
         label: 'Pendiente'
       },
       'Rechazado': {
-        clase: 'bg-red-100 text-red-700',
+        clase: 'bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-400',
         icono: XCircle,
         label: 'Rechazado'
       }
@@ -201,70 +202,60 @@ export const PublicacionesPanel: React.FC<PublicacionesPanelProps> = ({
     );
   };
 
-  // Obtener icono del estado para el filtro 
-  const getEstadoIcon = (estado: string) => {
-    switch(estado) {
-      case 'Publicado': return <CheckCircle className="w-4 h-4 text-green-600" />;
-      case 'Pendiente': return <Clock className="w-4 h-4 text-blue-600" />;
-      case 'Rechazado': return <XCircle className="w-4 h-4 text-red-600" />;
-      default: return <Filter className="w-4 h-4 text-gray-600" />;
-    }
-  };
-
   return (
     <div className="w-full h-full bg-background p-4">
       <div className="h-full max-w-7xl mx-auto">
-        <div className="h-full bg-background rounded-2xl shadow-sm border border-gray-200 flex flex-col">
+        <div className="h-full bg-card rounded-2xl shadow-sm border border-border flex flex-col">
           
           {/* Header con filtros */}
-          <div className="p-4 border-b border-gray-200 flex-shrink-0 bg-background">
+          <div className="p-4 border-b border-border flex-shrink-0 bg-card">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-              <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                <FileText className="w-5 h-5 text-blue-600" />
+              <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                <FileText className="w-5 h-5 text-primary" />
                 Publicaciones
-                <span className="text-sm font-normal text-gray-500 ml-2">
+                <span className="text-sm font-normal text-muted-foreground ml-2">
                   ({publicacionesFiltradas.length})
                 </span>
               </h2>
               
               <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                 {/* Búsqueda */}
-                <div className="relative bg-background">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <input
                     type="text"
                     placeholder="Buscar por título o creador..."
                     value={busqueda}
                     onChange={(e) => setBusqueda(e.target.value)}
-                    className="w-full sm:w-64 pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="w-full sm:w-64 pl-9 pr-4 py-2 text-sm bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-foreground placeholder:text-muted-foreground"
                   />
                 </div>
 
                 {/* Filtro de estado */}
-                <div className="relative bg-background">
+                <div className="relative">
                   <select
                     value={filtroEstado}
                     onChange={(e) => setFiltroEstado(e.target.value)}
-                    className="w-full sm:w-auto pl-3 pr-8 py-2 text-sm border border-gray-300 rounded-lg appearance-none bg-background focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="w-full sm:w-auto pl-3 pr-8 py-2 text-sm bg-background border border-input rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all text-foreground"
                   >
                     <option value="todos">Todos los estados</option>
                     <option value="Publicado">Publicado</option>
                     <option value="Pendiente">Pendiente</option>
                     <option value="Rechazado">Rechazado</option>
                   </select>
-                  <Filter className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                  <Filter className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                 </div>
               </div>
             </div>
           </div>
 
           {/* Tabla de publicaciones */}
-          <div className="flex-1 overflow-x-auto overflow-y-auto bg-background">
+          <div className="flex-1 overflow-x-auto overflow-y-auto">
             <table className="w-full min-w-[800px]">
-              <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
+              <thead className="bg-muted/30 border-b border-border sticky top-0 z-10">
                 <tr>
                   <th 
-                    className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:text-gray-800 transition-colors"
+                    className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground transition-colors"
                     onClick={() => handleOrdenar('titulo')}
                   >
                     <div className="flex items-center gap-1">
@@ -275,7 +266,7 @@ export const PublicacionesPanel: React.FC<PublicacionesPanelProps> = ({
                     </div>
                   </th>
                   <th 
-                    className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:text-gray-800 transition-colors"
+                    className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground transition-colors"
                     onClick={() => handleOrdenar('creador')}
                   >
                     <div className="flex items-center gap-1">
@@ -286,7 +277,7 @@ export const PublicacionesPanel: React.FC<PublicacionesPanelProps> = ({
                     </div>
                   </th>
                   <th 
-                    className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:text-gray-800 transition-colors"
+                    className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground transition-colors"
                     onClick={() => handleOrdenar('estado')}
                   >
                     <div className="flex items-center gap-1">
@@ -297,7 +288,7 @@ export const PublicacionesPanel: React.FC<PublicacionesPanelProps> = ({
                     </div>
                   </th>
                   <th 
-                    className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:text-gray-800 transition-colors"
+                    className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground transition-colors"
                     onClick={() => handleOrdenar('fechaCreacion')}
                   >
                     <div className="flex items-center gap-1">
@@ -308,7 +299,7 @@ export const PublicacionesPanel: React.FC<PublicacionesPanelProps> = ({
                     </div>
                   </th>
                   <th 
-                    className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:text-gray-800 transition-colors"
+                    className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground transition-colors"
                     onClick={() => handleOrdenar('fechaExpiracion')}
                   >
                     <div className="flex items-center gap-1">
@@ -319,7 +310,7 @@ export const PublicacionesPanel: React.FC<PublicacionesPanelProps> = ({
                     </div>
                   </th>
                   <th 
-                    className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider cursor-pointer hover:text-gray-800 transition-colors"
+                    className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider cursor-pointer hover:text-foreground transition-colors"
                     onClick={() => handleOrdenar('fechaPublicacion')}
                   >
                     <div className="flex items-center gap-1">
@@ -329,39 +320,40 @@ export const PublicacionesPanel: React.FC<PublicacionesPanelProps> = ({
                       )}
                     </div>
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Acciones
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-border">
                 {publicacionesFiltradas.length > 0 ? (
                   publicacionesFiltradas.map((pub) => (
                     <tr 
                       key={pub.id} 
-                      className={`hover:bg-gray-50 transition-colors ${
-                        pub.estado === 'Pendiente' ? 'bg-blue-50/50' : ''
-                      }`}
+                      className={cn(
+                        "hover:bg-muted/30 transition-colors",
+                        pub.estado === 'Pendiente' && "bg-primary/5 dark:bg-primary/10"
+                      )}
                     >
-                      <td className="px-4 py-3 text-sm font-medium text-gray-800 max-w-[200px] truncate">
+                      <td className="px-4 py-3 text-sm font-medium text-foreground max-w-[200px] truncate">
                         {pub.titulo}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">
+                      <td className="px-4 py-3 text-sm text-foreground">
                         <div className="flex items-center gap-2">
-                          <User className="w-3.5 h-3.5 text-gray-400" />
+                          <User className="w-3.5 h-3.5 text-muted-foreground" />
                           {pub.creador}
                         </div>
                       </td>
                       <td className="px-4 py-3">
                         {renderEstadoBadge(pub.estado)}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">
+                      <td className="px-4 py-3 text-sm text-foreground">
                         {pub.fechaCreacion}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">
+                      <td className="px-4 py-3 text-sm text-foreground">
                         {pub.fechaExpiracion}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">
+                      <td className="px-4 py-3 text-sm text-foreground">
                         {pub.fechaPublicacion || '-'}
                       </td>
                       <td className="px-4 py-3">
@@ -370,7 +362,7 @@ export const PublicacionesPanel: React.FC<PublicacionesPanelProps> = ({
                             <>
                               <button
                                 onClick={() => handleAprobar(pub.id)}
-                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-all hover:shadow-md"
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800 rounded-lg transition-all hover:shadow-md"
                                 title="Aprobar publicación"
                               >
                                 <CheckCircle className="w-3.5 h-3.5" />
@@ -378,7 +370,7 @@ export const PublicacionesPanel: React.FC<PublicacionesPanelProps> = ({
                               </button>
                               <button
                                 onClick={() => handleRechazar(pub.id)}
-                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-all hover:shadow-md"
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800 rounded-lg transition-all hover:shadow-md"
                                 title="Rechazar publicación"
                               >
                                 <XCircle className="w-3.5 h-3.5" />
@@ -386,11 +378,12 @@ export const PublicacionesPanel: React.FC<PublicacionesPanelProps> = ({
                               </button>
                             </>
                           ) : (
-                            <span className={`text-xs font-medium flex items-center gap-1.5 px-3 py-1.5 rounded-lg ${
+                            <span className={cn(
+                              "text-xs font-medium flex items-center gap-1.5 px-3 py-1.5 rounded-lg",
                               pub.estado === 'Publicado' 
-                                ? 'text-green-700 bg-green-50' 
-                                : 'text-red-700 bg-red-50'
-                            }`}>
+                                ? "text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/30" 
+                                : "text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/30"
+                            )}>
                               {pub.estado === 'Publicado' ? (
                                 <CheckCircle className="w-3.5 h-3.5" />
                               ) : (
@@ -405,11 +398,11 @@ export const PublicacionesPanel: React.FC<PublicacionesPanelProps> = ({
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={7} className="px-4 py-12 text-center text-gray-500">
+                    <td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">
                       <div className="flex flex-col items-center gap-2">
-                        <Search className="w-10 h-10 text-gray-300" />
+                        <Search className="w-10 h-10 text-muted-foreground/30" />
                         <p className="text-sm font-medium">No hay publicaciones que coincidan con los filtros</p>
-                        <p className="text-xs text-gray-400">Intenta ajustar los criterios de búsqueda</p>
+                        <p className="text-xs text-muted-foreground">Intenta ajustar los criterios de búsqueda</p>
                       </div>
                     </td>
                   </tr>
@@ -419,14 +412,14 @@ export const PublicacionesPanel: React.FC<PublicacionesPanelProps> = ({
           </div>
 
           {/* Footer */}
-          <div className="p-4 border-t border-gray-200 flex-shrink-0">
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-2 text-sm text-gray-600">
+          <div className="p-4 border-t border-border flex-shrink-0 bg-card">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-2 text-sm text-muted-foreground">
               <div className="flex items-center gap-4">
                 <span>
-                  Mostrando <span className="font-medium">{publicacionesFiltradas.length}</span> de{' '}
-                  <span className="font-medium">{publicaciones.length}</span> registros
+                  Mostrando <span className="font-medium text-foreground">{publicacionesFiltradas.length}</span> de{' '}
+                  <span className="font-medium text-foreground">{publicaciones.length}</span> registros
                 </span>
-                <div className="flex items-center gap-2 text-xs text-gray-400">
+                <div className="flex items-center gap-2 text-xs">
                   <span className="inline-flex items-center gap-1">
                     <span className="w-2 h-2 rounded-full bg-green-500"></span>
                     Publicados: {publicaciones.filter(p => p.estado === 'Publicado').length}
@@ -437,7 +430,7 @@ export const PublicacionesPanel: React.FC<PublicacionesPanelProps> = ({
                   </span>
                 </div>
               </div>
-              <span className="text-xs text-gray-400">
+              <span className="text-xs text-muted-foreground">
                 Última actualización: {new Date().toLocaleString('es-ES')}
               </span>
             </div>

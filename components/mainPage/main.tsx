@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import React, { useState, useEffect, useRef } from 'react';
 import {useRouter} from 'next/navigation';
@@ -37,6 +37,7 @@ import {
 } from 'lucide-react';
 import { useGetUsers } from '@/hooks/useGetUsers';
 import { useAuth } from "@/hooks/useAuth";
+import { cn } from '@/lib/utils';
 
 // ===== TIPOS =====
 interface User {
@@ -249,6 +250,22 @@ const getInitials = (name: string | null | undefined): string => {
   return (first + last).toUpperCase();
 };
 
+// ===== SCROLLBAR STYLES (reutilizable) =====
+const scrollbarStyles = `
+  [&::-webkit-scrollbar]:w-1.5
+  [&::-webkit-scrollbar]:h-1.5
+  [&::-webkit-scrollbar-track]:bg-muted/20
+  [&::-webkit-scrollbar-track]:rounded-full
+  [&::-webkit-scrollbar-thumb]:bg-muted-foreground/25
+  [&::-webkit-scrollbar-thumb]:rounded-full
+  [&::-webkit-scrollbar-thumb]:hover:bg-muted-foreground/40
+  dark:[&::-webkit-scrollbar-track]:bg-muted/15
+  dark:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/30
+  dark:[&::-webkit-scrollbar-thumb]:hover:bg-muted-foreground/50
+  scrollbar-width:thin
+  scrollbar-color:hsl(var(--muted-foreground)/0.25) transparent
+`;
+
 // ===== COMPONENTE SLIDER =====
 const ImageSlider: React.FC = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -288,7 +305,7 @@ const ImageSlider: React.FC = () => {
   };
 
   return (
-    <div className="relative w-full h-[280px] bg-gray-200 rounded-xl overflow-hidden flex-shrink-0">
+    <div className="relative w-full h-[280px] bg-muted rounded-xl overflow-hidden flex-shrink-0 shadow-sm">
       <div 
         className="flex transition-transform duration-500 ease-in-out h-full"
         style={{ transform: `translateX(-${currentIndex * 100}%)` }}
@@ -306,7 +323,7 @@ const ImageSlider: React.FC = () => {
 
       <button
         onClick={handlePrev}
-        className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition-all hover:scale-110"
+        className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition-all hover:scale-110 backdrop-blur-sm"
         aria-label="Imagen anterior"
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -316,7 +333,7 @@ const ImageSlider: React.FC = () => {
       
       <button
         onClick={handleNext}
-        className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition-all hover:scale-110"
+        className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition-all hover:scale-110 backdrop-blur-sm"
         aria-label="Siguiente imagen"
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -361,27 +378,28 @@ const BirthdayAvatar: React.FC<{ employee: Employee; day: string; isWeekend?: bo
   const gradientClass = blueGradients[colorIndex];
 
   return (
-    <div className="flex items-center gap-3 py-1.5 border-b border-gray-50 last:border-0">
+    <div className="flex items-center gap-3 py-1.5 border-b border-border/50 last:border-0 hover:bg-muted/20 transition-colors rounded-lg px-2 -mx-2">
       {employee.avatarUrl ? (
         <img 
           src={employee.avatarUrl} 
           alt={employee.name}
-          className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+          className="w-8 h-8 rounded-full object-cover flex-shrink-0 ring-2 ring-background"
         />
       ) : (
-        <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${gradientClass} text-white flex items-center justify-center font-bold text-[10px] flex-shrink-0`}>
+        <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${gradientClass} text-white flex items-center justify-center font-bold text-[10px] flex-shrink-0 ring-2 ring-background`}>
           {employee.initials}
         </div>
       )}
       <div className="flex-1 min-w-0">
-        <p className="text-sm text-gray-700 font-medium truncate">{employee.name}</p>
+        <p className="text-sm text-foreground font-medium truncate">{employee.name}</p>
       </div>
       <span
-        className={`text-xs px-2.5 py-0.5 rounded-full font-semibold flex-shrink-0 ${
+        className={cn(
+          "text-xs px-2.5 py-0.5 rounded-full font-semibold flex-shrink-0 transition-colors",
           isWeekend
-            ? 'bg-red-50 text-red-600'
-            : 'bg-gray-100 text-gray-600'
-        }`}
+            ? "bg-destructive/10 text-destructive"
+            : "bg-muted text-muted-foreground"
+        )}
       >
         {day}
       </span>
@@ -417,10 +435,8 @@ const CommentsModal: React.FC<CommentsModalProps> = ({
   const commentsEndRef = useRef<HTMLDivElement>(null);
   const replyInputRef = useRef<HTMLInputElement>(null);
 
-  // Encontrar el post actual basado en el postId
   const currentPost = posts.find(p => p.id === postId) || null;
 
-  // Scroll al final cuando se agregan nuevos comentarios
   useEffect(() => {
     if (commentsEndRef.current && currentPost) {
       commentsEndRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -463,39 +479,41 @@ const CommentsModal: React.FC<CommentsModalProps> = ({
       onClick={onClose}
     >
       <div 
-        className="bg-white rounded-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col shadow-2xl"
+        className="bg-card rounded-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col shadow-2xl border border-border/50"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 flex-shrink-0">
+        <div className="flex items-center justify-between p-4 border-b border-border flex-shrink-0">
           <div className="flex items-center gap-2">
-            <MessageCircle className="w-5 h-5 text-blue-500" />
-            <h2 className="text-lg font-semibold text-gray-800">Comentarios</h2>
-            <span className="text-sm text-gray-400">({currentPost.comments})</span>
+            <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+              <MessageCircle className="w-5 h-5" />
+            </div>
+            <h2 className="text-lg font-semibold text-foreground">Comentarios</h2>
+            <span className="text-sm text-muted-foreground">({currentPost.comments})</span>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+            className="p-1.5 rounded-full hover:bg-muted transition-colors"
           >
-            <X className="w-6 h-6 text-gray-500" />
+            <X className="w-5 h-5 text-foreground" />
           </button>
         </div>
 
         {/* Post original */}
-        <div className="p-4 border-b border-gray-100 flex-shrink-0">
+        <div className="p-4 border-b border-border/50 flex-shrink-0 bg-muted/20">
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-blue-400 text-white flex items-center justify-center font-bold text-sm flex-shrink-0">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-blue-400 text-white flex items-center justify-center font-bold text-sm flex-shrink-0 ring-2 ring-background">
               {currentPost.authorAvatar}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="text-sm font-semibold text-gray-800">{currentPost.author}</h4>
-                  <p className="text-xs text-gray-500">{currentPost.authorRole}</p>
+                  <h4 className="text-sm font-semibold text-foreground">{currentPost.author}</h4>
+                  <p className="text-xs text-muted-foreground">{currentPost.authorRole}</p>
                 </div>
-                <span className="text-xs text-gray-400">{currentPost.timestamp}</span>
+                <span className="text-xs text-muted-foreground">{currentPost.timestamp}</span>
               </div>
-              <p className="mt-2 text-sm text-gray-700">{currentPost.content}</p>
+              <p className="mt-2 text-sm text-foreground">{currentPost.content}</p>
               {currentPost.image && (
                 <div className="mt-2 rounded-lg overflow-hidden">
                   <img
@@ -509,84 +527,90 @@ const CommentsModal: React.FC<CommentsModalProps> = ({
           </div>
         </div>
 
-        {/* Lista de comentarios */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {/* Lista de comentarios con scroll mejorado */}
+        <div className={cn(
+          "flex-1 overflow-y-auto p-4 space-y-4",
+          scrollbarStyles
+        )}>
           {currentPost.commentsList && currentPost.commentsList.length > 0 ? (
             currentPost.commentsList.map((comment) => (
-              <div key={comment.id} className="flex gap-3">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-300 text-white flex items-center justify-center font-bold text-[10px] flex-shrink-0">
+              <div key={comment.id} className="flex gap-3 animate-in fade-in-50 duration-200">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-300 text-white flex items-center justify-center font-bold text-[10px] flex-shrink-0 ring-2 ring-background">
                   {comment.authorAvatar}
                 </div>
                 <div className="flex-1">
-                  <div className="bg-gray-50 rounded-lg p-3">
+                  <div className="bg-muted/30 rounded-xl p-3 border border-border/30 hover:border-border/60 transition-colors">
                     <div className="flex items-center justify-between">
                       <div>
-                        <span className="text-sm font-semibold text-gray-800">{comment.author}</span>
-                        <span className="text-xs text-gray-400 ml-2">{comment.timestamp}</span>
+                        <span className="text-sm font-semibold text-foreground">{comment.author}</span>
+                        <span className="text-xs text-muted-foreground ml-2">{comment.timestamp}</span>
                       </div>
                       <button
                         onClick={() => onLikeComment(currentPost.id, comment.id)}
-                        className={`flex items-center gap-1 text-xs transition-colors ${
-                          comment.liked ? 'text-blue-500' : 'text-gray-400 hover:text-blue-500'
-                        }`}
+                        className={cn(
+                          "flex items-center gap-1 text-xs transition-colors px-2 py-1 rounded-full",
+                          comment.liked 
+                            ? "text-primary bg-primary/10" 
+                            : "text-muted-foreground hover:text-primary hover:bg-primary/5"
+                        )}
                       >
-                        <ThumbsUp className={`w-3.5 h-3.5 ${comment.liked ? 'fill-blue-500' : ''}`} />
+                        <ThumbsUp className={cn("w-3.5 h-3.5", comment.liked && "fill-primary")} />
                         <span>{comment.likes}</span>
                       </button>
                     </div>
-                    <p className="text-sm text-gray-700 mt-1">{comment.content}</p>
+                    <p className="text-sm text-foreground mt-1">{comment.content}</p>
                   </div>
                   
-                  {/* Botón de responder */}
                   <button
                     onClick={() => setReplyTo({ commentId: comment.id, author: comment.author })}
-                    className="text-xs text-blue-500 hover:text-blue-700 ml-3 mt-1 font-medium"
+                    className="text-xs text-primary hover:text-primary/80 ml-3 mt-1.5 font-medium transition-colors"
                   >
                     Responder
                   </button>
 
-                  {/* Respuestas */}
                   {comment.replies && comment.replies.length > 0 && (
-                    <div className="ml-8 mt-3 space-y-3">
+                    <div className="ml-8 mt-3 space-y-3 border-l-2 border-border/30 pl-4">
                       {comment.replies.map((reply) => (
-                        <div key={reply.id} className="flex gap-3">
-                          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-400 to-blue-200 text-white flex items-center justify-center font-bold text-[8px] flex-shrink-0">
+                        <div key={reply.id} className="flex gap-3 animate-in fade-in-50 duration-200">
+                          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-400 to-blue-200 text-white flex items-center justify-center font-bold text-[8px] flex-shrink-0 ring-2 ring-background">
                             {reply.authorAvatar}
                           </div>
-                          <div className="flex-1 bg-gray-50 rounded-lg p-2.5">
+                          <div className="flex-1 bg-muted/20 rounded-xl p-2.5 border border-border/20">
                             <div className="flex items-center justify-between">
                               <div>
-                                <span className="text-xs font-semibold text-gray-800">{reply.author}</span>
-                                <span className="text-[10px] text-gray-400 ml-2">{reply.timestamp}</span>
+                                <span className="text-xs font-semibold text-foreground">{reply.author}</span>
+                                <span className="text-[10px] text-muted-foreground ml-2">{reply.timestamp}</span>
                               </div>
                               <button
                                 onClick={() => onLikeComment(currentPost.id, reply.id)}
-                                className={`flex items-center gap-1 text-xs transition-colors ${
-                                  reply.liked ? 'text-blue-500' : 'text-gray-400 hover:text-blue-500'
-                                }`}
+                                className={cn(
+                                  "flex items-center gap-1 text-xs transition-colors px-2 py-0.5 rounded-full",
+                                  reply.liked 
+                                    ? "text-primary bg-primary/10" 
+                                    : "text-muted-foreground hover:text-primary hover:bg-primary/5"
+                                )}
                               >
-                                <ThumbsUp className={`w-3 h-3 ${reply.liked ? 'fill-blue-500' : ''}`} />
+                                <ThumbsUp className={cn("w-3 h-3", reply.liked && "fill-primary")} />
                                 <span>{reply.likes}</span>
                               </button>
                             </div>
-                            <p className="text-xs text-gray-700 mt-0.5">{reply.content}</p>
+                            <p className="text-xs text-foreground mt-0.5">{reply.content}</p>
                           </div>
                         </div>
                       ))}
                     </div>
                   )}
 
-                  {/* Input de respuesta */}
                   {replyTo && replyTo.commentId === comment.id && (
-                    <div className="ml-8 mt-2 flex items-center gap-2">
+                    <div className="ml-8 mt-2 flex items-center gap-2 animate-in slide-in-from-left-5 duration-200">
                       {currentUser?.avatarUrl ? (
                         <img 
                           src={currentUser.avatarUrl} 
                           alt={currentUser.name}
-                          className="w-6 h-6 rounded-full object-cover flex-shrink-0"
+                          className="w-6 h-6 rounded-full object-cover flex-shrink-0 ring-2 ring-background"
                         />
                       ) : (
-                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-blue-300 text-white flex items-center justify-center font-bold text-[8px] flex-shrink-0">
+                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-blue-300 text-white flex items-center justify-center font-bold text-[8px] flex-shrink-0 ring-2 ring-background">
                           {userInitials}
                         </div>
                       )}
@@ -598,17 +622,18 @@ const CommentsModal: React.FC<CommentsModalProps> = ({
                           onChange={(e) => setReplyContent(e.target.value)}
                           onKeyPress={(e) => handleKeyPress(e, 'reply')}
                           placeholder={`Responder a ${replyTo.author}...`}
-                          className="flex-1 px-3 py-1.5 text-sm border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="flex-1 px-3 py-1.5 text-sm border border-input rounded-full focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-foreground placeholder:text-muted-foreground"
                           autoFocus
                         />
                         <button
                           onClick={() => handleSubmitReply(comment.id)}
                           disabled={!replyContent.trim()}
-                          className={`p-1.5 rounded-full transition-colors ${
+                          className={cn(
+                            "p-1.5 rounded-full transition-colors",
                             replyContent.trim()
-                              ? 'text-blue-500 hover:bg-blue-50'
-                              : 'text-gray-300 cursor-not-allowed'
-                          }`}
+                              ? "text-primary hover:bg-primary/10"
+                              : "text-muted-foreground cursor-not-allowed"
+                          )}
                         >
                           <Send className="w-4 h-4" />
                         </button>
@@ -617,7 +642,7 @@ const CommentsModal: React.FC<CommentsModalProps> = ({
                             setReplyTo(null);
                             setReplyContent('');
                           }}
-                          className="text-gray-400 hover:text-gray-600 text-xs"
+                          className="text-muted-foreground hover:text-foreground text-xs transition-colors"
                         >
                           Cancelar
                         </button>
@@ -628,26 +653,28 @@ const CommentsModal: React.FC<CommentsModalProps> = ({
               </div>
             ))
           ) : (
-            <div className="text-center py-8">
-              <MessageCircle className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-              <p className="text-gray-500">No hay comentarios aún</p>
-              <p className="text-sm text-gray-400">Sé el primero en comentar</p>
+            <div className="text-center py-12">
+              <div className="w-16 h-16 rounded-full bg-muted/30 flex items-center justify-center mx-auto mb-3">
+                <MessageCircle className="w-8 h-8 text-muted-foreground" />
+              </div>
+              <p className="text-foreground font-medium">No hay comentarios aún</p>
+              <p className="text-sm text-muted-foreground mt-1">Sé el primero en comentar</p>
             </div>
           )}
           <div ref={commentsEndRef} />
         </div>
 
         {/* Input de comentario */}
-        <div className="p-4 border-t border-gray-100 flex-shrink-0">
+        <div className="p-4 border-t border-border flex-shrink-0 bg-muted/5">
           <div className="flex items-center gap-3">
             {currentUser?.avatarUrl ? (
               <img 
                 src={currentUser.avatarUrl} 
                 alt={currentUser.name}
-                className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                className="w-10 h-10 rounded-full object-cover flex-shrink-0 ring-2 ring-background"
               />
             ) : (
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-blue-400 text-white flex items-center justify-center font-bold text-sm flex-shrink-0">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-blue-400 text-white flex items-center justify-center font-bold text-sm flex-shrink-0 ring-2 ring-background">
                 {userInitials}
               </div>
             )}
@@ -658,16 +685,17 @@ const CommentsModal: React.FC<CommentsModalProps> = ({
                 onChange={(e) => setNewComment(e.target.value)}
                 onKeyPress={(e) => handleKeyPress(e, 'comment')}
                 placeholder="Escribe un comentario..."
-                className="flex-1 px-4 py-2.5 text-sm border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="flex-1 px-4 py-2.5 text-sm border border-input rounded-full focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-foreground placeholder:text-muted-foreground transition-shadow"
               />
               <button
                 onClick={handleSubmitComment}
                 disabled={!newComment.trim()}
-                className={`p-2.5 rounded-full transition-colors ${
+                className={cn(
+                  "p-2.5 rounded-full transition-all",
                   newComment.trim()
-                    ? 'bg-blue-600 text-white hover:bg-blue-700'
-                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                }`}
+                    ? "bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-105 active:scale-95 shadow-sm"
+                    : "bg-muted text-muted-foreground cursor-not-allowed"
+                )}
               >
                 <Send className="w-5 h-5" />
               </button>
@@ -755,120 +783,126 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
       onClick={onClose}
     >
       <div 
-        className="bg-white rounded-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto shadow-2xl"
+        className="bg-card rounded-2xl w-full max-w-2xl mx-4 max-h-[90vh] shadow-2xl border border-border/50"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-800">Nueva publicación</h2>
-          <button
-            onClick={onClose}
-            className="p-1 rounded-full hover:bg-gray-100 transition-colors"
-          >
-            <X className="w-6 h-6 text-gray-500" />
-          </button>
-        </div>
-
-        {/* Perfil del usuario */}
-        <div className="flex items-center gap-3 p-4 border-b border-gray-100">
-          {currentUser?.avatarUrl ? (
-            <img 
-              src={currentUser.avatarUrl} 
-              alt={currentUser.name}
-              className="w-10 h-10 rounded-full object-cover flex-shrink-0"
-            />
-          ) : (
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-blue-400 text-white flex items-center justify-center font-bold text-sm flex-shrink-0">
-              {userInitials}
-            </div>
-          )}
-          <div>
-            <p className="text-sm font-semibold text-gray-800">{currentUser?.name || 'Usuario'}</p>
-            <p className="text-xs text-gray-500">{currentUser?.position || currentUser?.role || 'Empleado'}</p>
-          </div>
-        </div>
-
-        {/* Opciones de publicación */}
-        <div className="flex flex-wrap gap-2 p-4 border-b border-gray-100">
-          {options.map((option) => (
+        {/* Scroll con scrollbar mejorada */}
+        <div className={cn(
+          "overflow-y-auto max-h-[90vh]",
+          scrollbarStyles
+        )}>
+          {/* Header */}
+          <div className="flex items-center justify-between p-4 border-b border-border sticky top-0 bg-card/95 backdrop-blur-sm z-10">
+            <h2 className="text-xl font-semibold text-foreground">Nueva publicación</h2>
             <button
-              key={option.label}
-              onClick={() => setSelectedOption(option.label === selectedOption ? null : option.label)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition-all ${
-                selectedOption === option.label
-                  ? 'bg-blue-100 text-blue-700 border border-blue-300'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
+              onClick={onClose}
+              className="p-1.5 rounded-full hover:bg-muted transition-colors"
             >
-              <option.icon className="w-4 h-4" />
-              <span>{option.label}</span>
+              <X className="w-5 h-5 text-foreground" />
             </button>
-          ))}
-        </div>
+          </div>
 
-        {/* Área de texto */}
-        <div className="p-4">
-          <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder="¿Qué estás pensando?"
-            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none min-h-[120px] text-gray-700 placeholder-gray-400"
-            autoFocus
-          />
-          
-          {/* Vista previa de imagen */}
-          {selectedImage && (
-            <div className="relative mt-3 rounded-lg overflow-hidden border border-gray-200">
+          {/* Perfil del usuario */}
+          <div className="flex items-center gap-3 p-4 border-b border-border/50">
+            {currentUser?.avatarUrl ? (
               <img 
-                src={selectedImage} 
-                alt="Vista previa" 
-                className="w-full h-auto max-h-[300px] object-contain"
+                src={currentUser.avatarUrl} 
+                alt={currentUser.name}
+                className="w-10 h-10 rounded-full object-cover flex-shrink-0 ring-2 ring-background"
               />
-              <button
-                onClick={handleRemoveImage}
-                className="absolute top-2 right-2 bg-black/70 hover:bg-black/90 text-white rounded-full p-1.5 transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-blue-400 text-white flex items-center justify-center font-bold text-sm flex-shrink-0 ring-2 ring-background">
+                {userInitials}
+              </div>
+            )}
+            <div>
+              <p className="text-sm font-semibold text-foreground">{currentUser?.name || 'Usuario'}</p>
+              <p className="text-xs text-muted-foreground">{currentUser?.position || currentUser?.role || 'Empleado'}</p>
             </div>
-          )}
-        </div>
+          </div>
 
-        {/* Input de archivo oculto */}
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleImageUpload}
-          accept="image/*"
-          className="hidden"
-        />
-
-        {/* Opciones de medios */}
-        <div className="flex flex-wrap items-center justify-between gap-2 px-4 pb-4">
-          <div className="flex flex-wrap gap-2">
-            {mediaOptions.map((option) => (
+          {/* Opciones de publicación */}
+          <div className="flex flex-wrap gap-2 p-4 border-b border-border/50">
+            {options.map((option) => (
               <button
                 key={option.label}
-                onClick={option.action || (() => console.log(`${option.label} clickeado`))}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors"
+                onClick={() => setSelectedOption(option.label === selectedOption ? null : option.label)}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition-all",
+                  selectedOption === option.label
+                    ? "bg-primary/10 text-primary border border-primary/30"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                )}
               >
                 <option.icon className="w-4 h-4" />
                 <span>{option.label}</span>
               </button>
             ))}
           </div>
-          <button
-            onClick={handleSubmit}
-            disabled={!content.trim() && !selectedImage}
-            className={`px-6 py-2 rounded-full text-sm font-semibold transition-all flex items-center gap-2 ${
-              (content.trim() || selectedImage)
-                ? 'bg-blue-600 text-white hover:bg-blue-700'
-                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-            }`}
-          >
-            <Send className="w-4 h-4" />
-            Publicar
-          </button>
+
+          {/* Área de texto */}
+          <div className="p-4">
+            <textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="¿Qué estás pensando?"
+              className="w-full px-4 py-3 border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none min-h-[120px] bg-background text-foreground placeholder:text-muted-foreground transition-shadow"
+              autoFocus
+            />
+            
+            {selectedImage && (
+              <div className="relative mt-3 rounded-lg overflow-hidden border border-border">
+                <img 
+                  src={selectedImage} 
+                  alt="Vista previa" 
+                  className="w-full h-auto max-h-[300px] object-contain"
+                />
+                <button
+                  onClick={handleRemoveImage}
+                  className="absolute top-2 right-2 bg-black/70 hover:bg-black/90 text-white rounded-full p-1.5 transition-colors backdrop-blur-sm"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+          </div>
+
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleImageUpload}
+            accept="image/*"
+            className="hidden"
+          />
+
+          {/* Opciones de medios */}
+          <div className="flex flex-wrap items-center justify-between gap-2 px-4 pb-4">
+            <div className="flex flex-wrap gap-2">
+              {mediaOptions.map((option) => (
+                <button
+                  key={option.label}
+                  onClick={option.action || (() => console.log(`${option.label} clickeado`))}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
+                >
+                  <option.icon className="w-4 h-4" />
+                  <span>{option.label}</span>
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={handleSubmit}
+              disabled={!content.trim() && !selectedImage}
+              className={cn(
+                "px-6 py-2 rounded-full text-sm font-semibold transition-all flex items-center gap-2",
+                (content.trim() || selectedImage)
+                  ? "bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-105 active:scale-95 shadow-sm"
+                  : "bg-muted text-muted-foreground cursor-not-allowed"
+              )}
+            >
+              <Send className="w-4 h-4" />
+              Publicar
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -879,8 +913,11 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
 const LoadingSpinner: React.FC = () => (
   <div className="flex items-center justify-center h-full min-h-[400px]">
     <div className="flex flex-col items-center gap-3">
-      <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
-      <p className="text-sm text-gray-500">Cargando usuarios...</p>
+      <div className="relative">
+        <div className="w-12 h-12 rounded-full border-4 border-muted"></div>
+        <div className="absolute top-0 left-0 w-12 h-12 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+      </div>
+      <p className="text-sm text-muted-foreground animate-pulse">Cargando usuarios...</p>
     </div>
   </div>
 );
@@ -895,10 +932,8 @@ export const WallOfPosts: React.FC = () => {
   const [isCommentsModalOpen, setIsCommentsModalOpen] = useState(false);
   const router = useRouter();
   
-  // Usar el usuario autenticado como currentUser
   const currentUser = authUser || usersData?.[0] || null;
 
-  // Transformar usuarios para cumpleaños
   const getBirthdayData = (): Birthday[] => {
     if (!usersData || usersData.length === 0) return [];
     
@@ -1062,12 +1097,11 @@ export const WallOfPosts: React.FC = () => {
     );
   };
 
-  // Acciones para el aside izquierdo
   const actions = [
-    { icon: Calendar, label: 'Solicitar Vacaciones', color: 'text-blue-500', href: '/leaves' },
-    { icon: FileText, label: 'Ver Comprobantes', color: 'text-blue-500', href: '/receipts' },
-    { icon: Gift, label: 'Ver Beneficios', color: 'text-blue-500', href: '/points' },
-    { icon: FileCheck, label: 'Solicitar Documento', color: 'text-blue-500', href: '/documents' }
+    { icon: Calendar, label: 'Solicitar Vacaciones', color: 'text-primary', href: '/leaves' },
+    { icon: FileText, label: 'Ver Comprobantes', color: 'text-primary', href: '/receipts' },
+    { icon: Gift, label: 'Ver Beneficios', color: 'text-primary', href: '/points' },
+    { icon: FileCheck, label: 'Solicitar Documento', color: 'text-primary', href: '/documents' }
   ];
 
   const userInitials = currentUser ? getInitials(currentUser.name) : 'U';
@@ -1080,8 +1114,11 @@ export const WallOfPosts: React.FC = () => {
     return (
       <div className="flex items-center justify-center h-full min-h-[400px]">
         <div className="text-center">
-          <p className="text-red-500 font-semibold">Error al cargar usuarios</p>
-          <p className="text-sm text-gray-500 mt-2">Por favor, intenta de nuevo más tarde</p>
+          <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-3">
+            <span className="text-2xl">⚠️</span>
+          </div>
+          <p className="text-destructive font-semibold">Error al cargar usuarios</p>
+          <p className="text-sm text-muted-foreground mt-2">Por favor, intenta de nuevo más tarde</p>
         </div>
       </div>
     );
@@ -1089,43 +1126,44 @@ export const WallOfPosts: React.FC = () => {
 
   return (
     <>
-      <div className="w-full h-[calc(100vh-120px)] overflow-hidden bg-gray-100 p-4">
+      <div className="w-full h-[calc(100vh-120px)] overflow-hidden bg-muted/20 p-4">
         <div className="h-full max-w-7xl mx-auto">
           
-          {/* Layout: 3 Columnas*/}
-          <div className="h-full bg-white/30 rounded-2xl p-4 backdrop-blur-sm border border-white/50 flex flex-col">
+          <div className="h-full bg-card/30 rounded-2xl p-4 backdrop-blur-sm border border-border/50 flex flex-col shadow-sm">
             
-            {/* Grid principal */}
             <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr_280px] gap-6 flex-1 min-h-0">
               
               {/* Aside Izquierdo */}
               <aside className="h-full overflow-hidden">
-                <div className="bg-white rounded-xl shadow-sm p-5 h-full flex flex-col">
-                  <h2 className="text-sm font-semibold text-gray-800 mb-4">Crear publicación</h2>
+                <div className="bg-card rounded-xl shadow-sm p-5 h-full flex flex-col border border-border/50 hover:border-border/80 transition-colors">
+                  <h2 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-primary" />
+                    Crear publicación
+                  </h2>
                   
                   <button
                     onClick={() => setIsModalOpen(true)}
-                    className="w-full flex items-center gap-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all border border-gray-200 hover:border-blue-300"
+                    className="w-full flex items-center gap-3 p-3 bg-muted/30 hover:bg-muted rounded-xl transition-all border border-border/50 hover:border-primary/30 group"
                   >
                     {currentUser?.avatarUrl ? (
                       <img 
                         src={currentUser.avatarUrl} 
                         alt={currentUser.name}
-                        className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                        className="w-10 h-10 rounded-full object-cover flex-shrink-0 ring-2 ring-background"
                       />
                     ) : (
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-blue-400 text-white flex items-center justify-center font-bold text-sm flex-shrink-0">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-blue-400 text-white flex items-center justify-center font-bold text-sm flex-shrink-0 ring-2 ring-background">
                         {userInitials}
                       </div>
                     )}
-                    <span className="text-sm text-gray-500">¿Qué estás pensando?</span>
+                    <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">¿Qué estás pensando?</span>
                   </button>
 
-                  <div className="mt-4 pt-4 border-t border-gray-200">
-                    <p className="text-xs text-gray-400 text-center mb-3">Acciones rápidas</p>
+                  <div className="mt-4 pt-4 border-t border-border/50">
+                    <p className="text-xs text-muted-foreground text-center mb-3">Acciones rápidas</p>
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     {actions.map((action) => (
                       <button
                         key={action.label}
@@ -1133,60 +1171,66 @@ export const WallOfPosts: React.FC = () => {
                           console.log(`${action.label} clickeado`);
                           router.push(action.href);
                         }}
-                        className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors text-sm text-gray-600 group"
+                        className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted/50 transition-colors text-sm text-muted-foreground group"
                       >
                         <action.icon className={`w-5 h-5 ${action.color}`} />
-                        <span className="group-hover:text-gray-800">{action.label}</span>
+                        <span className="group-hover:text-foreground transition-colors">{action.label}</span>
                       </button>
                     ))}
                   </div>
 
-                  <div className="mt-auto pt-4 border-t border-gray-200">
+                  <div className="mt-auto pt-4 border-t border-border/50">
                     <div className="flex items-center gap-2">
                       {currentUser?.avatarUrl ? (
                         <img 
                           src={currentUser.avatarUrl} 
                           alt={currentUser.name}
-                          className="w-6 h-6 rounded-full object-cover flex-shrink-0"
+                          className="w-6 h-6 rounded-full object-cover flex-shrink-0 ring-2 ring-background"
                         />
                       ) : (
-                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-blue-300 text-white flex items-center justify-center font-bold text-[8px] flex-shrink-0">
+                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-blue-300 text-white flex items-center justify-center font-bold text-[8px] flex-shrink-0 ring-2 ring-background">
                           {userInitials}
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-gray-700 truncate">{currentUser?.name || 'Usuario'}</p>
-                        <p className="text-[10px] text-gray-400 truncate">{currentUser?.email || ''}</p>
+                        <p className="text-xs font-medium text-foreground truncate">{currentUser?.name || 'Usuario'}</p>
+                        <p className="text-[10px] text-muted-foreground truncate">{currentUser?.email || ''}</p>
                       </div>
-                      <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
+                      <div className="relative">
+                        <div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse"></div>
+                        <div className="absolute inset-0 w-2.5 h-2.5 bg-green-500 rounded-full animate-ping opacity-75"></div>
+                      </div>
                     </div>
-                    <p className="text-[10px] text-gray-400 text-center mt-2">
+                    <p className="text-[10px] text-muted-foreground text-center mt-2">
                       Sesión activa
                     </p>
                   </div>
                 </div>
               </aside>
 
-              {/* Contenido Central */}
-              <main className="h-full flex flex-col space-y-4 overflow-y-auto pr-1">
+              {/* Contenido Central - con scrollbar mejorada */}
+              <main className={cn(
+                "h-full flex flex-col space-y-4 overflow-y-auto pr-1",
+                scrollbarStyles
+              )}>
                 <ImageSlider />
 
                 <div className="space-y-4 pb-4">
                   {posts.map((post) => (
-                    <div key={post.id} className="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
+                    <div key={post.id} className="bg-card rounded-xl shadow-sm p-5 border border-border/50 hover:border-border/80 transition-colors hover:shadow-md">
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-blue-400 text-white flex items-center justify-center font-bold text-sm flex-shrink-0">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-blue-400 text-white flex items-center justify-center font-bold text-sm flex-shrink-0 ring-2 ring-background">
                             {post.authorAvatar}
                           </div>
                           <div>
-                            <h4 className="text-sm font-semibold text-gray-800">{post.author}</h4>
-                            <p className="text-xs text-gray-500">{post.authorRole}</p>
+                            <h4 className="text-sm font-semibold text-foreground">{post.author}</h4>
+                            <p className="text-xs text-muted-foreground">{post.authorRole}</p>
                           </div>
                         </div>
-                        <span className="text-xs text-gray-400">{post.timestamp}</span>
+                        <span className="text-xs text-muted-foreground">{post.timestamp}</span>
                       </div>
-                      <p className="mt-3 text-sm text-gray-700 leading-relaxed">{post.content}</p>
+                      <p className="mt-3 text-sm text-foreground leading-relaxed">{post.content}</p>
                       {post.image && (
                         <div className="mt-3 rounded-lg overflow-hidden">
                           <img
@@ -1196,25 +1240,28 @@ export const WallOfPosts: React.FC = () => {
                           />
                         </div>
                       )}
-                      <div className="mt-4 flex items-center justify-between pt-3 border-t border-gray-100">
+                      <div className="mt-4 flex items-center justify-between pt-3 border-t border-border/50">
                         <div className="flex items-center gap-4">
                           <button
                             onClick={() => handleLike(post.id)}
-                            className={`flex items-center gap-1.5 text-sm transition-colors ${
-                              post.liked ? 'text-red-500' : 'text-gray-500'
-                            }`}
+                            className={cn(
+                              "flex items-center gap-1.5 text-sm transition-all px-3 py-1 rounded-full",
+                              post.liked 
+                                ? "text-red-500 bg-red-50 dark:bg-red-500/10" 
+                                : "text-muted-foreground hover:text-red-500 hover:bg-red-50/50 dark:hover:bg-red-500/5"
+                            )}
                           >
                             <span>{post.liked ? <Heart fill="red" className="h-4 w-4 text-red-500 stroke-none" /> : <Heart className="h-4 w-4" />}</span>
                             <span>{post.likes}</span>
                           </button>
                           <button
                             onClick={() => handleOpenComments(post.id)}
-                            className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-blue-500 transition-colors"
+                            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors px-3 py-1 rounded-full hover:bg-primary/5"
                           >
                             <MessageCircle className="h-4 w-4" /> <span>{post.comments}</span>
                           </button>
                         </div>
-                        <button className="text-sm text-gray-400 hover:text-blue-600 transition-colors">
+                        <button className="text-sm text-muted-foreground hover:text-primary transition-colors p-1 rounded-full hover:bg-muted/50">
                           ⋮
                         </button>
                       </div>
@@ -1223,14 +1270,21 @@ export const WallOfPosts: React.FC = () => {
                 </div>
               </main>
 
-              {/* Aside Derecho */}
+              {/* Aside Derecho - con scrollbar mejorada */}
               <aside className="h-full overflow-hidden">
-                <div className="bg-white rounded-xl shadow-sm p-5 h-full overflow-y-auto flex flex-col space-y-4">
+                <div className={cn(
+                  "bg-card rounded-xl shadow-sm p-5 h-full overflow-y-auto flex flex-col space-y-4 border border-border/50 hover:border-border/80 transition-colors",
+                  scrollbarStyles
+                )}>
                   <div className="flex-shrink-0">
-                    <div className="flex justify-between items-center mb-3 pb-2 border-b border-gray-200">
-                      <Cake className="h-5 w-5 text-blue-500" />
-                      <h3 className="text-sm font-semibold text-gray-800"> Cumpleaños</h3>
-                      <span className="text-xs text-gray-500 font-medium">
+                    <div className="flex justify-between items-center mb-3 pb-2 border-b border-border/50">
+                      <div className="flex items-center gap-2">
+                        <div className="p-1 rounded-lg bg-primary/10">
+                          <Cake className="h-4 w-4 text-primary" />
+                        </div>
+                        <h3 className="text-sm font-semibold text-foreground">Cumpleaños</h3>
+                      </div>
+                      <span className="text-xs text-muted-foreground font-medium capitalize">
                         {new Date().toLocaleString('es', { month: 'long' })}
                       </span>
                     </div>
@@ -1245,28 +1299,28 @@ export const WallOfPosts: React.FC = () => {
                               isWeekend={birthday.isWeekend}
                             />
                           ) : (
-                            <div key={birthday.id} className="flex justify-between items-center py-1.5 border-b border-gray-50 last:border-0">
-                              <span className="text-sm text-gray-700 font-medium">{birthday.name}</span>
-                              <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-gray-100 text-gray-600">
+                            <div key={birthday.id} className="flex justify-between items-center py-1.5 border-b border-border/50 last:border-0">
+                              <span className="text-sm text-foreground font-medium">{birthday.name}</span>
+                              <span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-muted text-muted-foreground">
                                 {birthday.day}
                               </span>
                             </div>
                           )
                         ))
                       ) : (
-                        <p className="text-sm text-gray-500 text-center py-4">
-                          No hay cumpleaños este mes
-                        </p>
+                        <div className="text-center py-6">
+                          <p className="text-sm text-muted-foreground">No hay cumpleaños este mes</p>
+                        </div>
                       )}
                     </div>
                   </div>
 
                   <div className="flex-shrink-0">
-                    <div className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                      <Paperclip className="w-4 h-4 mr-1 inline-block" /> Publicación fijada
+                    <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1">
+                      <Paperclip className="w-3.5 h-3.5" /> Publicación fijada
                     </div>
-                    <div className="bg-gray-50 rounded-lg p-3.5 border-l-4 border-blue-600">
-                      <p className="text-sm text-gray-700">
+                    <div className="bg-gradient-to-r from-primary/5 to-transparent rounded-lg p-3.5 border-l-4 border-primary">
+                      <p className="text-sm text-foreground">
                         <strong>¡Atención equipo!</strong>
                         <br />
                         Recuerden que la reunión general será el próximo martes a las 10:00 AM.
@@ -1275,14 +1329,15 @@ export const WallOfPosts: React.FC = () => {
                   </div>
 
                   <div className="flex-1 flex items-end">
-                    <div className="w-full bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
-                      <p className="text-xs text-gray-600 text-center">
-                        <Lightbulb className="w-4 h-4 mr-1 inline-block" /> Tips del día: Recuerda actualizar tu perfil
+                    <div className="w-full bg-gradient-to-br from-primary/10 via-primary/5 to-transparent rounded-lg p-4 border border-primary/10">
+                      <p className="text-xs text-foreground text-center">
+                        <Lightbulb className="w-4 h-4 mr-1 inline-block text-primary" /> 
+                        Tips del día: Recuerda actualizar tu perfil
                       </p>
                       <div className="mt-2 flex justify-center gap-2">
-                        <span className="inline-block w-2 h-2 bg-blue-400 rounded-full"></span>
-                        <span className="inline-block w-2 h-2 bg-blue-600 rounded-full"></span>
-                        <span className="inline-block w-2 h-2 bg-blue-300 rounded-full"></span>
+                        <span className="inline-block w-2 h-2 bg-primary/30 rounded-full animate-pulse"></span>
+                        <span className="inline-block w-2 h-2 bg-primary rounded-full"></span>
+                        <span className="inline-block w-2 h-2 bg-primary/30 rounded-full animate-pulse"></span>
                       </div>
                     </div>
                   </div>
@@ -1294,7 +1349,6 @@ export const WallOfPosts: React.FC = () => {
         </div>
       </div>
 
-      {/* Modal para crear publicación */}
       <CreatePostModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -1302,7 +1356,6 @@ export const WallOfPosts: React.FC = () => {
         currentUser={currentUser}
       />
 
-      {/* Modal de comentarios */}
       <CommentsModal
         isOpen={isCommentsModalOpen}
         onClose={() => {
