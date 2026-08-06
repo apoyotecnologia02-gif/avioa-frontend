@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, Search, ChevronRight, User } from "lucide-react";
+import { Bell, Search, ChevronRight, User, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -18,6 +18,8 @@ import { useOvertimeStore } from "@/store/overtimeStore";
 import { usePathname, useRouter } from "next/navigation";
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Input } from '@/components/ui/input';
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import { cn } from "@/lib/utils";
 
 interface Breadcrumb {
   label: string;
@@ -40,7 +42,6 @@ function getBreadcrumbs(pathname: string): Breadcrumb[] {
     currentPath += `/${segment}`;
     const isLast = index === segments.length - 1;
 
-    // Skip IDs in breadcrumb labels but show them as "Detalle"
     const label =
       labelMap[segment] || (segment.length > 20 ? "Detalle" : segment);
 
@@ -72,46 +73,40 @@ export function Header() {
   };
 
   return (
-    <header className="flex h-16 items-center justify-between border-b border-border bg-card px-6">
-      {/* Breadcrumbs */}
-      <nav className="flex items-center gap-1 text-sm">
-        {breadcrumbs.map((crumb, index) => (
-          <span key={index} className="flex items-center gap-1">
-            {index > 0 && (
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
-            )}
-            {crumb.href ? (
-              <Link
-                href={crumb.href}
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {crumb.label}
-              </Link>
-            ) : (
-              <span className="font-medium text-foreground">{crumb.label}</span>
-            )}
-          </span>
-        ))}
-      </nav>
+    <header className="flex h-16 items-center justify-between border-b border-border bg-card px-4 lg:px-6">
+      {/* Left side - Breadcrumbs + Menu button */}
+      <div className="flex items-center gap-3 min-w-0">
+        {/* SidebarTrigger - controla la sidebar de shadcn */}
+        <SidebarTrigger className="lg:hidden" />
+
+        {/* Breadcrumbs - Oculto en móvil */}
+        <nav className="hidden lg:flex items-center gap-1 text-sm truncate">
+          {breadcrumbs.map((crumb, index) => (
+            <span key={index} className="flex items-center gap-1 whitespace-nowrap">
+              {index > 0 && (
+                <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              )}
+              {crumb.href ? (
+                <Link
+                  href={crumb.href}
+                  className="text-muted-foreground hover:text-foreground transition-colors truncate"
+                >
+                  {crumb.label}
+                </Link>
+              ) : (
+                <span className="font-medium text-foreground truncate">
+                  {crumb.label}
+                </span>
+              )}
+            </span>
+          ))}
+        </nav>
+      </div>
 
       {/* Right side actions */}
-      <div className="flex items-center gap-2">
-        {/* Buscador (opcional) */}
-        {/* <div className="hidden md:flex items-center gap-2">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Buscar..."
-              className="w-[160px] pl-8 bg-muted/50 border-none focus-visible:ring-1 h-9"
-            />
-          </div>
-        </div> */}
-
-        {/* Theme Toggle - Minimalista */}
+      <div className="flex items-center gap-1 lg:gap-2 flex-shrink-0">
         <ThemeToggle />
 
-        {/* Notifications */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -197,7 +192,6 @@ export function Header() {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* User menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="gap-2 pl-2 pr-3">

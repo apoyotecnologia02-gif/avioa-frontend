@@ -127,13 +127,52 @@
 }
 
 
-
-
-
-/* globals.css */
 * {
   transition: background-color 0.3s ease, 
               border-color 0.3s ease, 
               color 0.3s ease,
               box-shadow 0.3s ease;
+}
+
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+
+/* globals.css - Agrega estas clases */
+@layer components {
+  .sidebar-mobile-overlay {
+    @apply fixed inset-0 z-40 bg-black/50 transition-opacity duration-300;
+  }
+  
+  .sidebar-mobile {
+    @apply fixed top-0 left-0 z-50 h-full w-72 bg-sidebar shadow-xl transition-transform duration-300 ease-in-out;
+  }
+  
+  .sidebar-mobile.closed {
+    @apply -translate-x-full;
+  }
+  
+  .sidebar-mobile.open {
+    @apply translate-x-0;
+  }
 }

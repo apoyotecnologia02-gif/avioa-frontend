@@ -326,7 +326,12 @@ function SidebarInset({ className, ...props }: React.ComponentProps<'main'>) {
       data-slot="sidebar-inset"
       className={cn(
         'bg-background relative flex w-full flex-1 flex-col',
+        // CORRECCIÓN: Asegurar que en móvil siempre tenga width: 100%
+        'w-full',
+        // Solo aplicar márgenes en desktop
         'md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-2',
+        // Asegurar que en móvil no tenga márgenes extraños
+        'max-md:ml-0 max-md:mr-0 max-md:w-full',
         className,
       )}
       {...props}
