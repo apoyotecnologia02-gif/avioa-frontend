@@ -50,14 +50,14 @@ export default function PointsPage() {
     setIsRequestModalOpen(false),
   );
 
-  useEffect(() => {
-    if (rewards.length > 0) {
-      console.log(
-        "rewardsIds",
-        rewards.map((r) => r.rewardId),
-      );
-    }
-  }, [rewards]);
+  // useEffect(() => {
+  //   if (rewards.length > 0) {
+  //     console.log(
+  //       "rewardsIds",
+  //       rewards.map((r) => r.rewardId),
+  //     );
+  //   }
+  // }, [rewards]);
 
   return (
     <div className="container mx-auto py-8 px-4 max-w-7xl space-y-8 animate-in fade-in duration-500">

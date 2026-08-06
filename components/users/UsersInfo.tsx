@@ -52,6 +52,15 @@ export function UsersInfo() {
     );
   });
 
+  const nameInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   //estado de carga
   if (isLoading) {
     return (
@@ -193,7 +202,11 @@ export function UsersInfo() {
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="h-9 w-9">
-                          <AvatarImage src={user.avatar} />
+                          <AvatarImage
+                            src={user.avatar}
+                            alt={user.name}
+                            className="object-cover"
+                          />
                           <AvatarFallback className="bg-primary/10 text-primary">
                             {(() => {
                               if (!user.name) return "U";

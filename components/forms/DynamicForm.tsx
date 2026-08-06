@@ -106,7 +106,6 @@ export function DynamicForm({ formId, schema }: DynamicFormProps) {
 
   const onSubmit = async (data: Record<string, unknown>) => {
     try {
-      console.log("dynamic form data", data);
       await submitForm.mutateAsync({ formId, data });
       toast({
         title: "Formulario enviado",

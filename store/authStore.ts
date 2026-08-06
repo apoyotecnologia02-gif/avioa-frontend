@@ -14,6 +14,7 @@ import {
   REFRESH_KEY,
   USER_KEY,
 } from "@/lib/axios";
+import router from "next/router";
 
 export const TOKEN_KEY = "portal_access_token";
 // export const USER_KEY = "portal_user";
@@ -61,44 +62,25 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   login: async (credentials: LoginCredentials) => {
     const response = await api.post<LoginResponse>("/auth/login", credentials);
+
+    if (response.data.twoFactorEnabled) {
+      return {
+        twoFactorEnabled: true,
+        temporaryToken: response.data.temporaryToken as string,
+      };
+    }
+
     const { accessToken, user, refreshToken } = response.data;
 
     if (!refreshToken) {
       console.error("El backend no devolvió un refresh token");
     }
 
-    const payload = decodeJwt(accessToken);
-    let fullUser = {
-      ...user,
-      ...(payload?.area && { area: payload.area }),
-      ...(payload?.leaderId && { leaderId: payload.leaderId }),
-      ...(payload?.leaderName && { leaderName: payload.leaderName }),
+    get().setAuth(accessToken, refreshToken, user);
+
+    return {
+      twoFactorEnabled: false,
     };
-
-    // if (payload && payload.area) {
-    //   fullUser.area = payload.area;
-    // }
-
-    // if (payload && payload.leaderId) {
-    //   fullUser.leaderId = payload.leaderId;
-    // }
-
-    // if (payload && payload.leaderName) {
-    //   fullUser.leaderName = payload.leaderName;
-    // }
-
-    setSession(accessToken, refreshToken);
-    localStorage.setItem(REFRESH_KEY, refreshToken);
-    localStorage.setItem(USER_KEY, JSON.stringify(fullUser));
-    // localStorage.setItem("portal_refresh_token", refreshToken);
-    // setAuthCookie(accessToken);
-
-    set({
-      user: fullUser,
-      token: accessToken,
-      isAuthenticated: true,
-      isLoading: false,
-    });
   },
 
   logout: async () => {
@@ -127,6 +109,32 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   setToken: (token: string | null) => {
     setAuthCookie(token);
     set({ token, isAuthenticated: !!token });
+  },
+
+  setAuth: (accessToken: string, refreshToken: string, user: User) => {
+    const payload = decodeJwt(accessToken);
+
+    const fullUser = {
+      ...user,
+      ...(payload?.area && { area: payload.area }),
+      ...(payload?.leaderId && { leaderId: payload.leaderId }),
+      ...(payload?.leaderName && { leaderName: payload.leaderName }),
+      ...(payload?.twoFactorEnabled && {
+        twoFactorEnabled: payload.twoFactorEnabled,
+      }),
+    };
+
+    setSession(accessToken, refreshToken);
+
+    localStorage.setItem(REFRESH_KEY, refreshToken);
+    localStorage.setItem(USER_KEY, JSON.stringify(fullUser));
+
+    set({
+      user: fullUser,
+      token: accessToken,
+      isAuthenticated: true,
+      isLoading: false,
+    });
   },
 
   hydrate: () => {

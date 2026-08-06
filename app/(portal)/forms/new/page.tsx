@@ -594,8 +594,6 @@ export default function FormBuilderPage() {
         },
       };
 
-      console.log(payload);
-
       await api.post("/forms", payload);
 
       toast({

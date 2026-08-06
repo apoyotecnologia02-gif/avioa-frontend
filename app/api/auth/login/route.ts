@@ -20,6 +20,10 @@ export async function POST(request: Request) {
       return NextResponse.json(data, { status: response.status });
     }
 
+    if (data.twoFactorEnabled) {
+      return NextResponse.json(data, { status: response.status });
+    }
+
     return NextResponse.json({
       accessToken: data.accessToken,
       refreshToken: data.refreshToken,
