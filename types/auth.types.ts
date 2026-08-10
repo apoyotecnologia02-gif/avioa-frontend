@@ -47,5 +47,6 @@ export interface AuthState {
   setUser: (user: User | null) => void;
   setToken: (token: string | null) => void;
   setAuth: (accessToken: string, refreshToken: string, user: User) => void;
+  refreshAccessToken: () => boolean | Promise<boolean>;
   hydrate: () => void;
 }

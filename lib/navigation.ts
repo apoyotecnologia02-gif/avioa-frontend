@@ -12,6 +12,7 @@ import {
   ClipboardList,
   UserPlus,
   Users,
+  Key,
 } from "lucide-react";
 
 /**
@@ -169,6 +170,19 @@ export const NAV_SECTIONS: NavSection[] = [
           // { href: "/admin/templates", label: "Plantillas", icon: FolderOpen },
           // { href: "/admin/rewards", label: "Recompensas", icon: Gift }
         ],
+      },
+    ],
+  },
+  {
+    label: "Gestión de Contraseñas",
+    visibility: "all",
+    groups: [
+      {
+        key: "passwords",
+        label: "Gestión de Contraseñas",
+        icon: Key,
+        visibility: "all",
+        items: [{ href: "/passwords", label: "Contraseñas", icon: Key }],
       },
     ],
   },

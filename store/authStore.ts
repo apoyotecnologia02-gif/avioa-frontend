@@ -97,6 +97,39 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     });
   },
 
+  refreshAccessToken: async () => {
+    const refreshToken = localStorage.getItem(REFRESH_KEY);
+
+    if (!refreshToken) {
+      get().logout();
+      return false;
+    }
+
+    try {
+      const response = await api.post("/auth/refresh", {
+        refreshToken,
+      });
+
+      const {
+        accessToken,
+        refreshToken: newRefreshToken,
+        user,
+      } = response.data;
+
+      localStorage.setItem(TOKEN_KEY, accessToken);
+
+      if (newRefreshToken) {
+        localStorage.setItem(REFRESH_KEY, newRefreshToken);
+      }
+
+      get().setAuth(accessToken, newRefreshToken, user);
+      return true;
+    } catch (error) {
+      get().logout();
+      return false;
+    }
+  },
+
   setUser: (user: User | null) => {
     if (user) {
       localStorage.setItem(USER_KEY, JSON.stringify(user));
@@ -137,7 +170,60 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     });
   },
 
-  hydrate: () => {
+  hydrate: async () => {
+    // if (typeof window === "undefined") {
+    //   set({ isLoading: false });
+    //   return;
+    // }
+
+    // const token = localStorage.getItem(TOKEN_KEY);
+    // const userJson = localStorage.getItem(USER_KEY);
+
+    // if (token && userJson) {
+    //   if (isTokenExpired(token)) {
+    //     // localStorage.removeItem(TOKEN_KEY);
+    //     // localStorage.removeItem(USER_KEY);
+    //     // setAuthCookie(null);
+    //     // set({
+    //     //   user: null,
+    //     //   token: null,
+    //     //   isAuthenticated: false,
+    //     //   isLoading: false,
+    //     // });
+    //     // return;
+    //     await get().refreshAccessToken();
+    //   }
+
+    //   try {
+    //     let user = JSON.parse(userJson) as User;
+
+    //     const payload = decodeJwt(token);
+    //     if (payload && payload.area && !user.area) {
+    //       user.area = payload.area;
+    //       localStorage.setItem(USER_KEY, JSON.stringify(user));
+    //     }
+
+    //     setAuthCookie(token);
+    //     set({
+    //       user,
+    //       token,
+    //       isAuthenticated: true,
+    //       isLoading: false,
+    //     });
+    //   } catch {
+    //     localStorage.removeItem(TOKEN_KEY);
+    //     localStorage.removeItem(USER_KEY);
+    //     setAuthCookie(null);
+    //     set({
+    //       user: null,
+    //       token: null,
+    //       isAuthenticated: false,
+    //       isLoading: false,
+    //     });
+    //   }
+    // } else {
+    //   set({ isLoading: false });
+    // }
     if (typeof window === "undefined") {
       set({ isLoading: false });
       return;
@@ -148,34 +234,24 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     if (token && userJson) {
       if (isTokenExpired(token)) {
-        localStorage.removeItem(TOKEN_KEY);
-        localStorage.removeItem(USER_KEY);
-        setAuthCookie(null);
-        set({
-          user: null,
-          token: null,
-          isAuthenticated: false,
-          isLoading: false,
-        });
+        const refreshed = await get().refreshAccessToken();
+        if (refreshed === false) {
+          return;
+        }
+
+        set({ isLoading: false });
         return;
       }
 
       try {
         let user = JSON.parse(userJson) as User;
-
         const payload = decodeJwt(token);
         if (payload && payload.area && !user.area) {
           user.area = payload.area;
           localStorage.setItem(USER_KEY, JSON.stringify(user));
         }
-
         setAuthCookie(token);
-        set({
-          user,
-          token,
-          isAuthenticated: true,
-          isLoading: false,
-        });
+        set({ user, token, isAuthenticated: true, isLoading: false });
       } catch {
         localStorage.removeItem(TOKEN_KEY);
         localStorage.removeItem(USER_KEY);

@@ -11,7 +11,10 @@ import { useMyOvertime } from "@/hooks/useMyOvertime";
 import { useTeamOvertime } from "@/hooks/useTeamOvertime";
 import { useCreateOvertime } from "@/hooks/useCreateOvertime";
 import { useReviewOvertime } from "@/hooks/useReviewOvertime";
-import { OvertimeCalendar } from "@/components/overtime/OvertimeCalendar";
+import {
+  OvertimeCalendar,
+  OvertimeEntry,
+} from "@/components/overtime/OvertimeCalendar";
 import { OvertimeDayPanel } from "@/components/overtime/OvertimeDayPanel";
 import { OvertimeSummaryCards } from "@/components/overtime/OvertimeSummaryCards";
 import { RegisterOvertimeModal } from "@/components/overtime/RegisterOvertimeModal";
@@ -103,26 +106,9 @@ export default function OvertimePage() {
 
   // If summary has records for the day (with detail), prefer those
   const summaryDay = summary?.days.find((d) => d.date === selectedDate);
-  const dayRecordsToShow: OvertimeRecord[] =
-    summaryDay?.records && summaryDay.records.length > 0
-      ? (summaryDay.records as OvertimeRecord[])
-      : dayRecords;
-
-  const daysToColor =
-    summary?.days.map((d) => {
-      let status = "REJECTED";
-
-      if (d.entries?.some((e) => e.status === "APPROVED")) {
-        status = "APPROVED";
-      } else if (d.entries?.some((e) => e.status === "PENDING")) {
-        status = "PENDING";
-      }
-
-      return {
-        date: d.date,
-        status: status as OvertimeStatus,
-      };
-    }) || [];
+  const dayRecordsToShow: OvertimeEntry[] = summaryDay?.entries
+    ? summaryDay.entries
+    : [];
 
   const handleSelectDate = (date: string) => {
     setSelectedDate(date);
@@ -140,6 +126,24 @@ export default function OvertimePage() {
       setReviewOpen(true);
     }
   }, [searchParams, isLeaderOrManager]);
+
+  useEffect(() => {
+    const handler = async () => {
+      await reloadTeam();
+      await reloadSummary();
+      await reloadMy();
+    };
+
+    window.addEventListener("overtime-request-created", handler);
+    window.addEventListener("overtime_request_approved", handler);
+    window.addEventListener("overtime_request_rejected", handler);
+
+    return () => {
+      window.removeEventListener("overtime-request-created", handler);
+      window.removeEventListener("overtime_request_approved", handler);
+      window.removeEventListener("overtime_request_rejected", handler);
+    };
+  }, [reloadTeam, reloadSummary, reloadMy]);
 
   return (
     <div className="container mx-auto py-8 px-4 max-w-7xl space-y-6 animate-in fade-in duration-500">
@@ -180,7 +184,7 @@ export default function OvertimePage() {
       </div>
 
       {/* Summary cards */}
-      <OvertimeSummaryCards summary={summary} isLoading={summaryLoading} />
+      {/* <OvertimeSummaryCards summary={summary} isLoading={summaryLoading} /> */}
 
       {/* Calendar + day panel */}
       <div
@@ -197,7 +201,7 @@ export default function OvertimePage() {
             selectedDate={selectedDate}
             onSelectDate={handleSelectDate}
             isLoading={summaryLoading}
-            daysToColor={daysToColor}
+            // daysToColor={daysToColor}
           />
         </div>
 
@@ -214,7 +218,7 @@ export default function OvertimePage() {
         )}
       </div>
 
-      {/* 🪟 Modales */}
+      {/* Modales */}
       <RegisterOvertimeModal
         isOpen={registerOpen}
         onClose={() => setRegisterOpen(false)}
@@ -222,6 +226,7 @@ export default function OvertimePage() {
         isSubmitting={isCreating}
         leaders={leaders}
         leaderId={user?.leaderId}
+        existingRequests={dayRecordsToShow}
       />
 
       {isLeaderOrManager && (

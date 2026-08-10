@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { format } from "date-fns";
+import { format, isSameDay } from "date-fns";
 import { es } from "date-fns/locale";
 import { CalendarIcon, Clock } from "lucide-react";
 import {
@@ -36,6 +36,7 @@ import {
   SelectValue,
 } from "../ui/select";
 import { useAuthStore } from "@/store/authStore";
+import { OvertimeEntry } from "./OvertimeCalendar";
 
 const overtimeSchema = z
   .object({
@@ -78,6 +79,11 @@ interface RegisterOvertimeModalProps {
   isSubmitting: boolean;
   leaders: LeadersData[];
   leaderId?: string;
+  existingRequests?: OvertimeEntry[];
+}
+
+function hasOverlap(startA: Date, endA: Date, startB: Date, endB: Date) {
+  return startA < endB && startB < endA;
 }
 
 export function RegisterOvertimeModal({
@@ -87,6 +93,7 @@ export function RegisterOvertimeModal({
   isSubmitting,
   leaders,
   leaderId,
+  existingRequests,
 }: RegisterOvertimeModalProps) {
   const { user } = useAuthStore();
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -98,6 +105,8 @@ export function RegisterOvertimeModal({
     watch,
     setValue,
     reset,
+    setError,
+    clearErrors,
     formState: { errors, isValid },
   } = useForm<OvertimeFormData>({
     resolver: zodResolver(overtimeSchema),
@@ -109,6 +118,44 @@ export function RegisterOvertimeModal({
   const watchStart = watch("startTime");
   const watchEnd = watch("endTime");
   const totalHours = calcHours(watchStart, watchEnd);
+
+  useEffect(() => {
+    if (!watchDate || !watchStart || !watchEnd) {
+      clearErrors("startTime");
+      return;
+    }
+
+    const newStart = new Date(`${watchDate}T${watchStart}:00-05:00`);
+    const newEnd = new Date(`${watchDate}T${watchEnd}:00-05:00`);
+
+    const overlap = existingRequests?.some((req) => {
+      if (req.status === "REJECTED") return false;
+
+      return hasOverlap(
+        newStart,
+        newEnd,
+        new Date(req.startTime),
+        new Date(req.endTime),
+      );
+    });
+
+    if (overlap) {
+      setError("startTime", {
+        type: "manual",
+        message:
+          "Ya tienes una solicitud de horas extra en este rango de tiempo.",
+      });
+    } else {
+      clearErrors("startTime");
+    }
+  }, [
+    watchDate,
+    watchStart,
+    watchEnd,
+    existingRequests,
+    setError,
+    clearErrors,
+  ]);
 
   useEffect(() => {
     if (isOpen) {
@@ -129,6 +176,11 @@ export function RegisterOvertimeModal({
   const selectedDate = watchDate
     ? new Date(watchDate + "T12:00:00")
     : undefined;
+
+  const dateError =
+    selectedDate && !isSameDay(selectedDate, new Date())
+      ? "Solo puedes registrar horas para el día de hoy."
+      : "";
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -184,6 +236,9 @@ export function RegisterOvertimeModal({
                 <p className="text-xs text-destructive mt-1">
                   {errors.date.message}
                 </p>
+              )}
+              {dateError && (
+                <p className="text-xs text-destructive mt-1">{dateError}</p>
               )}
             </Field>
 
@@ -297,7 +352,10 @@ export function RegisterOvertimeModal({
               disabled={
                 isSubmitting ||
                 !isValid ||
-                (!user?.leaderId && !watch("leaderId"))
+                (!user?.leaderId && !watch("leaderId")) ||
+                dateError
+                  ? true
+                  : false
               }
             >
               {isSubmitting ? "Guardando..." : "Guardar"}

@@ -91,7 +91,7 @@ function refreshAccessToken(): Promise<string> {
       if (!refreshToken) throw new Error("Missing refresh token");
 
       const { data } = await axios.post(`${baseURL}/auth/refresh`, {
-        refresh_token: refreshToken,
+        refreshToken,
       });
       if (!data?.access_token) throw new Error("Refresh sin access_token");
 
@@ -176,16 +176,5 @@ api.interceptors.response.use(
       redirectToLogin();
       return Promise.reject(error);
     }
-
-    // if (error.response?.status === 401 && !error.config?.skip401Redirect) {
-    //   if (typeof window !== "undefined") {
-    //     localStorage.removeItem("portal_access_token");
-    //     localStorage.removeItem("portal_user");
-    //     document.cookie =
-    //       "portal_access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-    //     window.location.href = "/login";
-    //   }
-    // }
-    // return Promise.reject(error);
   },
 );
