@@ -45,6 +45,7 @@ import {
 } from "lucide-react";
 import { useGetUsers } from "@/hooks/useGetUsers";
 import { useAuth } from "@/hooks/useAuth";
+import { useBirthdayPosts } from "@/hooks/useBirthdayPosts";
 import { cn } from "@/lib/utils";
 
 // ===== TIPOS =====
@@ -1041,185 +1042,48 @@ const LoadingSpinner: React.FC = () => (
 
 // ===== COMPONENTE PRINCIPAL =====
 export const WallOfPosts: React.FC = () => {
-  const { data: usersData, isLoading: isLoadingUsers, error } = useGetUsers();
+  const { data: usersData, isLoading: isLoadingUsers, error: usersError } = useGetUsers();
   const { user: authUser, isLoading: isLoadingAuth } = useAuth();
+  const { data: birthdayData, isLoading: isLoadingBirthday, error: birthdayError } = useBirthdayPosts();
+  
   const [posts, setPosts] = useState<Post[]>(initialPosts);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const [isCommentsModalOpen, setIsCommentsModalOpen] = useState(false);
-  const [birthdayPostsGenerated, setBirthdayPostsGenerated] = useState(false);
   const router = useRouter();
 
   const currentUser = authUser || usersData?.[0] || null;
 
-  // ===== OBTENER CUMPLEAÑOS DEL MES ACTUAL (TODOS) =====
-  const getCurrentMonthBirthdays = (): Birthday[] => {
-    if (!usersData || usersData.length === 0) return [];
-
-    const today = new Date();
-    const currentMonth = today.getMonth();
-    const currentYear = today.getFullYear();
-
-    // Filtrar usuarios que cumplen en el mes actual
-    const birthdayUsers = usersData.filter((user: User) => {
-      if (!user.birthDate) return false;
-
-      try {
-        const birthDate = new Date(user.birthDate);
-        if (isNaN(birthDate.getTime())) return false;
-
-        // Verificar si el mes coincide con el mes actual
-        return birthDate.getMonth() === currentMonth;
-      } catch {
-        return false;
-      }
-    });
-
-    // Si no hay cumpleaños en el mes, retornar array vacío
-    if (birthdayUsers.length === 0) return [];
-
-    // Ordenar por día del mes
-    const sortedUsers = [...birthdayUsers].sort((a: User, b: User) => {
-      const dateA = new Date(a.birthDate!);
-      const dateB = new Date(b.birthDate!);
-      return dateA.getDate() - dateB.getDate();
-    });
-
-    // Formatear para el componente
-    return sortedUsers.map((user: User) => {
-      const birthDate = new Date(user.birthDate!);
-      const day = birthDate.getDate().toString().padStart(2, "0");
-      const month = birthDate.toLocaleString("es", { month: "long" });
-
-      // Verificar si es fin de semana (para el día actual)
-      const dateThisYear = new Date(
-        currentYear,
-        birthDate.getMonth(),
-        birthDate.getDate(),
-      );
-      const dayOfWeek = dateThisYear.getDay();
-      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-
-      return {
-        id: user.userId,
-        name: user.name,
-        day: day,
-        month: month,
-        isWeekend: isWeekend,
-        employee: {
-          id: user.userId,
-          name: user.name,
-          role: user.position || user.role || "Empleado",
-          initials: getInitials(user.name),
-          avatarUrl: user.avatarUrl,
-        },
-      };
-    });
-  };
-
-  // ===== OBTENER CUMPLEAÑOS DE HOY =====
-  const getTodayBirthdays = (): Birthday[] => {
-    if (!usersData || usersData.length === 0) return [];
-
-    const today = new Date();
-    const currentMonth = today.getMonth();
-    const currentDay = today.getDate();
-
-    const birthdayUsers = usersData.filter((user: User) => {
-      if (!user.birthDate) return false;
-
-      try {
-        const birthDate = new Date(user.birthDate);
-        if (isNaN(birthDate.getTime())) return false;
-
-        return (
-          birthDate.getMonth() === currentMonth &&
-          birthDate.getDate() === currentDay
-        );
-      } catch {
-        return false;
-      }
-    });
-
-    if (birthdayUsers.length === 0) return [];
-
-    return birthdayUsers.map((user: User) => {
-      const birthDate = new Date(user.birthDate!);
-      const day = birthDate.getDate().toString().padStart(2, "0");
-      const month = birthDate.toLocaleString("es", { month: "long" });
-
-      return {
-        id: user.userId,
-        name: user.name,
-        day: day,
-        month: month,
-        isWeekend: false,
-        employee: {
-          id: user.userId,
-          name: user.name,
-          role: user.position || user.role || "Empleado",
-          initials: getInitials(user.name),
-          avatarUrl: user.avatarUrl,
-        },
-      };
-    });
-  };
-
-  // ===== GENERAR PUBLICACIONES DE CUMPLEAÑOS CON ICONOS =====
-  const generateBirthdayPosts = () => {
-    const todayBirthdays = getTodayBirthdays();
-
-    if (todayBirthdays.length === 0 || birthdayPostsGenerated) return;
-
-    const companyName = "Avioa";
-    const companyInitials = "AV";
-
-    // Generar una publicación para cada cumpleañero
-    const newBirthdayPosts: Post[] = todayBirthdays.map((birthday) => {
-      // Generar mensaje personalizado SIN EMOJIS
-      const message = `¡Feliz Cumpleaños ${birthday.name}!
-
-${birthday.employee.role ? `Cargo: ${birthday.employee.role}` : ""}
-
-${birthday.day && birthday.month ? `Fecha: ${birthday.day} de ${birthday.month}` : ""}
-
-Todo el equipo de ${companyName} te desea un día lleno de alegría, éxitos y momentos inolvidables. ¡Gracias por ser parte de nuestra gran familia!
-
-¡Disfruta tu día al máximo!`;
-
-      return {
-        id: `birthday-${Date.now()}-${birthday.id}`,
-        author: companyName,
-        authorAvatar: companyInitials,
-        authorRole: "Recursos Humanos",
-        content: message,
-        timestamp: "Hace unos segundos",
-        likes: 0,
-        comments: 0,
-        shares: 0,
-        liked: false,
-        commentsList: [],
-        isBirthdayPost: true,
-        birthdayPerson: birthday.name,
-      };
-    });
-
-    setPosts((prevPosts) => [...newBirthdayPosts, ...prevPosts]);
-    setBirthdayPostsGenerated(true);
-  };
-
-  // ===== EFECTO PARA GENERAR PUBLICACIONES AL CARGAR =====
+  // ===== EFECTO PARA AGREGAR PUBLICACIONES DE CUMPLEAÑOS DESDE EL API =====
   useEffect(() => {
-    if (!isLoadingUsers && usersData) {
-      generateBirthdayPosts();
+    if (birthdayData?.birthdayPosts && birthdayData.birthdayPosts.length > 0) {
+      setPosts((prevPosts) => {
+        // Filtrar publicaciones de cumpleaños existentes para evitar duplicados
+        const existingBirthdayIds = new Set(
+          prevPosts
+            .filter(post => post.isBirthdayPost)
+            .map(post => post.id)
+        );
+
+        const newBirthdayPosts = birthdayData.birthdayPosts.filter(
+          post => !existingBirthdayIds.has(post.id)
+        );
+
+        if (newBirthdayPosts.length === 0) return prevPosts;
+
+        return [...newBirthdayPosts, ...prevPosts];
+      });
     }
-  }, [usersData, isLoadingUsers]);
+  }, [birthdayData]);
 
-  // Datos para el modal: TODOS los cumpleaños del mes
-  const allMonthBirthdays = getCurrentMonthBirthdays();
+  // ===== DATOS PARA WIDGETS DESDE EL API =====
+  const todayBirthdays = birthdayData?.todayBirthdays || [];
+  const allMonthBirthdays = birthdayData?.monthBirthdays || [];
 
-  // Datos para el widget: SOLO los cumpleaños de hoy
-  const todayBirthdays = getTodayBirthdays();
+  // Si hay error en el API de cumpleaños, mostrar mensaje pero no bloquear la UI
+  if (birthdayError) {
+    console.warn('⚠️ Error en birthday API:', birthdayError);
+  }
 
   const handleLike = (postId: string) => {
     setPosts((prevPosts) =>
@@ -1397,11 +1261,11 @@ Todo el equipo de ${companyName} te desea un día lleno de alegría, éxitos y m
 
   const userInitials = currentUser ? getInitials(currentUser.name) : "U";
 
-  if (isLoadingAuth || isLoadingUsers) {
+  if (isLoadingAuth || isLoadingUsers || isLoadingBirthday) {
     return <LoadingSpinner />;
   }
 
-  if (error) {
+  if (usersError) {
     return (
       <div className="flex items-center justify-center h-full min-h-[400px]">
         <div className="text-center">
@@ -1412,7 +1276,7 @@ Todo el equipo de ${companyName} te desea un día lleno de alegría, éxitos y m
             Error al cargar usuarios
           </p>
           <p className="text-sm text-muted-foreground mt-2">
-            Por favor, intenta de nuevo más tarde
+            {typeof usersError === 'string' ? usersError : "Por favor, intenta de nuevo más tarde"}
           </p>
         </div>
       </div>
@@ -1510,6 +1374,7 @@ Todo el equipo de ${companyName} te desea un día lleno de alegría, éxitos y m
                 </div>
               </aside>
 
+              {/* MAIN */}
               <main
                 className={cn(
                   "h-full flex flex-col space-y-4 overflow-y-auto pr-1",
@@ -1562,7 +1427,6 @@ Todo el equipo de ${companyName} te desea un día lleno de alegría, éxitos y m
                         </span>
                       </div>
 
-                      {/* Iconos decorativos para publicaciones de cumpleaños */}
                       {post.isBirthdayPost && (
                         <div className="flex gap-2 mt-2 mb-1">
                           <PartyPopper className="w-5 h-5 text-amber-500" />
@@ -1626,6 +1490,7 @@ Todo el equipo de ${companyName} te desea un día lleno de alegría, éxitos y m
                 </div>
               </main>
 
+              {/* ASIDE DERECHO */}
               <aside className="h-full overflow-hidden">
                 <div
                   className={cn(
@@ -1648,18 +1513,7 @@ Todo el equipo de ${companyName} te desea un día lleno de alegría, éxitos y m
                     <div
                       className={cn(
                         "space-y-0.5 max-h-[280px] overflow-y-auto overflow-x-hidden pr-1",
-                        "[&::-webkit-scrollbar]:w-1.5",
-                        "[&::-webkit-scrollbar]:h-1.5",
-                        "[&::-webkit-scrollbar-track]:bg-muted/20",
-                        "[&::-webkit-scrollbar-track]:rounded-full",
-                        "[&::-webkit-scrollbar-thumb]:bg-muted-foreground/25",
-                        "[&::-webkit-scrollbar-thumb]:rounded-full",
-                        "[&::-webkit-scrollbar-thumb]:hover:bg-muted-foreground/40",
-                        "dark:[&::-webkit-scrollbar-track]:bg-muted/15",
-                        "dark:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/30",
-                        "dark:[&::-webkit-scrollbar-thumb]:hover:bg-muted-foreground/50",
-                        "scrollbar-width:thin",
-                        "scrollbar-color:hsl(var(--muted-foreground)/0.25) transparent",
+                        scrollbarStyles,
                       )}
                     >
                       {todayBirthdays.length > 0 ? (
@@ -1685,7 +1539,6 @@ Todo el equipo de ${companyName} te desea un día lleno de alegría, éxitos y m
                       )}
                     </div>
 
-                    {/* Mostrar todos los cumpleaños del mes */}
                     {allMonthBirthdays.length > 0 && (
                       <div className="mt-4 pt-3 border-t border-border/50">
                         <div className="flex items-center gap-2 mb-2">
@@ -1700,23 +1553,9 @@ Todo el equipo de ${companyName} te desea un día lleno de alegría, éxitos y m
                         <div
                           className={cn(
                             "space-y-0.5 max-h-[200px] overflow-y-auto overflow-x-hidden pr-1",
-                            "[&::-webkit-scrollbar]:w-1.5",
-                            "[&::-webkit-scrollbar]:h-1.5",
-                            "[&::-webkit-scrollbar-track]:bg-muted/20",
-                            "[&::-webkit-scrollbar-track]:rounded-full",
-                            "[&::-webkit-scrollbar-thumb]:bg-muted-foreground/25",
-                            "[&::-webkit-scrollbar-thumb]:rounded-full",
-                            "[&::-webkit-scrollbar-thumb]:hover:bg-muted-foreground/40",
-                            "dark:[&::-webkit-scrollbar-track]:bg-muted/15",
-                            "dark:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/30",
-                            "dark:[&::-webkit-scrollbar-thumb]:hover:bg-muted-foreground/50",
-                            "scrollbar-width:thin",
-                            "scrollbar-color:hsl(var(--muted-foreground)/0.25) transparent",
+                            scrollbarStyles,
                           )}
                         >
-
-
-                          {/* Mostrar todos los cumpleaños del mes */}
                           {allMonthBirthdays.map((birthday) => (
                             <div
                               key={birthday.id}
