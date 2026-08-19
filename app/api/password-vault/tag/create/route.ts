@@ -1,19 +1,15 @@
 import { parseResponseData } from "@/utils/parse-response-data.util";
 import { NextResponse } from "next/server";
 
-const PASSWORD_VAULT_UPDATE_URL = `${process.env.NEXT_PUBLIC_API_URL}/password-vault/update`;
+const PASSWORD_VAULT_TAG_CREATE = `${process.env.NEXT_PUBLIC_API_URL}/password-vault/tag/create`;
 
-export async function PATCH(
-  request: Request,
-  { params }: { params: { id: string } },
-) {
+export async function POST(request: Request) {
   try {
-    const { id } = await params;
-    const authorization = request.headers.get("authorization");
     const body = await request.json();
+    const authorization = request.headers.get("authorization");
 
-    const response = await fetch(`${PASSWORD_VAULT_UPDATE_URL}/${id}`, {
-      method: "PATCH",
+    const response = await fetch(PASSWORD_VAULT_TAG_CREATE, {
+      method: "POST",
       headers: {
         "Content-Type": "application/json",
         ...(authorization ? { Authorization: authorization } : {}),

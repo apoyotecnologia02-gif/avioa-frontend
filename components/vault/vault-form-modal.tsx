@@ -1,7 +1,7 @@
 "use client";
 
 import { useCreateVault } from "@/hooks/useCreateVault";
-import { VaultCategory } from "@/hooks/userVaultCategories";
+import { VaultCategory } from "@/hooks/useVaultCategories";
 import { useUpdateVault } from "@/hooks/useUpdateVault";
 import { VaultTag } from "@/hooks/useVaultTags";
 import { VaultItem } from "@/types/password-vault.types";

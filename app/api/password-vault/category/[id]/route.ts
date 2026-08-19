@@ -1,25 +1,26 @@
 import { parseResponseData } from "@/utils/parse-response-data.util";
 import { NextResponse } from "next/server";
 
-const PASSWORD_VAULT_UPDATE_URL = `${process.env.NEXT_PUBLIC_API_URL}/password-vault/update`;
+const PASSWORD_VAULT_CATEGORY_DELETE_URL = `${process.env.BACKEND}/password-vault/category`;
 
-export async function PATCH(
+export async function DELETE(
   request: Request,
   { params }: { params: { id: string } },
 ) {
   try {
-    const { id } = await params;
+    const { id } = params;
     const authorization = request.headers.get("authorization");
-    const body = await request.json();
 
-    const response = await fetch(`${PASSWORD_VAULT_UPDATE_URL}/${id}`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        ...(authorization ? { Authorization: authorization } : {}),
+    const response = await fetch(
+      `${PASSWORD_VAULT_CATEGORY_DELETE_URL}/${id}`,
+      {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          ...(authorization ? { Authorization: authorization } : {}),
+        },
       },
-      body: JSON.stringify(body),
-    });
+    );
 
     const data = await parseResponseData(response);
 

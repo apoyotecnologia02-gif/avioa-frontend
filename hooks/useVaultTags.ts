@@ -13,7 +13,7 @@ export function useVaultTags() {
   const reload = useCallback(async () => {
     setIsLoading(true);
     try {
-      const { data } = await api.get<VaultTag[]>("/password-vault/tags", {
+      const { data } = await api.get<VaultTag[]>("/password-vault/tag", {
         skip401Redirect: true,
       });
       setTags(data);

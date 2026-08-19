@@ -33,6 +33,11 @@ export function RevealPasswordDialog({
   const [totpCode, setTotpCode] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
 
+  useEffect(() => {
+    setTotpCode("");
+    setLoginPassword("");
+  }, [item?.passwordVaultId]);
+
   async function handleConfirm() {
     try {
       const res = await reveal(item?.passwordVaultId as string, {
@@ -61,7 +66,7 @@ export function RevealPasswordDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-3">
+        {/* <div className="space-y-3">
           <div className="space-y-1">
             <Label>Código 2FA</Label>
             <Input
@@ -85,7 +90,59 @@ export function RevealPasswordDialog({
             />
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
-        </div>
+        </div> */}
+
+        <form
+          autoComplete="off"
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleConfirm();
+          }}
+          className="space-y-3"
+        >
+          <input
+            type="text"
+            name="username"
+            autoComplete="username"
+            value={item?.username ?? item?.email ?? ""}
+            readOnly
+            hidden
+          />
+
+          <div className="space-y-1">
+            <Label htmlFor="totp">Código 2FA</Label>
+            <Input
+              id="totp"
+              name="totp-code"
+              inputMode="numeric"
+              maxLength={6}
+              value={totpCode}
+              onChange={(e) => setTotpCode(e.target.value)}
+              placeholder="000000"
+              autoComplete="one-time-code"
+              autoFocus
+              data-1p-ignore
+              data-lpignore="true"
+              data-bwignore
+            />
+          </div>
+          <p className="text-center text-xs text-muted-foreground">o</p>
+          <div className="space-y-1">
+            <Label htmlFor="pwd">Tu contraseña</Label>
+            <Input
+              id="pwd"
+              name="login-password"
+              type="password"
+              value={loginPassword}
+              onChange={(e) => setLoginPassword(e.target.value)}
+              autoComplete="current-password"
+              data-1p-ignore
+              data-lpignore="true"
+              data-bwignore
+            />
+          </div>
+          {error && <p className="text-sm text-destructive">{error}</p>}
+        </form>
 
         <DialogFooter>
           <Button variant="outline">Cancelar</Button>

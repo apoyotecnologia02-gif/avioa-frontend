@@ -11,6 +11,8 @@ export function useDeleteVault(onSuccess?: () => void | Promise<void>) {
         skip401Redirect: true,
       });
       await onSuccess?.();
+    } catch (error) {
+      console.log(error);
     } finally {
       setIsSubmitting(false);
     }

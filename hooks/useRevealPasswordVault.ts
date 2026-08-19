@@ -4,6 +4,7 @@ import { api } from "@/lib/axios";
 interface RevealDto {
   totpCode?: string;
   loginPassword?: string;
+  onlyCopy?: boolean;
 }
 
 export function useRevealPassword() {
@@ -31,7 +32,7 @@ export function useRevealPassword() {
 
   const logCopy = async (id: string, field: "USERNAME" | "PASSWORD") => {
     await api.post(
-      `/api/password-vault/log-copy/${id}`,
+      `/password-vault/log-copy/${id}`,
       { field },
       { skip401Redirect: true },
     );

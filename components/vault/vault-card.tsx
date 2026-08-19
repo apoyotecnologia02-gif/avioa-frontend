@@ -50,6 +50,16 @@ export function VaultCard({ item, selected, onSelect }: VaultCardProps) {
         <p className="truncate text-xs text-muted-foreground">
           {item.username ?? item.email ?? item.website ?? "-"}
         </p>
+        {!item.isOwner && (
+          <p className="truncate text-[11px] text-muted-foreground">
+            {item.sharedVia === "direct" &&
+              `Compartida por ${item.sharedByName}`}
+            {item.sharedVia === "department" &&
+              `Compartida con tu área · ${item.sharedByName}`}
+            {item.sharedVia === "both" &&
+              `Compartida directamente y con tu área · ${item.sharedByName}`}
+          </p>
+        )}
       </div>
 
       <div className="flex shrink-0 items-center gap-2">

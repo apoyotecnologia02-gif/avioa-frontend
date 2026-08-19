@@ -4,7 +4,7 @@ import { Star, Folder, Tag, Trash2, Shield, Search } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { VaultCategory } from "@/hooks/userVaultCategories";
+import { VaultCategory } from "@/hooks/useVaultCategories";
 import { VaultTag } from "@/hooks/useVaultTags";
 
 export type VaultFilterSelection =

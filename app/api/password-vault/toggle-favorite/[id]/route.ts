@@ -8,7 +8,7 @@ export async function PATCH(
   { params }: { params: { id: string } },
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const authorization = request.headers.get("authorization");
 
     const response = await fetch(

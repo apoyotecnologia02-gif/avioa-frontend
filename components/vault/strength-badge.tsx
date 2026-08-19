@@ -1,11 +1,15 @@
+import { PasswordStrengthEnum } from "./enums/password_strength.enum";
+
 export function StrengthBadge({ level }: { level?: string }) {
   return (
     <span
       className={`${
-        level === "WEAK" ? "text-red-500" : "text-green-500"
+        level === "WEAK" || level === "VERY_WEAK"
+          ? "text-red-500"
+          : "text-green-500"
       } text-sm font-medium`}
     >
-      {level}
+      {PasswordStrengthEnum[level as keyof typeof PasswordStrengthEnum]}
     </span>
   );
 }

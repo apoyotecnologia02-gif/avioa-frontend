@@ -8,7 +8,7 @@ export async function POST(
   { params }: { params: { id: string } },
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const authorization = request.headers.get("authorization");
     const body = await request.json();
 

@@ -7,6 +7,7 @@ export interface VaultListFilters {
   categoryId?: string;
   favorite?: boolean;
   tagId?: string;
+  scope?: "own" | "shared";
 }
 
 export function useVaultList(filters: VaultListFilters) {
@@ -26,6 +27,7 @@ export function useVaultList(filters: VaultListFilters) {
       if (filters.favorite !== undefined)
         params.set("favorite", String(filters.favorite));
       if (filters.tagId) params.set("tagId", filters.tagId);
+      if (filters.scope) params.set("scope", filters.scope);
 
       const { data } = await api.get(
         `/password-vault/find-all${params ? `?${params.toString()}` : ""}`,
@@ -38,7 +40,13 @@ export function useVaultList(filters: VaultListFilters) {
     } finally {
       setIsLoading(false);
     }
-  }, [filters.search, filters.categoryId, filters.favorite, filters.tagId]);
+  }, [
+    filters.search,
+    filters.categoryId,
+    filters.favorite,
+    filters.tagId,
+    filters.scope,
+  ]);
 
   useEffect(() => {
     reload();

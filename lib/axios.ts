@@ -93,13 +93,14 @@ function refreshAccessToken(): Promise<string> {
       const { data } = await axios.post(`${baseURL}/auth/refresh`, {
         refreshToken,
       });
-      if (!data?.access_token) throw new Error("Refresh sin access_token");
 
-      if (data.refresh_token) {
-        localStorage.setItem(REFRESH_KEY, data.refresh_token);
+      if (!data?.accessToken) throw new Error("Refresh sin access_token");
+
+      if (data.refreshToken) {
+        localStorage.setItem(REFRESH_KEY, data.refreshToken);
       }
-      setSession(data.access_token, data.refresh_token);
-      return data.access_token as string;
+      setSession(data.accessToken, data.refreshToken);
+      return data.accessToken as string;
     } finally {
       refreshPromise = null;
     }
@@ -140,7 +141,11 @@ api.interceptors.response.use(
     const original = error.config as InternalAxiosRequestConfig | undefined;
     const status = error.response?.status;
 
-    if ((status !== 401 && typeof window === "undefined") || !original) {
+    // if ((status !== 401 && typeof window === "undefined") || !original) {
+    //   return Promise.reject(error);
+    // }
+
+    if (status !== 401 || !original) {
       return Promise.reject(error);
     }
 

@@ -8,7 +8,7 @@ export async function GET(
   { params }: { params: { id: string } },
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const authorization = request.headers.get("authorization");
 
     const response = await fetch(`${PASSWORD_VAULT_LIST_SHARED_URL}/${id}`, {
@@ -27,7 +27,7 @@ export async function GET(
       });
     }
 
-    return new NextResponse(data, { status: response.status });
+    return new NextResponse(JSON.stringify(data), { status: response.status });
   } catch {
     return NextResponse.json(
       { error: "No fue posible obtener las solicitudes" },

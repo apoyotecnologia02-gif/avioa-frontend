@@ -147,13 +147,37 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   setAuth: (accessToken: string, refreshToken: string, user: User) => {
     const payload = decodeJwt(accessToken);
 
+    // const fullUser = {
+    //   ...user,
+    //   ...(payload?.area && { area: payload.area }),
+    //   ...(payload?.leaderId && { leaderId: payload.leaderId }),
+    //   ...(payload?.leaderName && { leaderName: payload.leaderName }),
+    //   ...(payload?.twoFactorEnabled && {
+    //     twoFactorEnabled: payload.twoFactorEnabled,
+    //   }),
+    // };
+
     const fullUser = {
       ...user,
-      ...(payload?.area && { area: payload.area }),
-      ...(payload?.leaderId && { leaderId: payload.leaderId }),
-      ...(payload?.leaderName && { leaderName: payload.leaderName }),
+
+      ...(payload?.area && {
+        area: payload.area,
+      }),
+
+      ...(payload?.leaderId && {
+        leaderId: payload.leaderId,
+      }),
+
+      ...(payload?.leaderName && {
+        leaderName: payload.leaderName,
+      }),
+
       ...(payload?.twoFactorEnabled && {
         twoFactorEnabled: payload.twoFactorEnabled,
+      }),
+
+      ...(payload?.role && {
+        role: payload.role,
       }),
     };
 

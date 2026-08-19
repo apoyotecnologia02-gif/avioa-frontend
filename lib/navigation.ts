@@ -144,14 +144,14 @@ export const NAV_SECTIONS: NavSection[] = [
         href: "/points-request",
         visibility: "leader",
       },
-      
-        {
-          key: "Public",
-          label: "Aprobar Publicaciones",
-          icon: Users,
-          href: "/approvePost",
-          visibility: "admin",
-        },
+
+      {
+        key: "Public",
+        label: "Aprobar Publicaciones",
+        icon: Users,
+        href: "/approvePost",
+        visibility: "admin",
+      },
     ],
   },
   {
@@ -174,15 +174,17 @@ export const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    label: "Gestión de Contraseñas",
+    label: "Contraseñas",
     visibility: "all",
     groups: [
       {
-        key: "passwords",
+        key: "contraseñas",
         label: "Gestión de Contraseñas",
         icon: Key,
+        // visibility: "all",
+        // items: [{ href: "/passwords", label: "Contraseñas", icon: Key }],
+        href: "/passwords",
         visibility: "all",
-        items: [{ href: "/passwords", label: "Contraseñas", icon: Key }],
       },
     ],
   },

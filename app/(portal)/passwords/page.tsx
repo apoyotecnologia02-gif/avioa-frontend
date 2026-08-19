@@ -1,8 +1,6 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { RevealPasswordDialog } from "@/components/vault/reveal-password-dialog";
 import { VaultDetails } from "@/components/vault/vault-details";
 import { VaultFormModal } from "@/components/vault/vault-form-modal";
 import { VaultHeader } from "@/components/vault/vault-header";
@@ -11,16 +9,11 @@ import {
   VaultFilterSelection,
   VaultSidebar,
 } from "@/components/vault/vault-sidebar";
-import { VaultTable } from "@/components/vault/vault-table";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
-import { useDeleteVault } from "@/hooks/useDeleteVault";
-import { useRevealPassword } from "@/hooks/useRevealPasswordVault";
-import { useVaultCategories } from "@/hooks/userVaultCategories";
-import { useToggleFavoriteVault } from "@/hooks/useToggleFavoriteVault";
+import { useVaultCategories } from "@/hooks/useVaultCategories";
 import { useVaultList } from "@/hooks/useVaultList";
 import { useVaultTags } from "@/hooks/useVaultTags";
 import { VaultItem } from "@/types/password-vault.types";
-import { Plus, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 
 export default function VaultPage() {
@@ -29,24 +22,28 @@ export default function VaultPage() {
     type: "all",
   });
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [revealedPassword, setRevealedPassword] = useState<{
+    password: string;
+    itemId: string;
+  } | null>(null);
   const debouncedSearch = useDebouncedValue(search, 350);
 
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<"create" | "edit">("create");
   const [formTarget, setFormTarget] = useState<VaultItem | null>(null);
+  const [scope, setScope] = useState<"own" | "shared">("own");
 
   const { categories } = useVaultCategories();
   const { tags } = useVaultTags();
 
   const filters = useMemo(() => {
-    if (selection.type === "favorites")
-      return { search: debouncedSearch, favorite: true };
+    const base = { search: debouncedSearch, scope };
+    if (selection.type === "favorites") return { ...base, favorite: true };
     if (selection.type === "category")
-      return { search: debouncedSearch, categoryId: selection.id };
-    if (selection.type === "tag")
-      return { search: debouncedSearch, tagId: selection.id };
-    return { search: debouncedSearch };
-  }, [selection, debouncedSearch]);
+      return { ...base, categoryId: selection.id };
+    if (selection.type === "tag") return { ...base, tagId: selection.id };
+    return base;
+  }, [selection, debouncedSearch, scope]);
 
   const { items, isLoading, reload } = useVaultList(filters);
 
@@ -55,6 +52,7 @@ export default function VaultPage() {
 
   function handleSelect(item: VaultItem) {
     setSelectedId(item.passwordVaultId);
+    setRevealedPassword(null);
   }
 
   function handleCreateNew() {
@@ -70,10 +68,15 @@ export default function VaultPage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] flex-col overflow-hidden">
-      <VaultHeader onCreateNew={handleCreateNew} />
+    // <div className="flex h-[calc(100vh-4rem)] flex-col overflow-hidden">
+    <div className="flex h-screen flex-col overflow-hidden">
+      <VaultHeader
+        onCreateNew={handleCreateNew}
+        scope={scope}
+        onScopeChange={setScope}
+      />
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex min-h-0 flex-1 overflow-hidden">
         <div className="hidden md:block">
           <VaultSidebar
             search={search}
@@ -97,10 +100,12 @@ export default function VaultPage() {
           />
         </div>
 
-        <div className={`flex-1 ${selectedItem ? "block" : "hidden md:block"}`}>
+        <div
+          className={`min-h-0 min-w-0 flex-1 ${selectedItem ? "block" : "hidden md:block"}`}
+        >
           {selectedItem ? (
             <>
-              <div className="border-b p-2 md:hidden">
+              <div className="shrink-0 border-b p-2 md:hidden">
                 <Button
                   onClick={() => setSelectedId(null)}
                   className="text-sm text-muted-foreground"
@@ -108,15 +113,30 @@ export default function VaultPage() {
                   ← Volver
                 </Button>
               </div>
-              <VaultDetails
-                item={selectedItem}
-                onEdit={handleEdit}
-                onDeleted={() => {
-                  setSelectedId(null);
-                  reload();
-                }}
-                onFavoriteToggled={reload}
-              />
+
+              <div className="min-w-0 flex-1 overflow-hidden">
+                <VaultDetails
+                  item={selectedItem}
+                  revealedPassword={revealedPassword}
+                  onRevealed={(password) => {
+                    setRevealedPassword({
+                      password,
+                      itemId: selectedItem.passwordVaultId,
+                    });
+
+                    setTimeout(() => {
+                      setRevealedPassword(null);
+                    }, 15000);
+                  }}
+                  onEdit={handleEdit}
+                  onDeleted={() => {
+                    setSelectedId(null);
+                    setRevealedPassword(null);
+                    reload();
+                  }}
+                  onFavoriteToggled={reload}
+                />
+              </div>
             </>
           ) : (
             <div className="flex h-full items-center justify-center text-sm text-muted-foreground">

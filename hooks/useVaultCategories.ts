@@ -17,7 +17,7 @@ export function useVaultCategories() {
     setIsLoading(true);
     try {
       const { data } = await api.get<VaultCategory[]>(
-        "/password-vault/categories",
+        "/password-vault/category",
         {
           skip401Redirect: true,
         },

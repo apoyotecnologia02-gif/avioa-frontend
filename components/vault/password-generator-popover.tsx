@@ -46,7 +46,6 @@ export function PasswordGeneratorPopover({
 
     try {
       const password = await generate(options);
-      console.log("password", password);
       setPreview(password);
     } catch {}
   }
@@ -55,7 +54,7 @@ export function PasswordGeneratorPopover({
     <Popover onOpenChange={(open) => open && refresh()}>
       <PopoverTrigger asChild>
         <Button>
-          <Wand2 className="" h-4 w-4 />
+          <Wand2 className="h-4 w-4" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-80 space-y-4">

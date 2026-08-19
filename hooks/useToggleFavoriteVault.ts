@@ -8,7 +8,7 @@ export function useToggleFavoriteVault(onSuccess?: (item: VaultItem) => void) {
   const toggleFavorite = async (id: string) => {
     setIsSubmitting(true);
     try {
-      const { data } = await api.post<VaultItem>(
+      const { data } = await api.patch<VaultItem>(
         `/password-vault/toggle-favorite/${id}`,
         { skip401Redirect: true },
       );

@@ -1714,8 +1714,6 @@ Todo el equipo de ${companyName} te desea un día lleno de alegría, éxitos y m
                             "scrollbar-color:hsl(var(--muted-foreground)/0.25) transparent",
                           )}
                         >
-
-
                           {/* Mostrar todos los cumpleaños del mes */}
                           {allMonthBirthdays.map((birthday) => (
                             <div
