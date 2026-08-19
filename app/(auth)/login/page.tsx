@@ -77,7 +77,7 @@ function LoginPageContent() {
   }
 
   return (
-    <div className="flex h-screen w-screen items-center justify-center bg-white p-4 overflow-hidden">
+    <div className="flex h-screen w-screen items-center justify-center bg-white p-4 overflow-hidden bg-background">
       {/* Contenedor principal con fondo tenue */}
       <div className="flex w-full h-full max-h-[98vh] flex-col overflow-hidden rounded-2xl bg-[#F8F9FA] shadow-lg lg:flex-row">
         {/* Columna izquierda - Formulario */}

@@ -144,14 +144,14 @@ export const NAV_SECTIONS: NavSection[] = [
         href: "/points-request",
         visibility: "leader",
       },
-      // PROXIMAMENTE
-      //   {
-      //     key: "mi-equipo",
-      //     label: "Mi equipo",
-      //     icon: Users,
-      //     href: "/my-team",
-      //     visibility: "leader",
-      //   },
+      
+        {
+          key: "Public",
+          label: "Aprobar Publicaciones",
+          icon: Users,
+          href: "/approvePost",
+          visibility: "admin",
+        },
     ],
   },
   {

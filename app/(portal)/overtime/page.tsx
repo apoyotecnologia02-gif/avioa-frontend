@@ -218,7 +218,7 @@ export default function OvertimePage() {
         )}
       </div>
 
-      {/* Modales */}
+      {/*Modales */}
       <RegisterOvertimeModal
         isOpen={registerOpen}
         onClose={() => setRegisterOpen(false)}
