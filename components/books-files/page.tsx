@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useMemo } from "react";
+
 import {
   File,
   FolderOpen,
@@ -35,6 +36,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/components/context/AuthContext";
 
 // ===== TIPOS =====
 
@@ -351,7 +353,6 @@ const getFileIcon = (type: Document["type"]) => {
   }
 };
 
-// Todos los iconos usan el color primario
 const getFileColor = (type: Document["type"]) => {
   return "text-primary";
 };
@@ -402,29 +403,60 @@ const scrollbarClasses = `
 // ===== COMPONENTE PRINCIPAL =====
 
 export const DocumentManagement: React.FC = () => {
+  const { user, isLoading, isAdminOrLeader, hasRole } = useAuth();
+
   const [documents, setDocuments] = useState<Document[]>(mockDocuments);
   const [folders] = useState<Folder[]>(mockFolders);
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [showUploadModal, setShowUploadModal] = useState(false);
+
   const [selectedDocs, setSelectedDocs] = useState<string[]>([]);
-  const [sortBy, setSortBy] = useState<"name" | "date" | "size" | "type">("date");
+  const [sortBy, setSortBy] = useState<"name" | "date" | "size" | "type">(
+    "date",
+  );
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 9;
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Debug: Log del usuario y roles
+  console.log("Usuario actual:", user);
+  console.log("Roles permitidos para subir: ADMIN, LEADER");
+  console.log("Tiene permiso para subir:", hasRole(["ADMIN", "LEADER"]));
+
+  // Verificar permisos - Usamos el rol directamente del usuario para más control
+  // En tu DocumentManagement, haz la comparación insensible a mayúsculas:
+   const canUpload = isAdminOrLeader();
+  const canDelete = isAdminOrLeader();
+  const canShare = hasRole(['ADMIN', 'LEADER', 'MANAGER']);
+
+  // Mostrar loading mientras se verifica autenticación
+  if (isLoading) {
+    return (
+      <div className="w-full h-[calc(100vh-120px)] flex items-center justify-center bg-muted/20 p-4">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-muted-foreground">Cargando documentos...</p>
+        </div>
+      </div>
+    );
+  }
 
   // ===== FILTRAR DOCUMENTOS =====
 
   const filteredDocuments = useMemo(() => {
     return documents.filter((doc) => {
-      const matchesSearch = doc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        doc.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      const matchesSearch =
+        doc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        doc.tags.some((tag) =>
+          tag.toLowerCase().includes(searchQuery.toLowerCase()),
+        ) ||
         doc.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
         doc.department.toLowerCase().includes(searchQuery.toLowerCase());
 
       const matchesFolder = selectedFolder
-        ? folders.find(f => f.id === selectedFolder)?.name === doc.category
+        ? folders.find((f) => f.id === selectedFolder)?.name === doc.category
         : true;
 
       return matchesSearch && matchesFolder;
@@ -439,7 +471,9 @@ export const DocumentManagement: React.FC = () => {
         case "name":
           return a.name.localeCompare(b.name);
         case "date":
-          return new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime();
+          return (
+            new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime()
+          );
         case "size":
           return parseFloat(a.size) - parseFloat(b.size);
         case "type":
@@ -466,22 +500,22 @@ export const DocumentManagement: React.FC = () => {
   // ===== HANDLERS =====
 
   const handleStarDocument = (docId: string) => {
-    setDocuments(prev =>
-      prev.map(doc =>
-        doc.id === docId ? { ...doc, starred: !doc.starred } : doc
-      )
+    setDocuments((prev) =>
+      prev.map((doc) =>
+        doc.id === docId ? { ...doc, starred: !doc.starred } : doc,
+      ),
     );
   };
 
   const handleDeleteDocument = (docId: string) => {
-    setDocuments(prev => prev.filter(doc => doc.id !== docId));
+    setDocuments((prev) => prev.filter((doc) => doc.id !== docId));
   };
 
   const handleSelectDocument = (docId: string) => {
-    setSelectedDocs(prev =>
+    setSelectedDocs((prev) =>
       prev.includes(docId)
-        ? prev.filter(id => id !== docId)
-        : [...prev, docId]
+        ? prev.filter((id) => id !== docId)
+        : [...prev, docId],
     );
   };
 
@@ -489,7 +523,7 @@ export const DocumentManagement: React.FC = () => {
     if (selectedDocs.length === paginatedDocuments.length) {
       setSelectedDocs([]);
     } else {
-      setSelectedDocs(paginatedDocuments.map(d => d.id));
+      setSelectedDocs(paginatedDocuments.map((d) => d.id));
     }
   };
 
@@ -503,12 +537,12 @@ export const DocumentManagement: React.FC = () => {
         type: "pdf",
         size: `${(file.size / 1024 / 1024).toFixed(1)} MB`,
         category: "Nuevos",
-        uploadDate: new Date().toISOString().split('T')[0],
-        lastModified: new Date().toISOString().split('T')[0],
+        uploadDate: new Date().toISOString().split("T")[0],
+        lastModified: new Date().toISOString().split("T")[0],
         uploadedBy: {
-          id: "u1",
-          name: "Usuario Actual",
-          avatar: "UA",
+          id: user?.id || "u1",
+          name: user?.name || "Usuario Actual",
+          avatar: user?.avatar || "UA",
         },
         department: "General",
         starred: false,
@@ -518,7 +552,7 @@ export const DocumentManagement: React.FC = () => {
         version: 1,
         status: "active",
       };
-      setDocuments(prev => [newDoc, ...prev]);
+      setDocuments((prev) => [newDoc, ...prev]);
       setShowUploadModal(false);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
@@ -529,9 +563,9 @@ export const DocumentManagement: React.FC = () => {
   // ===== ESTADÍSTICAS =====
 
   const totalDocuments = documents.length;
-  const starredCount = documents.filter(d => d.starred).length;
-  const sharedCount = documents.filter(d => d.shared).length;
-  const recentCount = documents.filter(d => {
+  const starredCount = documents.filter((d) => d.starred).length;
+  const sharedCount = documents.filter((d) => d.shared).length;
+  const recentCount = documents.filter((d) => {
     const date = new Date(d.uploadDate);
     const weekAgo = new Date();
     weekAgo.setDate(weekAgo.getDate() - 7);
@@ -551,7 +585,7 @@ export const DocumentManagement: React.FC = () => {
           "group bg-card rounded-xl p-4 border transition-all hover:shadow-md cursor-pointer relative",
           isSelected
             ? "border-primary ring-2 ring-primary/20 bg-primary/5"
-            : "border-border/50 hover:border-border/80 hover:bg-muted/10"
+            : "border-border/50 hover:border-border/80 hover:bg-muted/10",
         )}
         onClick={() => handleSelectDocument(doc.id)}
       >
@@ -573,7 +607,10 @@ export const DocumentManagement: React.FC = () => {
           </div>
           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
             <button
-              onClick={(e) => { e.stopPropagation(); handleStarDocument(doc.id); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleStarDocument(doc.id);
+              }}
               className="p-1 rounded-full hover:bg-muted/50 transition-colors"
             >
               {doc.starred ? (
@@ -582,20 +619,29 @@ export const DocumentManagement: React.FC = () => {
                 <StarOff className="w-4 h-4 text-muted-foreground" />
               )}
             </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); handleDeleteDocument(doc.id); }}
-              className="p-1 rounded-full hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
-            >
-              <Trash2 className="w-4 h-4 text-muted-foreground hover:text-red-500 transition-colors" />
-            </button>
+            {canDelete && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (confirm(`¿Estás seguro de eliminar "${doc.name}"?`)) {
+                    handleDeleteDocument(doc.id);
+                  }
+                }}
+                className="p-1 rounded-full hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+              >
+                <Trash2 className="w-4 h-4 text-muted-foreground hover:text-red-500 transition-colors" />
+              </button>
+            )}
           </div>
         </div>
 
         <div className="mt-3 flex items-center gap-2">
-          <span className={cn(
-            "text-xs px-2 py-0.5 rounded-full",
-            getStatusColor(doc.status)
-          )}>
+          <span
+            className={cn(
+              "text-xs px-2 py-0.5 rounded-full",
+              getStatusColor(doc.status),
+            )}
+          >
             {getStatusLabel(doc.status)}
           </span>
           {doc.shared && (
@@ -614,7 +660,7 @@ export const DocumentManagement: React.FC = () => {
           </div>
           <span>{doc.uploadedBy.name}</span>
           <span className="w-1 h-1 rounded-full bg-muted-foreground/30"></span>
-          <span>{new Date(doc.uploadDate).toLocaleDateString('es-ES')}</span>
+          <span>{new Date(doc.uploadDate).toLocaleDateString("es-ES")}</span>
         </div>
       </div>
     );
@@ -631,7 +677,7 @@ export const DocumentManagement: React.FC = () => {
         key={doc.id}
         className={cn(
           "group flex items-center gap-4 p-3 border-b border-border/50 hover:bg-muted/10 transition-all cursor-pointer",
-          isSelected && "bg-primary/5"
+          isSelected && "bg-primary/5",
         )}
         onClick={() => handleSelectDocument(doc.id)}
       >
@@ -655,24 +701,29 @@ export const DocumentManagement: React.FC = () => {
               <span className="w-1 h-1 rounded-full bg-muted-foreground/30"></span>
               <span>{doc.uploadedBy.name}</span>
               <span className="w-1 h-1 rounded-full bg-muted-foreground/30"></span>
-              <span>{new Date(doc.uploadDate).toLocaleDateString('es-ES')}</span>
+              <span>
+                {new Date(doc.uploadDate).toLocaleDateString("es-ES")}
+              </span>
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className={cn(
-            "text-xs px-2 py-0.5 rounded-full",
-            getStatusColor(doc.status)
-          )}>
+          <span
+            className={cn(
+              "text-xs px-2 py-0.5 rounded-full",
+              getStatusColor(doc.status),
+            )}
+          >
             {getStatusLabel(doc.status)}
           </span>
-          {doc.shared && (
-            <Globe className="w-3.5 h-3.5 text-primary" />
-          )}
+          {doc.shared && <Globe className="w-3.5 h-3.5 text-primary" />}
           <span className="text-xs text-muted-foreground">v{doc.version}</span>
           <button
-            onClick={(e) => { e.stopPropagation(); handleStarDocument(doc.id); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleStarDocument(doc.id);
+            }}
             className="p-1 rounded-full hover:bg-muted/50 transition-colors"
           >
             {doc.starred ? (
@@ -681,12 +732,19 @@ export const DocumentManagement: React.FC = () => {
               <StarOff className="w-4 h-4 text-muted-foreground" />
             )}
           </button>
-          <button
-            onClick={(e) => { e.stopPropagation(); handleDeleteDocument(doc.id); }}
-            className="p-1 rounded-full hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100"
-          >
-            <Trash2 className="w-4 h-4 text-muted-foreground hover:text-red-500 transition-colors" />
-          </button>
+          {canDelete && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (confirm(`¿Estás seguro de eliminar "${doc.name}"?`)) {
+                  handleDeleteDocument(doc.id);
+                }
+              }}
+              className="p-1 rounded-full hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100"
+            >
+              <Trash2 className="w-4 h-4 text-muted-foreground hover:text-red-500 transition-colors" />
+            </button>
+          )}
         </div>
       </div>
     );
@@ -694,7 +752,10 @@ export const DocumentManagement: React.FC = () => {
 
   // ===== MODAL DE SUBIDA =====
 
-  const UploadModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
+  const UploadModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({
+    isOpen,
+    onClose,
+  }) => {
     const [dragOver, setDragOver] = useState(false);
 
     if (!isOpen) return null;
@@ -727,10 +788,16 @@ export const DocumentManagement: React.FC = () => {
                 "border-2 border-dashed rounded-xl p-8 text-center transition-all",
                 dragOver
                   ? "border-primary bg-primary/5"
-                  : "border-border/50 hover:border-border/80"
+                  : "border-border/50 hover:border-border/80",
               )}
-              onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-              onDragLeave={(e) => { e.preventDefault(); setDragOver(false); }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragOver(true);
+              }}
+              onDragLeave={(e) => {
+                e.preventDefault();
+                setDragOver(false);
+              }}
               onDrop={(e) => {
                 e.preventDefault();
                 setDragOver(false);
@@ -743,12 +810,12 @@ export const DocumentManagement: React.FC = () => {
                     type: "pdf",
                     size: `${(file.size / 1024 / 1024).toFixed(1)} MB`,
                     category: "Nuevos",
-                    uploadDate: new Date().toISOString().split('T')[0],
-                    lastModified: new Date().toISOString().split('T')[0],
+                    uploadDate: new Date().toISOString().split("T")[0],
+                    lastModified: new Date().toISOString().split("T")[0],
                     uploadedBy: {
-                      id: "u1",
-                      name: "Usuario Actual",
-                      avatar: "UA",
+                      id: user?.id || "u1",
+                      name: user?.name || "Usuario Actual",
+                      avatar: user?.avatar || "UA",
                     },
                     department: "General",
                     starred: false,
@@ -758,7 +825,7 @@ export const DocumentManagement: React.FC = () => {
                     version: 1,
                     status: "active",
                   };
-                  setDocuments(prev => [newDoc, ...prev]);
+                  setDocuments((prev) => [newDoc, ...prev]);
                   onClose();
                 }
               }}
@@ -802,6 +869,7 @@ export const DocumentManagement: React.FC = () => {
       <div className="h-full max-w-7xl mx-auto">
         <div className="h-full bg-card/30 rounded-2xl p-4 backdrop-blur-sm border border-border/50 flex flex-col shadow-sm">
           <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 flex-1 min-h-0">
+            {/* <TokenLoader /> */}
             {/* Barra lateral izquierda - Folders */}
             <aside className="h-full overflow-hidden">
               <div className="bg-card rounded-xl shadow-sm p-5 h-full flex flex-col border border-border/50 hover:border-border/80 transition-colors">
@@ -810,46 +878,73 @@ export const DocumentManagement: React.FC = () => {
                     <FolderOpen className="w-4 h-4 text-primary" />
                     Documentos
                   </h2>
-                  <button
-                    onClick={() => setShowUploadModal(true)}
-                    className="p-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </button>
+                  {canUpload && (
+                    <button
+                      onClick={() => setShowUploadModal(true)}
+                      className="p-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                      title="Subir documento (Requiere rol ADMIN o LEADER)"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
 
                 {/* Estadísticas rápidas */}
                 <div className="grid grid-cols-2 gap-2 mb-4">
                   <div className="bg-muted/20 rounded-lg p-2 text-center">
-                    <p className="text-lg font-bold text-foreground">{totalDocuments}</p>
+                    <p className="text-lg font-bold text-foreground">
+                      {totalDocuments}
+                    </p>
                     <p className="text-[10px] text-muted-foreground">Total</p>
                   </div>
                   <div className="bg-muted/20 rounded-lg p-2 text-center">
-                    <p className="text-lg font-bold text-amber-500">{starredCount}</p>
-                    <p className="text-[10px] text-muted-foreground">Favoritos</p>
+                    <p className="text-lg font-bold text-amber-500">
+                      {starredCount}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">
+                      Favoritos
+                    </p>
                   </div>
                   <div className="bg-muted/20 rounded-lg p-2 text-center">
-                    <p className="text-lg font-bold text-primary">{sharedCount}</p>
-                    <p className="text-[10px] text-muted-foreground">Compartidos</p>
+                    <p className="text-lg font-bold text-primary">
+                      {sharedCount}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">
+                      Compartidos
+                    </p>
                   </div>
                   <div className="bg-muted/20 rounded-lg p-2 text-center">
-                    <p className="text-lg font-bold text-primary">{recentCount}</p>
-                    <p className="text-[10px] text-muted-foreground">Recientes</p>
+                    <p className="text-lg font-bold text-primary">
+                      {recentCount}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">
+                      Recientes
+                    </p>
                   </div>
                 </div>
 
-                <div className={cn("flex-1 overflow-y-auto space-y-1", scrollbarClasses)}>
+                <div
+                  className={cn(
+                    "flex-1 overflow-y-auto space-y-1",
+                    scrollbarClasses,
+                  )}
+                >
                   <button
-                    onClick={() => { setSelectedFolder(null); setCurrentPage(1); }}
+                    onClick={() => {
+                      setSelectedFolder(null);
+                      setCurrentPage(1);
+                    }}
                     className={cn(
                       "w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm",
                       !selectedFolder
                         ? "bg-primary/10 text-primary"
-                        : "text-muted-foreground hover:bg-muted/30 hover:text-foreground"
+                        : "text-muted-foreground hover:bg-muted/30 hover:text-foreground",
                     )}
                   >
                     <Folder className="w-4 h-4 text-primary" />
-                    <span className="flex-1 text-left">Todos los documentos</span>
+                    <span className="flex-1 text-left">
+                      Todos los documentos
+                    </span>
                     <span className="text-xs bg-muted/30 px-2 py-0.5 rounded-full">
                       {totalDocuments}
                     </span>
@@ -858,21 +953,28 @@ export const DocumentManagement: React.FC = () => {
                   {folders.map((folder) => (
                     <button
                       key={folder.id}
-                      onClick={() => { setSelectedFolder(folder.id); setCurrentPage(1); }}
+                      onClick={() => {
+                        setSelectedFolder(folder.id);
+                        setCurrentPage(1);
+                      }}
                       className={cn(
                         "w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm group",
                         selectedFolder === folder.id
                           ? "bg-primary/10 text-primary"
-                          : "text-muted-foreground hover:bg-muted/30 hover:text-foreground"
+                          : "text-muted-foreground hover:bg-muted/30 hover:text-foreground",
                       )}
                     >
-                      <div className={cn(
-                        "p-1.5 rounded-lg bg-gradient-to-br text-white",
-                        folder.color
-                      )}>
+                      <div
+                        className={cn(
+                          "p-1.5 rounded-lg bg-gradient-to-br text-white",
+                          folder.color,
+                        )}
+                      >
                         {folder.icon}
                       </div>
-                      <span className="flex-1 text-left truncate">{folder.name}</span>
+                      <span className="flex-1 text-left truncate">
+                        {folder.name}
+                      </span>
                       <span className="text-xs bg-muted/30 px-2 py-0.5 rounded-full group-hover:bg-muted/50 transition-colors">
                         {folder.documentCount}
                       </span>
@@ -886,6 +988,18 @@ export const DocumentManagement: React.FC = () => {
                       <Shield className="w-3.5 h-3.5 text-primary flex-shrink-0 mt-0.5" />
                       <span>Todos los documentos están cifrados y seguros</span>
                     </p>
+                    {user && (
+                      <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1">
+                        <span className="w-1 h-1 rounded-full bg-primary"></span>
+                        Rol: {user.role}
+                      </p>
+                    )}
+                    {!user && (
+                      <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1">
+                        <span className="w-1 h-1 rounded-full bg-yellow-500"></span>
+                        No autenticado
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -901,7 +1015,10 @@ export const DocumentManagement: React.FC = () => {
                     type="text"
                     placeholder="Buscar por nombre, categoría, departamento..."
                     value={searchQuery}
-                    onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setCurrentPage(1);
+                    }}
                     className="w-full pl-9 pr-4 py-2 bg-background border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-shadow text-foreground placeholder:text-muted-foreground"
                   />
                 </div>
@@ -913,7 +1030,7 @@ export const DocumentManagement: React.FC = () => {
                       "p-2 rounded-lg transition-colors",
                       viewMode === "grid"
                         ? "bg-primary/10 text-primary"
-                        : "text-muted-foreground hover:bg-muted/30 hover:text-foreground"
+                        : "text-muted-foreground hover:bg-muted/30 hover:text-foreground",
                     )}
                   >
                     <Grid3x3 className="w-4 h-4" />
@@ -924,7 +1041,7 @@ export const DocumentManagement: React.FC = () => {
                       "p-2 rounded-lg transition-colors",
                       viewMode === "list"
                         ? "bg-primary/10 text-primary"
-                        : "text-muted-foreground hover:bg-muted/30 hover:text-foreground"
+                        : "text-muted-foreground hover:bg-muted/30 hover:text-foreground",
                     )}
                   >
                     <List className="w-4 h-4" />
@@ -942,20 +1059,24 @@ export const DocumentManagement: React.FC = () => {
                   <option value="type">Tipo</option>
                 </select>
 
-                <button
-                  onClick={() => setShowUploadModal(true)}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
-                >
-                  <Upload className="w-4 h-4" />
-                  <span className="hidden sm:inline">Subir</span>
-                </button>
+                {canUpload && (
+                  <button
+                    onClick={() => setShowUploadModal(true)}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+                  >
+                    <Upload className="w-4 h-4" />
+                    <span className="hidden sm:inline">Subir</span>
+                  </button>
+                )}
               </div>
 
               {/* Selección masiva */}
               {selectedDocs.length > 0 && (
                 <div className="flex items-center gap-3 px-4 py-2 bg-primary/10 rounded-lg mb-3 flex-shrink-0">
                   <span className="text-sm text-foreground">
-                    {selectedDocs.length} documento{selectedDocs.length !== 1 ? 's' : ''} seleccionado{selectedDocs.length !== 1 ? 's' : ''}
+                    {selectedDocs.length} documento
+                    {selectedDocs.length !== 1 ? "s" : ""} seleccionado
+                    {selectedDocs.length !== 1 ? "s" : ""}
                   </span>
                   <button
                     onClick={() => setSelectedDocs([])}
@@ -964,20 +1085,45 @@ export const DocumentManagement: React.FC = () => {
                     <X className="w-4 h-4" />
                   </button>
                   <div className="flex-1"></div>
-                  <button className="p-1.5 rounded-lg hover:bg-primary/20 transition-colors text-primary">
-                    <Share2 className="w-4 h-4" />
-                  </button>
+                  {canShare && (
+                    <button className="p-1.5 rounded-lg hover:bg-primary/20 transition-colors text-primary">
+                      <Share2 className="w-4 h-4" />
+                    </button>
+                  )}
                   <button className="p-1.5 rounded-lg hover:bg-primary/20 transition-colors text-primary">
                     <Download className="w-4 h-4" />
                   </button>
-                  <button className="p-1.5 rounded-lg hover:bg-red-500/20 transition-colors text-red-500">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  {canDelete && (
+                    <button
+                      onClick={() => {
+                        if (
+                          confirm(
+                            `¿Estás seguro de eliminar ${selectedDocs.length} documento(s)?`,
+                          )
+                        ) {
+                          setDocuments((prev) =>
+                            prev.filter(
+                              (doc) => !selectedDocs.includes(doc.id),
+                            ),
+                          );
+                          setSelectedDocs([]);
+                        }
+                      }}
+                      className="p-1.5 rounded-lg hover:bg-red-500/20 transition-colors text-red-500"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
               )}
 
               {/* Lista de documentos */}
-              <div className={cn("flex-1 overflow-y-auto rounded-xl", scrollbarClasses)}>
+              <div
+                className={cn(
+                  "flex-1 overflow-y-auto rounded-xl",
+                  scrollbarClasses,
+                )}
+              >
                 {paginatedDocuments.length > 0 ? (
                   viewMode === "grid" ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 p-1">
@@ -985,7 +1131,7 @@ export const DocumentManagement: React.FC = () => {
                     </div>
                   ) : (
                     <div className="bg-card rounded-xl border border-border/50 overflow-hidden">
-                      <div 
+                      <div
                         className="flex items-center px-3 py-2 bg-muted/20 border-b border-border/50 text-xs text-muted-foreground font-medium cursor-pointer"
                         onClick={handleSelectAll}
                       >
@@ -1004,13 +1150,15 @@ export const DocumentManagement: React.FC = () => {
                     <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-4">
                       <FolderOpen className="w-10 h-10 text-primary" />
                     </div>
-                    <h3 className="text-lg font-medium text-foreground">No hay documentos</h3>
+                    <h3 className="text-lg font-medium text-foreground">
+                      No hay documentos
+                    </h3>
                     <p className="text-sm text-muted-foreground mt-1 max-w-sm">
                       {searchQuery
                         ? "No se encontraron documentos con esa búsqueda"
                         : "Sube tu primer documento para comenzar a organizar tus archivos"}
                     </p>
-                    {!searchQuery && (
+                    {!searchQuery && canUpload && (
                       <button
                         onClick={() => setShowUploadModal(true)}
                         className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors flex items-center gap-2"
@@ -1027,7 +1175,12 @@ export const DocumentManagement: React.FC = () => {
               {totalPages > 1 && (
                 <div className="flex items-center justify-between pt-4 border-t border-border/50 mt-2 flex-shrink-0">
                   <p className="text-sm text-muted-foreground">
-                    Mostrando {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, sortedDocuments.length)} de {sortedDocuments.length} documentos
+                    Mostrando {(currentPage - 1) * itemsPerPage + 1} -{" "}
+                    {Math.min(
+                      currentPage * itemsPerPage,
+                      sortedDocuments.length,
+                    )}{" "}
+                    de {sortedDocuments.length} documentos
                   </p>
                   <div className="flex items-center gap-1">
                     <button
@@ -1037,7 +1190,7 @@ export const DocumentManagement: React.FC = () => {
                         "p-2 rounded-lg border border-border/50 transition-colors",
                         currentPage === 1
                           ? "opacity-50 cursor-not-allowed"
-                          : "hover:bg-muted/30 hover:border-border/80 hover:text-primary"
+                          : "hover:bg-muted/30 hover:border-border/80 hover:text-primary",
                       )}
                     >
                       <ChevronLeft className="w-4 h-4" />
@@ -1061,7 +1214,7 @@ export const DocumentManagement: React.FC = () => {
                             "w-8 h-8 rounded-lg text-sm transition-colors",
                             currentPage === pageNum
                               ? "bg-primary text-primary-foreground"
-                              : "text-muted-foreground hover:bg-muted/30 hover:text-primary"
+                              : "text-muted-foreground hover:bg-muted/30 hover:text-primary",
                           )}
                         >
                           {pageNum}
@@ -1075,7 +1228,7 @@ export const DocumentManagement: React.FC = () => {
                         "p-2 rounded-lg border border-border/50 transition-colors",
                         currentPage === totalPages
                           ? "opacity-50 cursor-not-allowed"
-                          : "hover:bg-muted/30 hover:border-border/80 hover:text-primary"
+                          : "hover:bg-muted/30 hover:border-border/80 hover:text-primary",
                       )}
                     >
                       <ChevronRight className="w-4 h-4" />
