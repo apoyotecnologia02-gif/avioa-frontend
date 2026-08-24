@@ -50,12 +50,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { useBirthdayPosts } from "@/hooks/useBirthdayPosts";
 import { cn } from "@/lib/utils";
 
-<<<<<<< HEAD
 
 
 // ===== TIPOS =====
-=======
->>>>>>> 71694d543b270fd90e540343fb8d7e01bd07439a
 interface User {
   userId: string;
   name: string;
@@ -1208,7 +1205,6 @@ export const WallOfPosts: React.FC = () => {
     error: usersError,
   } = useGetUsers();
   const { user: authUser, isLoading: isLoadingAuth } = useAuth();
-<<<<<<< HEAD
   const { data: birthdayData, isLoading: isLoadingBirthday, error: birthdayError } = useBirthdayPosts();
   
 
@@ -1220,13 +1216,6 @@ useEffect(() => {
   console.log("Todos los localStorage:", localStorage);
   console.log("=== FIN DEBUG ===");
 }, []);
-=======
-  const {
-    data: birthdayData,
-    isLoading: isLoadingBirthday,
-    error: birthdayError,
-  } = useBirthdayPosts();
->>>>>>> 71694d543b270fd90e540343fb8d7e01bd07439a
 
   const [posts, setPosts] = useState<Post[]>(initialPosts);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -1421,11 +1410,7 @@ useEffect(() => {
     },
     {
       icon: FileText,
-<<<<<<< HEAD
-      label: "Leaves",
-=======
       label: "Ausencias",
->>>>>>> 71694d543b270fd90e540343fb8d7e01bd07439a
       color: "text-primary",
       onClick: () => setIsAbsencesModalOpen(true),
     },
@@ -1829,9 +1814,5 @@ useEffect(() => {
       />
     </>
   );
-<<<<<<< HEAD
 
 };
-=======
-};
->>>>>>> 71694d543b270fd90e540343fb8d7e01bd07439a
