@@ -20,8 +20,9 @@ export interface AuthTokens {
 }
 
 export interface LoginCredentials {
-  email: string;
+  email?: string;
   password: string;
+  documentNumber?: string;
 }
 
 export interface LoginResponse {
@@ -30,11 +31,13 @@ export interface LoginResponse {
   user: User;
   temporaryToken?: string;
   twoFactorEnabled?: boolean;
+  mustChangePassword?: boolean;
 }
 
 export interface Login2FAResponse {
-  twoFactorEnabled: boolean;
+  twoFactorEnabled?: boolean;
   temporaryToken?: string;
+  mustChangePassword?: boolean;
 }
 
 export interface AuthState {

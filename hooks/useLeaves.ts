@@ -27,7 +27,7 @@ function getErrorMessage(err: unknown, fallback: string) {
   return fallback;
 }
 
-export function useVacationBalance() {
+export function useVacationBalance(onSuccess?: () => void) {
   const [balance, setBalance] = useState<VacationBalance | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -38,6 +38,7 @@ export function useVacationBalance() {
         skip401Redirect: true,
       });
       setBalance(res.data);
+      onSuccess?.();
     } catch (err) {
       toast.error(getErrorMessage(err, "Error al cargar tu saldo"));
     } finally {
@@ -53,7 +54,7 @@ export function useVacationBalance() {
 }
 
 // mis solicitudes
-export function useMyLeaves(year?: number) {
+export function useMyLeaves(year?: number, onSuccess?: () => void) {
   const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -65,6 +66,7 @@ export function useMyLeaves(year?: number) {
         skip401Redirect: true,
       });
       setLeaves(res.data);
+      onSuccess?.();
     } catch (err) {
       toast.error(getErrorMessage(err, "Error al cargar tus solicitudes"));
     } finally {
@@ -80,7 +82,7 @@ export function useMyLeaves(year?: number) {
 }
 
 // solicitudes del equipo
-export function useTeamLeaves(enabled: boolean) {
+export function useTeamLeaves(enabled: boolean, onSuccess?: () => void) {
   const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
   const [isLoading, setIsLoading] = useState(enabled);
 
@@ -92,6 +94,7 @@ export function useTeamLeaves(enabled: boolean) {
         skip401Redirect: true,
       });
       setLeaves(Array.isArray(res.data) ? res.data : []);
+      onSuccess?.();
     } catch (err) {
       toast.error(
         getErrorMessage(err, "Error al cargar las solicitudes del equipo"),

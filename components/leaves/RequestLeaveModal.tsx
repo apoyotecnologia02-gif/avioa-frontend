@@ -111,10 +111,10 @@ export function RequestLeaveModal({
       setError("Este tipo de ausencia requiere adjuntar el soporte");
       return;
     }
-    if (exceedsBalance) {
-      setError("No tienes saldo suficiente para estas fechas");
-      return;
-    }
+    // if (exceedsBalance) {
+    //   setError("No tienes saldo suficiente para estas fechas");
+    //   return;
+    // }
 
     try {
       await onSubmit({
