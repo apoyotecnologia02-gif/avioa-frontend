@@ -4,12 +4,10 @@ import {
   FileCheck,
   Download,
   Eye,
-  Calendar,
-  User,
-  Building2,
   FileText,
   CheckCircle,
   Clock,
+  Building2,
   Maximize2,
   Minimize2,
 } from "lucide-react";
@@ -102,17 +100,6 @@ const mockCertificates: Certificate[] = [
   }
 ];
 
-const getInitials = (name: string): string => {
-  if (!name) return "U";
-  const parts = name.trim().split(" ");
-  if (parts.length === 1) {
-    return parts[0].charAt(0).toUpperCase();
-  }
-  const first = parts[0].charAt(0);
-  const last = parts[parts.length - 1].charAt(0);
-  return (first + last).toUpperCase();
-};
-
 const scrollbarStyles = `
   [&::-webkit-scrollbar]:w-1.5
   [&::-webkit-scrollbar]:h-1.5
@@ -128,16 +115,27 @@ const scrollbarStyles = `
   scrollbar-color:hsl(var(--muted-foreground)/0.25) transparent
 `;
 
+const getInitials = (name: string): string => {
+  if (!name) return "U";
+  const parts = name.trim().split(" ");
+  if (parts.length === 1) {
+    return parts[0].charAt(0).toUpperCase();
+  }
+  const first = parts[0].charAt(0);
+  const last = parts[parts.length - 1].charAt(0);
+  return (first + last).toUpperCase();
+};
+
 export const CertificatesModal: React.FC<CertificatesModalProps> = ({
   isOpen,
   onClose,
 }) => {
   const { user } = useAuth();
   const [selectedCertificate, setSelectedCertificate] = useState<Certificate | null>(null);
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const itemsPerPage = 4;
 
   const userName = user?.name || 'Usuario';
@@ -212,11 +210,7 @@ export const CertificatesModal: React.FC<CertificatesModalProps> = ({
 
   const handleDownload = (certificate: Certificate) => {
     console.log(`Descargando: ${certificate.fileName}`);
-    if (certificate.pdfUrl) {
-      window.open(certificate.pdfUrl, '_blank');
-    } else {
-      alert(`Descargando ${certificate.fileName} (${certificate.fileSize})`);
-    }
+    alert(`Descargando ${certificate.fileName} (${certificate.fileSize})`);
   };
 
   const handleView = (certificate: Certificate) => {
@@ -320,7 +314,10 @@ export const CertificatesModal: React.FC<CertificatesModalProps> = ({
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4">
+          <div className={cn(
+            "flex-1 overflow-y-auto p-4",
+            scrollbarStyles
+          )}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {paginatedCertificates.length > 0 ? (
                 paginatedCertificates.map((cert) => (
@@ -461,16 +458,16 @@ export const CertificatesModal: React.FC<CertificatesModalProps> = ({
       {selectedCertificate && (
         <div
           className={cn(
-            "fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm transition-all duration-300",
-            isFullscreen && "bg-black/95"
+            "fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm transition-all",
+            isFullscreen && "p-0"
           )}
           onClick={() => !isFullscreen && setSelectedCertificate(null)}
         >
           <div
             className={cn(
-              "bg-card rounded-2xl shadow-2xl border border-border/50 transition-all duration-300",
-              isFullscreen 
-                ? "w-full h-full max-w-full max-h-full mx-0 rounded-none" 
+              "bg-card rounded-2xl shadow-2xl border border-border/50 flex flex-col transition-all",
+              isFullscreen
+                ? "w-full h-full rounded-none"
                 : "w-full max-w-4xl mx-4 max-h-[90vh]"
             )}
             onClick={(e) => e.stopPropagation()}
@@ -492,13 +489,13 @@ export const CertificatesModal: React.FC<CertificatesModalProps> = ({
               <div className="flex items-center gap-2">
                 <button
                   onClick={toggleFullscreen}
-                  className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground"
+                  className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
                   title={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
                 >
                   {isFullscreen ? (
-                    <Minimize2 className="w-5 h-5" />
+                    <Minimize2 className="w-4 h-4" />
                   ) : (
-                    <Maximize2 className="w-5 h-5" />
+                    <Maximize2 className="w-4 h-4" />
                   )}
                 </button>
                 <button
@@ -510,49 +507,21 @@ export const CertificatesModal: React.FC<CertificatesModalProps> = ({
               </div>
             </div>
 
-            <div className={cn(
-              "p-4 overflow-y-auto",
-              isFullscreen ? "h-[calc(100vh-120px)]" : "h-[500px]"
-            )}>
-              {selectedCertificate.pdfUrl ? (
-                <iframe
-                  src={selectedCertificate.pdfUrl}
-                  className="w-full h-full rounded-lg border border-border/50"
-                  title={selectedCertificate.name}
-                />
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full text-center">
-                  <div className="w-20 h-20 rounded-full bg-muted/30 flex items-center justify-center mb-4">
-                    <FileText className="w-10 h-10 text-muted-foreground" />
-                  </div>
-                  <p className="text-foreground font-medium">Vista previa no disponible</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    El documento no se puede visualizar en el navegador
-                  </p>
-                  <button
-                    onClick={() => handleDownload(selectedCertificate)}
-                    className="mt-4 px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium flex items-center gap-2"
-                  >
-                    <Download className="w-4 h-4" />
-                    Descargar PDF
-                  </button>
-                </div>
-              )}
+            <div className="flex-1 overflow-hidden bg-muted/10">
+              <iframe
+                src={selectedCertificate.pdfUrl || 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'}
+                className="w-full h-full"
+                title={selectedCertificate.name}
+              />
             </div>
 
-            <div className="flex items-center justify-between p-4 border-t border-border bg-muted/5">
+            <div className="flex items-center justify-between p-4 border-t border-border flex-shrink-0 bg-muted/5">
               <div className="text-xs text-muted-foreground">
-                <span className="font-medium">Emisión:</span> {formatDate(selectedCertificate.issueDate)}
-                {selectedCertificate.status === 'active' && (
-                  <span className="ml-4">
-                    <span className="font-medium">Estado:</span> 
-                    <span className="ml-1 text-green-600 dark:text-green-400">Activo</span>
-                  </span>
-                )}
+                {selectedCertificate.description}
               </div>
               <button
                 onClick={() => handleDownload(selectedCertificate)}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium flex items-center gap-2 text-sm"
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium text-sm flex items-center gap-2"
               >
                 <Download className="w-4 h-4" />
                 Descargar PDF
