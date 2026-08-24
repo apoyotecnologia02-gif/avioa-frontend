@@ -14,7 +14,7 @@ import { useAuth } from "@/hooks/useAuth";
 import Link from "next/link";
 
 const loginSchema = z.object({
-  email: z.string().email("Ingresa un correo electrónico válido"),
+  documentNumber: z.string().min(1, "El documento es requerido"),
   password: z.string().min(1, "La contraseña es requerida"),
 });
 
@@ -53,12 +53,37 @@ function LoginPageContent() {
     try {
       const result = await login(data);
 
-      if (result.twoFactorEnabled) {
-        router.push(`/two-factor?temporaryToken=${result.temporaryToken}`);
-      } else {
-        const from = searchParams.get("from") || "/dashboard";
-        router.push(from);
+      if (result.mustChangePassword) {
+        if (!result.temporaryToken) {
+          throw new Error(
+            "No se recibió el token necesario para cambiar la contraseña",
+          );
+        }
+
+        router.push(
+          `/change-password?temporaryToken=${encodeURIComponent(result.temporaryToken)}`,
+        );
+
+        return;
       }
+
+      if (result.twoFactorEnabled) {
+        if (!result.temporaryToken) {
+          throw new Error("No se recibió el token temporal para 2FA.");
+        }
+
+        router.push(
+          `/two-factor?temporaryToken=${encodeURIComponent(
+            result.temporaryToken,
+          )}`,
+        );
+
+        return;
+      }
+
+      const from = searchParams.get("from") || "/dashboard";
+
+      router.push(from);
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
@@ -77,7 +102,7 @@ function LoginPageContent() {
   }
 
   return (
-    <div className="flex h-screen w-screen items-center justify-center bg-white p-4 overflow-hidden">
+    <div className="flex h-screen w-screen items-center justify-center bg-white p-4 overflow-hidden bg-background">
       {/* Contenedor principal con fondo tenue */}
       <div className="flex w-full h-full max-h-[98vh] flex-col overflow-hidden rounded-2xl bg-[#F8F9FA] shadow-lg lg:flex-row">
         {/* Columna izquierda - Formulario */}
@@ -115,22 +140,23 @@ function LoginPageContent() {
                 {/* Email */}
                 <div>
                   <Label
-                    htmlFor="email"
+                    htmlFor="documentNumber"
                     className="text-sm font-medium text-gray-700"
                   >
-                    Email
+                    Número de documento
                   </Label>
                   <Input
-                    id="email"
-                    type="email"
-                    placeholder="tu@gmail.com"
-                    {...register("email")}
+                    id="documentNumber"
+                    // type="email"
+                    type="text"
+                    placeholder="Ingresa tu número de documento"
+                    {...register("documentNumber")}
                     className="mt-1 h-10 rounded-lg border-gray-200 bg-white px-3 text-gray-900 placeholder:text-gray-400 focus:border-primary focus:ring-primary"
-                    aria-invalid={!!errors.email}
+                    aria-invalid={!!errors.documentNumber}
                   />
-                  {errors.email && (
+                  {errors.documentNumber && (
                     <p className="mt-0.5 text-xs text-destructive">
-                      {errors.email.message}
+                      {errors.documentNumber.message}
                     </p>
                   )}
                 </div>

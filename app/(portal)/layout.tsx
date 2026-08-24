@@ -1,3 +1,4 @@
+// app/(portal)/layout.tsx
 'use client'
 
 import { useEffect } from 'react'
@@ -5,6 +6,23 @@ import { useRouter } from 'next/navigation'
 import { AppShell } from '@/components/layout/AppShell'
 import { useAuth } from '@/hooks/useAuth'
 import { SocketProvider } from '@/components/providers/SocketProvider'
+import { cn } from '@/lib/utils'
+
+// ===== SCROLLBAR STYLES =====
+const scrollbarStyles = `
+  [&::-webkit-scrollbar]:w-1.5
+  [&::-webkit-scrollbar]:h-1.5
+  [&::-webkit-scrollbar-track]:bg-muted/20
+  [&::-webkit-scrollbar-track]:rounded-full
+  [&::-webkit-scrollbar-thumb]:bg-muted-foreground/25
+  [&::-webkit-scrollbar-thumb]:rounded-full
+  [&::-webkit-scrollbar-thumb]:hover:bg-muted-foreground/40
+  dark:[&::-webkit-scrollbar-track]:bg-muted/15
+  dark:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/30
+  dark:[&::-webkit-scrollbar-thumb]:hover:bg-muted-foreground/50
+  scrollbar-width:thin
+  scrollbar-color:hsl(var(--muted-foreground)/0.25) transparent
+`
 
 export default function PortalLayout({
   children,
@@ -59,6 +77,18 @@ export default function PortalLayout({
     }
   }, [isAuthenticated, token, logout])
 
+  // Deshabilitar Ctrl+B (opcional)
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+        e.preventDefault()
+      }
+    }
+    
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [])
+
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
@@ -73,7 +103,15 @@ export default function PortalLayout({
 
   return (
     <SocketProvider>
-      <AppShell>{children}</AppShell>
+      <AppShell>
+        {/* ===== CONTENIDO CON SCROLL PERSONALIZADO ===== */}
+        <div className={cn(
+          "h-full w-full overflow-y-auto",
+          scrollbarStyles
+        )}>
+          {children}
+        </div>
+      </AppShell>
     </SocketProvider>
   )
 }

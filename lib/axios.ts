@@ -91,15 +91,16 @@ function refreshAccessToken(): Promise<string> {
       if (!refreshToken) throw new Error("Missing refresh token");
 
       const { data } = await axios.post(`${baseURL}/auth/refresh`, {
-        refresh_token: refreshToken,
+        refreshToken,
       });
-      if (!data?.access_token) throw new Error("Refresh sin access_token");
 
-      if (data.refresh_token) {
-        localStorage.setItem(REFRESH_KEY, data.refresh_token);
+      if (!data?.accessToken) throw new Error("Refresh sin access_token");
+
+      if (data.refreshToken) {
+        localStorage.setItem(REFRESH_KEY, data.refreshToken);
       }
-      setSession(data.access_token, data.refresh_token);
-      return data.access_token as string;
+      setSession(data.accessToken, data.refreshToken);
+      return data.accessToken as string;
     } finally {
       refreshPromise = null;
     }
@@ -140,7 +141,11 @@ api.interceptors.response.use(
     const original = error.config as InternalAxiosRequestConfig | undefined;
     const status = error.response?.status;
 
-    if ((status !== 401 && typeof window === "undefined") || !original) {
+    // if ((status !== 401 && typeof window === "undefined") || !original) {
+    //   return Promise.reject(error);
+    // }
+
+    if (status !== 401 || !original) {
       return Promise.reject(error);
     }
 
@@ -176,16 +181,5 @@ api.interceptors.response.use(
       redirectToLogin();
       return Promise.reject(error);
     }
-
-    // if (error.response?.status === 401 && !error.config?.skip401Redirect) {
-    //   if (typeof window !== "undefined") {
-    //     localStorage.removeItem("portal_access_token");
-    //     localStorage.removeItem("portal_user");
-    //     document.cookie =
-    //       "portal_access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-    //     window.location.href = "/login";
-    //   }
-    // }
-    // return Promise.reject(error);
   },
 );

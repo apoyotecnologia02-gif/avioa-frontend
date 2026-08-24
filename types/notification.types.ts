@@ -1,3 +1,5 @@
+import { TeamOvertimeRecord } from "./overtime.types";
+
 export enum NotificationType {
   OVERTIME_REQUEST = "OVERTIME_REQUEST",
   POINT_REQUEST = "POINT_REQUEST",
@@ -16,6 +18,15 @@ export interface NotificationPayload {
   type: NotificationType | string;
   title: string;
   message: string;
+  requestId?: string;
+  requestDetails?: PointRequestDetails;
+}
+
+export interface AddOvertimeRequestPayload {
+  type: NotificationType | string;
+  title: string;
+  message: string;
+  requests: TeamOvertimeRecord[];
   requestId?: string;
   requestDetails?: PointRequestDetails;
 }

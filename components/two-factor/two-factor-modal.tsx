@@ -120,10 +120,21 @@ export default function TwoFactorModal({
             </div>
           </div>
 
+          <div className="w-full space-y-2">
+            <p className="mb-2 text-sm font-medium">
+              Descarga los codigos de recuperación por seguridad.
+            </p>
+
+            <div className="flex items-center justify-between gap-2">
+              <Button variant="outline">Descargar codigos</Button>
+            </div>
+          </div>
+
           <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-100">
             <p className="font-medium">Siguientes pasos</p>
 
             <ol className="mt-2 list-decimal space-y-1 pl-5">
+              <li>Descarga los codigos de recuperación</li>
               <li>Abre Google Authenticator o Microsoft Authenticator.</li>
               <li>Escanea el código QR o ingresa la clave manualmente</li>
               <li>

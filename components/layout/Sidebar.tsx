@@ -126,6 +126,11 @@ export function Sidebar() {
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const [hydrated, setHydrated] = useState(false);
 
+  <SidebarRail 
+  className="hover:bg-sidebar-accent hover:w-2" 
+  // O personaliza el comportamiento
+/>
+
   useEffect(() => {
     try {
       const stored = localStorage.getItem(OPEN_GROUPS_KEY);

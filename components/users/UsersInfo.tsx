@@ -208,7 +208,15 @@ export function UsersInfo() {
                             className="object-cover"
                           />
                           <AvatarFallback className="bg-primary/10 text-primary">
-                            {user ? nameInitials(user.name) : "U"}
+                            {(() => {
+                              if (!user.name) return "U";
+                              const parts = user.name.trim().split(" ");
+                              if (parts.length === 1)
+                                return parts[0].charAt(0).toUpperCase();
+                              const first = parts[0].charAt(0);
+                              const last = parts[parts.length - 1].charAt(0);
+                              return (first + last).toUpperCase();
+                            })()}
                           </AvatarFallback>
                         </Avatar>
                         <div>
@@ -221,7 +229,13 @@ export function UsersInfo() {
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
                       <Badge variant="secondary" className="font-normal">
-                        {user.role}
+                        {(()=> { 
+                          if (user.role === "ADMIN") return "Administrador";
+                          if (user.role === "MANAGER") return "Gerente";
+                          if (user.role === "EMPLOYEE") return "Empleado";
+                          if(user.role === "LEADER") return "Líder";
+                          return user.role;
+                        })()}
                       </Badge>
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
@@ -267,10 +281,15 @@ export function UsersInfo() {
                   <div className="flex items-start gap-3">
                     <Avatar className="h-12 w-12">
                       <AvatarFallback className="bg-primary/10 text-primary text-lg">
-                        {user.name
-                          ?.split(" ")
-                          .map((n) => n[0])
-                          .join("") || "U"}
+                        {(() => {
+                          if (!user.name) return "U";
+                          const parts = user.name.trim().split(" ");
+                          if (parts.length === 1)
+                            return parts[0].charAt(0).toUpperCase();
+                          const first = parts[0].charAt(0);
+                          const last = parts[parts.length - 1].charAt(0);
+                          return (first + last).toUpperCase();
+                        })()}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
