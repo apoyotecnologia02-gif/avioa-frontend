@@ -36,6 +36,7 @@ export interface User {
   role: Role;
   status: UserStatus;
   department?: string;
+  area?: string;
   position?: string;
   leaderId?: string;
   managerId?: string;
@@ -44,6 +45,7 @@ export interface User {
   lastLoginAt?: string;
   createdAt: string;
   updatedAt: string;
+  canPublishInFeed?: boolean;
 }
 
 export interface CreateUserDto {

@@ -16,10 +16,11 @@ import { useNotificationStore } from "@/store/notificationStore";
 import { NotificationType } from "@/types/notification.types";
 import { useOvertimeStore } from "@/store/overtimeStore";
 import { usePathname, useRouter } from "next/navigation";
-import { ThemeToggle } from '@/components/ThemeToggle';
-import { Input } from '@/components/ui/input';
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { Input } from "@/components/ui/input";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
+import { useEffect } from "react";
 
 interface Breadcrumb {
   label: string;
@@ -35,6 +36,17 @@ function getBreadcrumbs(pathname: string): Breadcrumb[] {
     forms: "Formularios",
     admin: "Administración",
     users: "Usuarios",
+    passwords: "Contraseñas",
+    rewards: "Recompensas",
+    history: "Historial",
+    points: "Puntos",
+    "my-requests": "Solicitudes",
+    overtime: "Control de Horas",
+    leaves: "Vacaciones y Ausencias",
+    colaboradores: "Colaboradores",
+    profile: "Perfil",
+    "points-request": "Solicitudes de puntos",
+    approvePost: "Aprobar Publicaciones",
   };
 
   let currentPath = "";
@@ -59,8 +71,13 @@ export function Header() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const { triggerModal } = useOvertimeStore();
-  const { unreadCount, notifications, markAllAsRead, markAsRead } =
-    useNotificationStore();
+  const {
+    unreadCount,
+    notifications,
+    markAllAsRead,
+    markAsRead,
+    fetchNotifications,
+  } = useNotificationStore();
   const breadcrumbs = getBreadcrumbs(pathname);
 
   const getInitials = (name: string) => {
@@ -72,6 +89,12 @@ export function Header() {
       .slice(0, 2);
   };
 
+  useEffect(() => {
+    fetchNotifications();
+  }, [fetchNotifications]);
+
+  console.log(notifications);
+
   return (
     <header className="flex h-16 items-center justify-between border-b border-border bg-card px-4 lg:px-6">
       {/* Left side - Breadcrumbs + Menu button */}
@@ -82,7 +105,10 @@ export function Header() {
         {/* Breadcrumbs - Oculto en móvil */}
         <nav className="hidden lg:flex items-center gap-1 text-sm truncate">
           {breadcrumbs.map((crumb, index) => (
-            <span key={index} className="flex items-center gap-1 whitespace-nowrap">
+            <span
+              key={index}
+              className="flex items-center gap-1 whitespace-nowrap"
+            >
               {index > 0 && (
                 <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
               )}
@@ -147,11 +173,14 @@ export function Header() {
               ) : (
                 notifications.map((notification) => (
                   <DropdownMenuItem
-                    key={notification.id}
+                    key={notification.notificationId}
                     className={`flex flex-col items-start gap-1 p-4 cursor-pointer border-b last:border-0 ${!notification.isRead ? "bg-primary/5" : ""}`}
                     onClick={(e) => {
                       e.preventDefault();
-                      markAsRead(notification.id);
+                      console.log(
+                        "notification marked as read",
+                        notification.notificationId,
+                      );
 
                       switch (notification.type) {
                         case "POINT_REQUEST":

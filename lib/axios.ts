@@ -90,7 +90,7 @@ function refreshAccessToken(): Promise<string> {
       const refreshToken = localStorage.getItem(REFRESH_KEY);
       if (!refreshToken) throw new Error("Missing refresh token");
 
-      const { data } = await axios.post(`${baseURL}/auth/refresh`, {
+      const { data } = await api.post(`/auth/refresh`, {
         refreshToken,
       });
 
