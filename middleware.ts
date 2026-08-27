@@ -9,6 +9,7 @@ const PUBLIC_PATHS = [
   "/forgot-password",
   "/send-forgot-password",
   "/two-factor",
+  "/change-password",
 ];
 const TOKEN_KEY = "portal_access_token";
 const ADMIN_PATH_PREFIX = "/admin";

@@ -49,7 +49,8 @@ export default function LeavesPage() {
 
   const { isReviewing, reviewLeave: doReview } = useReviewLeave(async () => {
     setReviewOpen(false);
-    await reloadTeam();
+    await Promise.all([reloadTeam(), reloadBalance(), reloadMy()]);
+    // await reloadTeam();
   });
 
   const { isCancelling, cancelLeave } = useCancelLeave(async () => {
@@ -129,7 +130,7 @@ export default function LeavesPage() {
             )}
           </div>
 
-          <div className="rounded-xl border bg-card p-4">
+          {/* <div className="rounded-xl border bg-card p-4">
             <p className="text-xs text-muted-foreground">
               Devengado desde tu ingreso
             </p>
@@ -139,6 +140,58 @@ export default function LeavesPage() {
             <p className="mt-0.5 text-xs text-muted-foreground">
               15 por año · Art. 186 CST
             </p>
+          </div> */}
+          <div className="rounded-xl border bg-card p-4 space-y-3">
+            <div>
+              <p className="text-xs text-muted-foreground">
+                Resumen de tus vacaciones
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-xs text-muted-foreground">Devengados</p>
+                <p className="text-sm font-medium">
+                  {balance?.accrued ?? 0} días
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs text-muted-foreground">Tomados</p>
+                <p className="text-sm font-medium">
+                  {balance?.taken ?? 0} días
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs text-muted-foreground">Pendientes</p>
+                <p className="text-sm font-medium">
+                  {balance?.pending ?? 0} días
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs text-muted-foreground">Saldo actual</p>
+                <p
+                  className={`text-sm font-semibold ${
+                    (balance?.available ?? 0) < 0
+                      ? "text-destructive"
+                      : "text-foreground"
+                  }`}
+                >
+                  {balance?.available ?? 0} días
+                </p>
+              </div>
+            </div>
+
+            {(balance?.pending ?? 0) > 0 && (
+              <p className="text-xs text-muted-foreground">
+                Si se aprueban tus solicitudes pendientes, tu saldo quedaría en{" "}
+                <span className="font-medium">
+                  {balance?.projectedAvailable ?? 0} días
+                </span>
+              </p>
+            )}
           </div>
         </div>
       </div>

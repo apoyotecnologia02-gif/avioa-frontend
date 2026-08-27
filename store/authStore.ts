@@ -63,22 +63,39 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   login: async (credentials: LoginCredentials) => {
     const response = await api.post<LoginResponse>("/auth/login", credentials);
 
-    if (response.data.twoFactorEnabled) {
+    const {
+      accessToken,
+      user,
+      refreshToken,
+      temporaryToken,
+      mustChangePassword,
+      twoFactorEnabled,
+    } = response.data;
+
+    if (mustChangePassword) {
       return {
-        twoFactorEnabled: true,
-        temporaryToken: response.data.temporaryToken as string,
+        mustChangePassword: true,
+        twoFactorEnabled,
+        temporaryToken,
       };
     }
 
-    const { accessToken, user, refreshToken } = response.data;
+    if (twoFactorEnabled) {
+      return {
+        mustChangePassword: false,
+        twoFactorEnabled: true,
+        temporaryToken: temporaryToken,
+      };
+    }
 
-    if (!refreshToken) {
+    if (!accessToken || !refreshToken || !user) {
       console.error("El backend no devolvió un refresh token");
     }
 
     get().setAuth(accessToken, refreshToken, user);
 
     return {
+      mustChangePassword: false,
       twoFactorEnabled: false,
     };
   },
@@ -95,6 +112,39 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       isAuthenticated: false,
       isLoading: false,
     });
+  },
+
+  refreshAccessToken: async () => {
+    const refreshToken = localStorage.getItem(REFRESH_KEY);
+
+    if (!refreshToken) {
+      get().logout();
+      return false;
+    }
+
+    try {
+      const response = await api.post("/auth/refresh", {
+        refreshToken,
+      });
+
+      const {
+        accessToken,
+        refreshToken: newRefreshToken,
+        user,
+      } = response.data;
+
+      localStorage.setItem(TOKEN_KEY, accessToken);
+
+      if (newRefreshToken) {
+        localStorage.setItem(REFRESH_KEY, newRefreshToken);
+      }
+
+      get().setAuth(accessToken, newRefreshToken, user);
+      return true;
+    } catch (error) {
+      get().logout();
+      return false;
+    }
   },
 
   setUser: (user: User | null) => {
@@ -114,13 +164,37 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   setAuth: (accessToken: string, refreshToken: string, user: User) => {
     const payload = decodeJwt(accessToken);
 
+    // const fullUser = {
+    //   ...user,
+    //   ...(payload?.area && { area: payload.area }),
+    //   ...(payload?.leaderId && { leaderId: payload.leaderId }),
+    //   ...(payload?.leaderName && { leaderName: payload.leaderName }),
+    //   ...(payload?.twoFactorEnabled && {
+    //     twoFactorEnabled: payload.twoFactorEnabled,
+    //   }),
+    // };
+
     const fullUser = {
       ...user,
-      ...(payload?.area && { area: payload.area }),
-      ...(payload?.leaderId && { leaderId: payload.leaderId }),
-      ...(payload?.leaderName && { leaderName: payload.leaderName }),
+
+      ...(payload?.area && {
+        area: payload.area,
+      }),
+
+      ...(payload?.leaderId && {
+        leaderId: payload.leaderId,
+      }),
+
+      ...(payload?.leaderName && {
+        leaderName: payload.leaderName,
+      }),
+
       ...(payload?.twoFactorEnabled && {
         twoFactorEnabled: payload.twoFactorEnabled,
+      }),
+
+      ...(payload?.role && {
+        role: payload.role,
       }),
     };
 
@@ -137,7 +211,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     });
   },
 
-  hydrate: () => {
+  hydrate: async () => {
     if (typeof window === "undefined") {
       set({ isLoading: false });
       return;
@@ -148,34 +222,24 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     if (token && userJson) {
       if (isTokenExpired(token)) {
-        localStorage.removeItem(TOKEN_KEY);
-        localStorage.removeItem(USER_KEY);
-        setAuthCookie(null);
-        set({
-          user: null,
-          token: null,
-          isAuthenticated: false,
-          isLoading: false,
-        });
+        const refreshed = await get().refreshAccessToken();
+        if (refreshed === false) {
+          return;
+        }
+
+        set({ isLoading: false });
         return;
       }
 
       try {
         let user = JSON.parse(userJson) as User;
-
         const payload = decodeJwt(token);
         if (payload && payload.area && !user.area) {
           user.area = payload.area;
           localStorage.setItem(USER_KEY, JSON.stringify(user));
         }
-
         setAuthCookie(token);
-        set({
-          user,
-          token,
-          isAuthenticated: true,
-          isLoading: false,
-        });
+        set({ user, token, isAuthenticated: true, isLoading: false });
       } catch {
         localStorage.removeItem(TOKEN_KEY);
         localStorage.removeItem(USER_KEY);
