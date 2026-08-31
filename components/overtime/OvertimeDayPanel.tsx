@@ -1,24 +1,24 @@
-'use client'
+"use client";
 
-import { format, parseISO } from 'date-fns'
-import { es } from 'date-fns/locale'
-import { X, Clock, MessageSquare } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
-import { OvertimeStatusBadge } from './OvertimeStatusBadge'
-import type { OvertimeRecord } from '@/types/overtime.types'
-import { ScrollArea } from '@/components/ui/scroll-area'
+import { format, parseISO } from "date-fns";
+import { es } from "date-fns/locale";
+import { X, Clock, MessageSquare } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { OvertimeStatusBadge } from "./OvertimeStatusBadge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { OvertimeEntry } from "./OvertimeCalendar";
 
 interface OvertimeDayPanelProps {
-  selectedDate: string | null        // "YYYY-MM-DD"
-  records: OvertimeRecord[]
-  isLoading: boolean
-  onClose: () => void
+  selectedDate: string | null; // "YYYY-MM-DD"
+  records: OvertimeEntry[];
+  isLoading: boolean;
+  onClose: () => void;
 }
 
 function formatTime(time: string) {
   // time is "HH:mm" or "HH:mm:ss"
-  return time.slice(0, 5)
+  return format(parseISO(time), "HH:mm");
 }
 
 export function OvertimeDayPanel({
@@ -27,9 +27,11 @@ export function OvertimeDayPanel({
   isLoading,
   onClose,
 }: OvertimeDayPanelProps) {
-  if (!selectedDate) return null
+  if (!selectedDate) return null;
 
-  const dateLabel = format(parseISO(selectedDate), "EEEE d 'de' MMMM", { locale: es })
+  const dateLabel = format(parseISO(selectedDate), "EEEE d 'de' MMMM", {
+    locale: es,
+  });
 
   return (
     <div className="flex flex-col h-full border-l border-border bg-card">
@@ -39,9 +41,16 @@ export function OvertimeDayPanel({
           <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">
             Detalle del día
           </p>
-          <h3 className="text-base font-semibold capitalize mt-0.5">{dateLabel}</h3>
+          <h3 className="text-base font-semibold capitalize mt-0.5">
+            {dateLabel}
+          </h3>
         </div>
-        <Button variant="ghost" size="icon" onClick={onClose} className="shrink-0">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onClose}
+          className="shrink-0"
+        >
           <X className="h-4 w-4" />
         </Button>
       </div>
@@ -71,7 +80,8 @@ export function OvertimeDayPanel({
                   <div className="flex items-center gap-1.5 text-sm font-medium">
                     <Clock className="h-3.5 w-3.5 text-muted-foreground" />
                     <span>
-                      {formatTime(record.startTime)} → {formatTime(record.endTime)}
+                      {formatTime(record.startTime)} →{" "}
+                      {formatTime(record.endTime)}
                     </span>
                   </div>
                   <span className="text-xs font-semibold text-primary bg-primary/8 px-2 py-0.5 rounded-full">
@@ -80,7 +90,9 @@ export function OvertimeDayPanel({
                 </div>
 
                 {/* Description */}
-                <p className="text-sm text-foreground leading-relaxed">{record.description}</p>
+                <p className="text-sm text-foreground leading-relaxed">
+                  {record.description}
+                </p>
 
                 {/* Status */}
                 <div className="flex items-start gap-2 flex-wrap">
@@ -102,5 +114,5 @@ export function OvertimeDayPanel({
         </div>
       </ScrollArea>
     </div>
-  )
+  );
 }

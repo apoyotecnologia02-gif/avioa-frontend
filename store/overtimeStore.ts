@@ -1,4 +1,5 @@
-import { create } from 'zustand';
+import { AddOvertimeRequestPayload } from "@/types/notification.types";
+import { create } from "zustand";
 
 interface OvertimeStore {
   shouldOpenModal: boolean;

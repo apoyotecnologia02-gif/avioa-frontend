@@ -4,7 +4,10 @@ import React, { createContext, useContext, useEffect, useRef } from "react";
 import { io, Socket } from "socket.io-client";
 import { useAuthStore } from "@/store/authStore";
 import { useNotificationStore } from "@/store/notificationStore";
-import { NotificationPayload } from "@/types/notification.types";
+import {
+  AddOvertimeRequestPayload,
+  NotificationPayload,
+} from "@/types/notification.types";
 import { toast } from "sonner";
 
 interface SocketContextType {
@@ -52,7 +55,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL;
     }
 
-    const socket = io(`${socketUrl}/points`, {
+    const socket = io(`${socketUrl}/portal`, {
       // handshake.auth debe incluir JWT en `token`; sin esto el servidor desconecta por seguridad.
       auth: {
         token: handshakeAuthToken(token),
@@ -64,7 +67,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     socketRef.current = socket;
 
     socket.on("connect", () => {
-      console.log("✅ Conectado a websockets (/points) de forma global");
+      console.log("✅ Conectado a websockets (/portal) de forma global");
     });
 
     socket.on("disconnect", () => {
@@ -77,11 +80,36 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
 
     // Handler de notificaciones
     const handleNotification = (data: NotificationPayload) => {
+      console.log("handleNotification", data);
       useNotificationStore.getState().addNotification(data);
       toast(data.title || "Nueva notificación", {
         description: data.message,
         duration: 5000,
       });
+    };
+
+    const handleAddOvertimeRequest = (data: AddOvertimeRequestPayload) => {
+      window.dispatchEvent(
+        new CustomEvent("overtime-request-created", {
+          detail: data,
+        }),
+      );
+    };
+
+    const handleOvertimeRequestApproved = (data) => {
+      window.dispatchEvent(
+        new CustomEvent("overtime_request_approved", {
+          detail: data,
+        }),
+      );
+    };
+
+    const handleOvertimeRequestRejected = (data) => {
+      window.dispatchEvent(
+        new CustomEvent("overtime_request_rejected", {
+          detail: data,
+        }),
+      );
     };
 
     socket.on("point_request_received", handleNotification);
@@ -93,6 +121,11 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     socket.on("leave_request_received", handleNotification);
     socket.on("leave_request_approved", handleNotification);
     socket.on("leave_request_rejected", handleNotification);
+
+    // overtime
+    socket.on("overtime_request_received", handleAddOvertimeRequest);
+    socket.on("overtime_request_approved", handleOvertimeRequestApproved);
+    socket.on("overtime_request_rejected", handleOvertimeRequestRejected);
 
     return () => {
       // La limpieza solo ocurre si el componente se desmonta por completo (ej: saliendo de la app)

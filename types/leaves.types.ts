@@ -46,6 +46,7 @@ export interface VacationBalance {
   taken: number; // días aprobados y consumidos
   pending: number; // días en solicitudes pendientes
   available: number; // accrued - taken
+  projectedAvailable: number;
 }
 
 export interface CreateLeaveDto {
