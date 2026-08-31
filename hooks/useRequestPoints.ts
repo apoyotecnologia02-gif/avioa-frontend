@@ -7,14 +7,22 @@ import { toast } from "sonner";
 export function useRequestPoints(onSuccess?: () => void) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleRequestPoints = async (reason: string, amount: number, leaderId?: string) => {
+  const handleRequestPoints = async (
+    reason: string,
+    amount: number,
+    leaderId?: string,
+  ) => {
     try {
       setIsSubmitting(true);
-      const res = await api.post("/points/request", { reason, amount, leaderId });
+      const res = await api.post("/points/request", {
+        reason,
+        amount,
+        leaderId,
+      });
 
       if (res.data.success) {
         toast.success(res.data.message);
-        onSuccess?.(); // 👈 para cerrar el modal desde afuera
+        onSuccess?.();
       }
     } catch (error: any) {
       toast.error(
