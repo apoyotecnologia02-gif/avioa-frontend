@@ -177,11 +177,11 @@ export function UsersInfo() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[200px]">Colaborador</TableHead>
-                <TableHead>Cargo</TableHead>
+                {/* <TableHead>Cargo</TableHead> */}
                 <TableHead>Área</TableHead>
                 <TableHead className="hidden lg:table-cell">Email</TableHead>
                 <TableHead className="hidden xl:table-cell">Teléfono</TableHead>
-                <TableHead className="text-right">Horario</TableHead>
+                {/* <TableHead className="text-right">Horario</TableHead> */}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -229,7 +229,7 @@ export function UsersInfo() {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="hidden md:table-cell">
+                    {/* <TableCell className="hidden md:table-cell">
                       <Badge variant="secondary" className="font-normal">
                         {(() => {
                           if (user.role === "ADMIN") return "Administrador";
@@ -239,7 +239,7 @@ export function UsersInfo() {
                           return user.role;
                         })()}
                       </Badge>
-                    </TableCell>
+                    </TableCell> */}
                     <TableCell className="hidden md:table-cell">
                       {user.area || "—"}
                     </TableCell>
@@ -255,11 +255,11 @@ export function UsersInfo() {
                         <span className="text-sm">{user.phone || "—"}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-right">
+                    {/* <TableCell className="text-right">
                       <Badge variant="outline" className="font-normal">
                         {user.schedule || "9:00 - 18:00"}
                       </Badge>
-                    </TableCell>
+                    </TableCell> */}
                   </TableRow>
                 ))
               )}
