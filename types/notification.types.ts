@@ -20,6 +20,8 @@ export interface NotificationPayload {
   message: string;
   requestId?: string;
   requestDetails?: PointRequestDetails;
+  notificationId: string;
+  isRead: boolean;
 }
 
 export interface AddOvertimeRequestPayload {
@@ -32,7 +34,7 @@ export interface AddOvertimeRequestPayload {
 }
 
 export interface Notification extends NotificationPayload {
-  id: string; // locally generated or backend provided
+  notificationId: string; // locally generated or backend provided
   isRead: boolean;
   receivedAt: Date;
 }

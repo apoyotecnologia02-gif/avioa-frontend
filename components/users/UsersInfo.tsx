@@ -24,6 +24,7 @@ import { Skeleton } from "@/components/ui/skeleton"; //importante para loading
 import { Search, Users, Mail, Phone, AlertCircle } from "lucide-react";
 import { useGetUsers } from "@/hooks/useGetUsers";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useDirectory } from "@/hooks/useDirectory";
 
 interface User {
   id: string;
@@ -40,6 +41,7 @@ export function UsersInfo() {
   const [searchTerm, setSearchTerm] = useState("");
 
   const { data: users, isLoading, isError, error } = useGetUsers();
+  // const { data: users, isLoading, isError, error } = useDirectory();
 
   const filteredUsers = users?.filter((user: User) => {
     const searchLower = searchTerm.toLowerCase();
@@ -229,11 +231,11 @@ export function UsersInfo() {
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
                       <Badge variant="secondary" className="font-normal">
-                        {(()=> { 
+                        {(() => {
                           if (user.role === "ADMIN") return "Administrador";
                           if (user.role === "MANAGER") return "Gerente";
                           if (user.role === "EMPLOYEE") return "Empleado";
-                          if(user.role === "LEADER") return "Líder";
+                          if (user.role === "LEADER") return "Líder";
                           return user.role;
                         })()}
                       </Badge>

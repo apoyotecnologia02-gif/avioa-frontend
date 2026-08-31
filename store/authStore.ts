@@ -10,11 +10,12 @@ import type {
 import {
   api,
   setSession,
-  ACCESS_KEY,
-  REFRESH_KEY,
-  USER_KEY,
+  // ACCESS_KEY,
+  // REFRESH_KEY,
+  // USER_KEY,
 } from "@/lib/axios";
 import router from "next/router";
+import { REFRESH_KEY, USER_KEY } from "@/utils/constants";
 
 export const TOKEN_KEY = "portal_access_token";
 // export const USER_KEY = "portal_user";

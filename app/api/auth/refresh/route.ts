@@ -20,7 +20,7 @@ export async function POST(request: Request) {
       return NextResponse.json(data, { status: response.status });
     }
 
-    return NextResponse.json(data);
+    return NextResponse.json(data, { status: response.status });
   } catch (error) {
     return NextResponse.json(
       { error: "No fue posible conectar con el backend de autenticación" },
