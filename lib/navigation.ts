@@ -13,6 +13,7 @@ import {
   UserPlus,
   Users,
   Key,
+  Calculator,
 } from "lucide-react";
 
 /**
@@ -86,8 +87,8 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: Users,
         items: [
           { href: "/colaboradores", label: "Colaboradores" },
-          { href: "/equipment-requests", label: "Solicitud Equipos" },
-          { href: "/books-files", label: "Biblioteca" }
+          // { href: "/equipment-requests", label: "Solicitud Equipos" },
+          // { href: "/books-files", label: "Biblioteca" }
         ],
       },
       {
@@ -100,24 +101,30 @@ export const NAV_SECTIONS: NavSection[] = [
           { href: "/leaves", label: "Vacaciones y ausencias" },
         ],
       },
-      {
-        key: "beneficios",
-        label: "Beneficios",
-        icon: Gift,
-        items: [
-          { href: "/points", label: "Mis puntos", icon: Coins, exact: true },
-          { href: "/points/history", label: "Historial", icon: History },
-          {
-            href: "/points/my-requests",
-            label: "Mis solicitudes",
-            icon: ClipboardList,
-          },
-          // PROXIMAMENTE
-          // { href: "/benefits", label: "Convenios y descuentos", icon: Store },
-          // { href: "/celebrations", label: "Celebraciones", icon: CalendarDays }
-        ],
-      },
+      // {
+      //   key: "beneficios",
+      //   label: "Beneficios",
+      //   icon: Gift,
+      //   items: [
+      //     { href: "/points", label: "Mis puntos", icon: Coins, exact: true },
+      //     { href: "/points/history", label: "Historial", icon: History },
+      //     {
+      //       href: "/points/my-requests",
+      //       label: "Mis solicitudes",
+      //       icon: ClipboardList,
+      //     },
+      //     // PROXIMAMENTE
+      //     // { href: "/benefits", label: "Convenios y descuentos", icon: Store },
+      //     // { href: "/celebrations", label: "Celebraciones", icon: CalendarDays }
+      //   ],
+      // },
       { key: "forms", label: "Formularios", icon: FileText, href: "/forms" },
+      {
+        key: "cotizador",
+        label: "Cotizador",
+        icon: Calculator,
+        href: "/cotizador",
+      },
       // PROXIMAMENTE
       //   {
       //     key: "comunicacion",
@@ -135,15 +142,15 @@ export const NAV_SECTIONS: NavSection[] = [
     label: "Gestión",
     visibility: "leader",
     groups: [
-      {
-        key: "aprobaciones",
-        label: "Aprobaciones",
-        icon: ClipboardCheck,
-        // Hoy apunta a solicitudes de puntos; cuando exista la bandeja
-        // unificada, toca cambiar el href a "/approvals".
-        href: "/points-request",
-        visibility: "leader",
-      },
+      // {
+      //   key: "aprobaciones",
+      //   label: "Aprobaciones",
+      //   icon: ClipboardCheck,
+      //   // Hoy apunta a solicitudes de puntos; cuando exista la bandeja
+      //   // unificada, toca cambiar el href a "/approvals".
+      //   href: "/points-request",
+      //   visibility: "leader",
+      // },
 
       {
         key: "Public",
