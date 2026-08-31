@@ -912,7 +912,7 @@ export default function AdminUsersPage() {
                       <TableCell className="font-medium">{user.name}</TableCell>
                       <TableCell>{user.email}</TableCell>
                       <TableCell>{user.role}</TableCell>
-                      <TableCell>{user.department || "-"}</TableCell>
+                      <TableCell>{user.area || "-"}</TableCell>
                       <TableCell>
                         <Badge
                           variant="outline"

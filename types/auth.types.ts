@@ -41,7 +41,7 @@ export interface Login2FAResponse {
 }
 
 export interface AuthState {
-  user: User | null;
+  user: User | null | undefined;
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;

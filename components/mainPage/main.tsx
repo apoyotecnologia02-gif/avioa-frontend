@@ -50,8 +50,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { useBirthdayPosts } from "@/hooks/useBirthdayPosts";
 import { cn } from "@/lib/utils";
 
-
-
 // ===== TIPOS =====
 interface User {
   userId: string;
@@ -1205,17 +1203,20 @@ export const WallOfPosts: React.FC = () => {
     error: usersError,
   } = useGetUsers();
   const { user: authUser, isLoading: isLoadingAuth } = useAuth();
-  const { data: birthdayData, isLoading: isLoadingBirthday, error: birthdayError } = useBirthdayPosts();
-  
+  const {
+    data: birthdayData,
+    isLoading: isLoadingBirthday,
+    error: birthdayError,
+  } = useBirthdayPosts();
 
   // Al inicio del componente, después de los hooks
-useEffect(() => {
-  console.log("=== DEBUG TOKEN ===");
-  console.log("localStorage token:", localStorage.getItem('token'));
-  console.log("sessionStorage token:", sessionStorage.getItem('token'));
-  console.log("Todos los localStorage:", localStorage);
-  console.log("=== FIN DEBUG ===");
-}, []);
+  useEffect(() => {
+    console.log("=== DEBUG TOKEN ===");
+    console.log("localStorage token:", localStorage.getItem("token"));
+    console.log("sessionStorage token:", sessionStorage.getItem("token"));
+    console.log("Todos los localStorage:", localStorage);
+    console.log("=== FIN DEBUG ===");
+  }, []);
 
   const [posts, setPosts] = useState<Post[]>(initialPosts);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -1814,5 +1815,4 @@ useEffect(() => {
       />
     </>
   );
-
 };

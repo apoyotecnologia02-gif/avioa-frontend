@@ -80,6 +80,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
 
     // Handler de notificaciones
     const handleNotification = (data: NotificationPayload) => {
+      console.log("handleNotification", data);
       useNotificationStore.getState().addNotification(data);
       toast(data.title || "Nueva notificación", {
         description: data.message,

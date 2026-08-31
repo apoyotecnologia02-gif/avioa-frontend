@@ -1,10 +1,11 @@
 "use client";
+import { ACCESS_KEY, REFRESH_KEY, USER_KEY } from "@/utils/constants";
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
 //import {TOKEN_KEY} from "@/store/authStore"
 
-export const ACCESS_KEY = "portal_access_token";
-export const REFRESH_KEY = "portal_refresh_token";
-export const USER_KEY = "portal_user";
+// export const ACCESS_KEY = "portal_access_token";
+// export const REFRESH_KEY = "portal_refresh_token";
+// export const USER_KEY = "portal_user";
 
 declare module "axios" {
   interface AxiosRequestConfig {
@@ -90,7 +91,7 @@ function refreshAccessToken(): Promise<string> {
       const refreshToken = localStorage.getItem(REFRESH_KEY);
       if (!refreshToken) throw new Error("Missing refresh token");
 
-      const { data } = await axios.post(`${baseURL}/auth/refresh`, {
+      const { data } = await api.post(`/auth/refresh`, {
         refreshToken,
       });
 
@@ -114,7 +115,7 @@ function refreshAccessToken(): Promise<string> {
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     if (typeof window !== "undefined") {
-      const token = localStorage.getItem("portal_access_token");
+      const token = localStorage.getItem(ACCESS_KEY);
       if (token && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;
       }
