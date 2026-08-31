@@ -86,8 +86,8 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: Users,
         items: [
           { href: "/colaboradores", label: "Colaboradores" },
-          // PROXIMAMENTE
-          // { href: "/leaves", label: "Vacaciones y ausencias" }
+          { href: "/equipment-requests", label: "Solicitud Equipos" },
+          { href: "/books-files", label: "Biblioteca" }
         ],
       },
       {

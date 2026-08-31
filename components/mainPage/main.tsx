@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { AbsencesModal } from "@/components/leaves-container/page";
+import { CertificatesModal } from "@/components/certficados/page";
 import { useRouter } from "next/navigation";
 import {
   Search,
@@ -45,6 +47,7 @@ import {
 } from "lucide-react";
 import { useGetUsers } from "@/hooks/useGetUsers";
 import { useAuth } from "@/hooks/useAuth";
+import { useBirthdayPosts } from "@/hooks/useBirthdayPosts";
 import { cn } from "@/lib/utils";
 
 // ===== TIPOS =====
@@ -114,7 +117,21 @@ interface Post {
   birthdayPerson?: string;
 }
 
-// ===== DATOS DE EJEMPLO (SOLO PARA PUBLICACIONES Y SLIDER) =====
+interface Absence {
+  id: string;
+  employeeName: string;
+  employeeAvatar: string;
+  department: string;
+  area: string;
+  position: string;
+  type: "vacation" | "sick" | "license" | "personal" | "other";
+  startDate: string;
+  endDate: string;
+  duration: number;
+  status: "approved" | "pending" | "rejected";
+  reason?: string;
+}
+
 const sliderImages = [
   "https://picsum.photos/seed/central1/800/500",
   "https://picsum.photos/seed/central2/800/500",
@@ -255,7 +272,149 @@ const initialPosts: Post[] = [
   },
 ];
 
-// ===== FUNCIÓN PARA OBTENER INICIALES =====
+const mockAbsences: Absence[] = [
+  {
+    id: "1",
+    employeeName: "María González",
+    employeeAvatar: "MG",
+    department: "Marketing",
+    area: "Marketing Digital",
+    position: "Gerente de Marketing",
+    type: "vacation",
+    startDate: "2026-08-25",
+    endDate: "2026-09-05",
+    duration: 12,
+    status: "approved",
+    reason: "Vacaciones anuales",
+  },
+  {
+    id: "2",
+    employeeName: "Carlos Rodríguez",
+    employeeAvatar: "CR",
+    department: "Tecnología",
+    area: "Desarrollo",
+    position: "Desarrollador Senior",
+    type: "sick",
+    startDate: "2026-08-20",
+    endDate: "2026-08-22",
+    duration: 3,
+    status: "approved",
+    reason: "Incapacidad médica",
+  },
+  {
+    id: "3",
+    employeeName: "Ana Martínez",
+    employeeAvatar: "AM",
+    department: "Diseño",
+    area: "UX/UI",
+    position: "Diseñadora UX/UI",
+    type: "license",
+    startDate: "2026-09-01",
+    endDate: "2026-09-30",
+    duration: 30,
+    status: "pending",
+    reason: "Licencia de maternidad",
+  },
+  {
+    id: "4",
+    employeeName: "Pedro Ramírez",
+    employeeAvatar: "PR",
+    department: "Analítica",
+    area: "Datos",
+    position: "Analista de Datos",
+    type: "personal",
+    startDate: "2026-08-28",
+    endDate: "2026-08-28",
+    duration: 1,
+    status: "approved",
+    reason: "Asuntos personales",
+  },
+  {
+    id: "5",
+    employeeName: "Laura Fernández",
+    employeeAvatar: "LF",
+    department: "Recursos Humanos",
+    area: "Gestión",
+    position: "Gerente de RRHH",
+    type: "vacation",
+    startDate: "2026-09-10",
+    endDate: "2026-09-20",
+    duration: 11,
+    status: "pending",
+    reason: "Vacaciones",
+  },
+  {
+    id: "6",
+    employeeName: "Roberto Méndez",
+    employeeAvatar: "RM",
+    department: "Tecnología",
+    area: "Ingeniería",
+    position: "Ingeniero de Software",
+    type: "sick",
+    startDate: "2026-08-19",
+    endDate: "2026-08-21",
+    duration: 3,
+    status: "rejected",
+    reason: "Incapacidad no justificada",
+  },
+  {
+    id: "7",
+    employeeName: "Sofía Torres",
+    employeeAvatar: "ST",
+    department: "Marketing",
+    area: "Contenido",
+    position: "Especialista en Contenido",
+    type: "license",
+    startDate: "2026-08-15",
+    endDate: "2026-09-15",
+    duration: 32,
+    status: "approved",
+    reason: "Licencia de estudios",
+  },
+  {
+    id: "8",
+    employeeName: "Diego Silva",
+    employeeAvatar: "DS",
+    department: "Ventas",
+    area: "Comercial",
+    position: "Ejecutivo de Ventas",
+    type: "personal",
+    startDate: "2026-08-27",
+    endDate: "2026-08-28",
+    duration: 2,
+    status: "approved",
+    reason: "Trámites personales",
+  },
+  {
+    id: "9",
+    employeeName: "Elena Vargas",
+    employeeAvatar: "EV",
+    department: "Tecnología",
+    area: "DevOps",
+    position: "Ingeniero DevOps",
+    type: "vacation",
+    startDate: "2026-09-05",
+    endDate: "2026-09-12",
+    duration: 8,
+    status: "pending",
+    reason: "Vacaciones",
+  },
+  {
+    id: "10",
+    employeeName: "Jorge Castillo",
+    employeeAvatar: "JC",
+    department: "Finanzas",
+    area: "Contabilidad",
+    position: "Contador",
+    type: "sick",
+    startDate: "2026-08-22",
+    endDate: "2026-08-24",
+    duration: 3,
+    status: "approved",
+    reason: "Problemas de salud",
+  },
+];
+
 const getInitials = (name: string | null | undefined): string => {
   if (!name) return "U";
   const parts = name.trim().split(" ");
@@ -267,7 +426,6 @@ const getInitials = (name: string | null | undefined): string => {
   return (first + last).toUpperCase();
 };
 
-// ===== SCROLLBAR STYLES =====
 const scrollbarStyles = `
   [&::-webkit-scrollbar]:w-1.5
   [&::-webkit-scrollbar]:h-1.5
@@ -283,7 +441,6 @@ const scrollbarStyles = `
   scrollbar-color:hsl(var(--muted-foreground)/0.25) transparent
 `;
 
-// ===== COMPONENTE SLIDER =====
 const ImageSlider: React.FC = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -292,7 +449,6 @@ const ImageSlider: React.FC = () => {
     const timer = setInterval(() => {
       handleNext();
     }, 4000);
-
     return () => clearInterval(timer);
   }, [currentIndex]);
 
@@ -396,7 +552,6 @@ const ImageSlider: React.FC = () => {
   );
 };
 
-// ===== COMPONENTE AVATAR PARA CUMPLEAÑOS =====
 const BirthdayAvatar: React.FC<{
   employee: Employee;
   day: string;
@@ -457,7 +612,6 @@ const BirthdayAvatar: React.FC<{
   );
 };
 
-// ===== MODAL DE COMENTARIOS =====
 interface CommentsModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -814,7 +968,6 @@ const CommentsModal: React.FC<CommentsModalProps> = ({
   );
 };
 
-// ===== MODAL PARA CREAR PUBLICACIÓN =====
 interface CreatePostModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -1024,7 +1177,11 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({
   );
 };
 
-// ===== COMPONENTE LOADING =====
+interface AbsencesModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
 const LoadingSpinner: React.FC = () => (
   <div className="flex items-center justify-center h-full min-h-[400px]">
     <div className="flex flex-col items-center gap-3">
@@ -1039,187 +1196,64 @@ const LoadingSpinner: React.FC = () => (
   </div>
 );
 
-// ===== COMPONENTE PRINCIPAL =====
 export const WallOfPosts: React.FC = () => {
-  const { data: usersData, isLoading: isLoadingUsers, error } = useGetUsers();
+  const {
+    data: usersData,
+    isLoading: isLoadingUsers,
+    error: usersError,
+  } = useGetUsers();
   const { user: authUser, isLoading: isLoadingAuth } = useAuth();
+  const {
+    data: birthdayData,
+    isLoading: isLoadingBirthday,
+    error: birthdayError,
+  } = useBirthdayPosts();
+
+  // Al inicio del componente, después de los hooks
+  useEffect(() => {
+    console.log("=== DEBUG TOKEN ===");
+    console.log("localStorage token:", localStorage.getItem("token"));
+    console.log("sessionStorage token:", sessionStorage.getItem("token"));
+    console.log("Todos los localStorage:", localStorage);
+    console.log("=== FIN DEBUG ===");
+  }, []);
+
   const [posts, setPosts] = useState<Post[]>(initialPosts);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   const [isCommentsModalOpen, setIsCommentsModalOpen] = useState(false);
-  const [birthdayPostsGenerated, setBirthdayPostsGenerated] = useState(false);
+  const [isAbsencesModalOpen, setIsAbsencesModalOpen] = useState(false);
+  const [isCertificatesModalOpen, setIsCertificatesModalOpen] = useState(false);
   const router = useRouter();
 
   const currentUser = authUser || usersData?.[0] || null;
 
-  // ===== OBTENER CUMPLEAÑOS DEL MES ACTUAL (TODOS) =====
-  const getCurrentMonthBirthdays = (): Birthday[] => {
-    if (!usersData || usersData.length === 0) return [];
-
-    const today = new Date();
-    const currentMonth = today.getMonth();
-    const currentYear = today.getFullYear();
-
-    // Filtrar usuarios que cumplen en el mes actual
-    const birthdayUsers = usersData.filter((user: User) => {
-      if (!user.birthDate) return false;
-
-      try {
-        const birthDate = new Date(user.birthDate);
-        if (isNaN(birthDate.getTime())) return false;
-
-        // Verificar si el mes coincide con el mes actual
-        return birthDate.getMonth() === currentMonth;
-      } catch {
-        return false;
-      }
-    });
-
-    // Si no hay cumpleaños en el mes, retornar array vacío
-    if (birthdayUsers.length === 0) return [];
-
-    // Ordenar por día del mes
-    const sortedUsers = [...birthdayUsers].sort((a: User, b: User) => {
-      const dateA = new Date(a.birthDate!);
-      const dateB = new Date(b.birthDate!);
-      return dateA.getDate() - dateB.getDate();
-    });
-
-    // Formatear para el componente
-    return sortedUsers.map((user: User) => {
-      const birthDate = new Date(user.birthDate!);
-      const day = birthDate.getDate().toString().padStart(2, "0");
-      const month = birthDate.toLocaleString("es", { month: "long" });
-
-      // Verificar si es fin de semana (para el día actual)
-      const dateThisYear = new Date(
-        currentYear,
-        birthDate.getMonth(),
-        birthDate.getDate(),
-      );
-      const dayOfWeek = dateThisYear.getDay();
-      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-
-      return {
-        id: user.userId,
-        name: user.name,
-        day: day,
-        month: month,
-        isWeekend: isWeekend,
-        employee: {
-          id: user.userId,
-          name: user.name,
-          role: user.position || user.role || "Empleado",
-          initials: getInitials(user.name),
-          avatarUrl: user.avatarUrl,
-        },
-      };
-    });
-  };
-
-  // ===== OBTENER CUMPLEAÑOS DE HOY =====
-  const getTodayBirthdays = (): Birthday[] => {
-    if (!usersData || usersData.length === 0) return [];
-
-    const today = new Date();
-    const currentMonth = today.getMonth();
-    const currentDay = today.getDate();
-
-    const birthdayUsers = usersData.filter((user: User) => {
-      if (!user.birthDate) return false;
-
-      try {
-        const birthDate = new Date(user.birthDate);
-        if (isNaN(birthDate.getTime())) return false;
-
-        return (
-          birthDate.getMonth() === currentMonth &&
-          birthDate.getDate() === currentDay
-        );
-      } catch {
-        return false;
-      }
-    });
-
-    if (birthdayUsers.length === 0) return [];
-
-    return birthdayUsers.map((user: User) => {
-      const birthDate = new Date(user.birthDate!);
-      const day = birthDate.getDate().toString().padStart(2, "0");
-      const month = birthDate.toLocaleString("es", { month: "long" });
-
-      return {
-        id: user.userId,
-        name: user.name,
-        day: day,
-        month: month,
-        isWeekend: false,
-        employee: {
-          id: user.userId,
-          name: user.name,
-          role: user.position || user.role || "Empleado",
-          initials: getInitials(user.name),
-          avatarUrl: user.avatarUrl,
-        },
-      };
-    });
-  };
-
-  // ===== GENERAR PUBLICACIONES DE CUMPLEAÑOS CON ICONOS =====
-  const generateBirthdayPosts = () => {
-    const todayBirthdays = getTodayBirthdays();
-
-    if (todayBirthdays.length === 0 || birthdayPostsGenerated) return;
-
-    const companyName = "Avioa";
-    const companyInitials = "AV";
-
-    // Generar una publicación para cada cumpleañero
-    const newBirthdayPosts: Post[] = todayBirthdays.map((birthday) => {
-      // Generar mensaje personalizado SIN EMOJIS
-      const message = `¡Feliz Cumpleaños ${birthday.name}!
-
-${birthday.employee.role ? `Cargo: ${birthday.employee.role}` : ""}
-
-${birthday.day && birthday.month ? `Fecha: ${birthday.day} de ${birthday.month}` : ""}
-
-Todo el equipo de ${companyName} te desea un día lleno de alegría, éxitos y momentos inolvidables. ¡Gracias por ser parte de nuestra gran familia!
-
-¡Disfruta tu día al máximo!`;
-
-      return {
-        id: `birthday-${Date.now()}-${birthday.id}`,
-        author: companyName,
-        authorAvatar: companyInitials,
-        authorRole: "Recursos Humanos",
-        content: message,
-        timestamp: "Hace unos segundos",
-        likes: 0,
-        comments: 0,
-        shares: 0,
-        liked: false,
-        commentsList: [],
-        isBirthdayPost: true,
-        birthdayPerson: birthday.name,
-      };
-    });
-
-    setPosts((prevPosts) => [...newBirthdayPosts, ...prevPosts]);
-    setBirthdayPostsGenerated(true);
-  };
-
-  // ===== EFECTO PARA GENERAR PUBLICACIONES AL CARGAR =====
   useEffect(() => {
-    if (!isLoadingUsers && usersData) {
-      generateBirthdayPosts();
+    if (birthdayData?.birthdayPosts && birthdayData.birthdayPosts.length > 0) {
+      setPosts((prevPosts) => {
+        const existingBirthdayIds = new Set(
+          prevPosts
+            .filter((post) => post.isBirthdayPost)
+            .map((post) => post.id),
+        );
+
+        const newBirthdayPosts = birthdayData.birthdayPosts.filter(
+          (post) => !existingBirthdayIds.has(post.id),
+        );
+
+        if (newBirthdayPosts.length === 0) return prevPosts;
+
+        return [...newBirthdayPosts, ...prevPosts];
+      });
     }
-  }, [usersData, isLoadingUsers]);
+  }, [birthdayData]);
 
-  // Datos para el modal: TODOS los cumpleaños del mes
-  const allMonthBirthdays = getCurrentMonthBirthdays();
+  const todayBirthdays = birthdayData?.todayBirthdays || [];
+  const allMonthBirthdays = birthdayData?.monthBirthdays || [];
 
-  // Datos para el widget: SOLO los cumpleaños de hoy
-  const todayBirthdays = getTodayBirthdays();
+  if (birthdayError) {
+    console.warn("⚠️ Error en birthday API:", birthdayError);
+  }
 
   const handleLike = (postId: string) => {
     setPosts((prevPosts) =>
@@ -1377,9 +1411,9 @@ Todo el equipo de ${companyName} te desea un día lleno de alegría, éxitos y m
     },
     {
       icon: FileText,
-      label: "Ver Comprobantes",
+      label: "Ausencias",
       color: "text-primary",
-      href: "/receipts",
+      onClick: () => setIsAbsencesModalOpen(true),
     },
     {
       icon: Gift,
@@ -1389,19 +1423,19 @@ Todo el equipo de ${companyName} te desea un día lleno de alegría, éxitos y m
     },
     {
       icon: FileCheck,
-      label: "Solicitar Documento",
+      label: "Certificados laborales",
       color: "text-primary",
-      href: "/documents",
+      onClick: () => setIsCertificatesModalOpen(true),
     },
   ];
 
   const userInitials = currentUser ? getInitials(currentUser.name) : "U";
 
-  if (isLoadingAuth || isLoadingUsers) {
+  if (isLoadingAuth || isLoadingUsers || isLoadingBirthday) {
     return <LoadingSpinner />;
   }
 
-  if (error) {
+  if (usersError) {
     return (
       <div className="flex items-center justify-center h-full min-h-[400px]">
         <div className="text-center">
@@ -1412,7 +1446,9 @@ Todo el equipo de ${companyName} te desea un día lleno de alegría, éxitos y m
             Error al cargar usuarios
           </p>
           <p className="text-sm text-muted-foreground mt-2">
-            Por favor, intenta de nuevo más tarde
+            {typeof usersError === "string"
+              ? usersError
+              : "Por favor, intenta de nuevo más tarde"}
           </p>
         </div>
       </div>
@@ -1425,7 +1461,6 @@ Todo el equipo de ${companyName} te desea un día lleno de alegría, éxitos y m
         <div className="h-full max-w-7xl mx-auto">
           <div className="h-full bg-card/30 rounded-2xl p-4 backdrop-blur-sm border border-border/50 flex flex-col shadow-sm">
             <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr_280px] gap-6 flex-1 min-h-0">
-              {/* Aside Izquierdo */}
               <aside className="h-full overflow-hidden">
                 <div className="bg-card rounded-xl shadow-sm p-5 h-full flex flex-col border border-border/50 hover:border-border/80 transition-colors">
                   <h2 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
@@ -1464,8 +1499,11 @@ Todo el equipo de ${companyName} te desea un día lleno de alegría, éxitos y m
                       <button
                         key={action.label}
                         onClick={() => {
-                          console.log(`${action.label} clickeado`);
-                          router.push(action.href);
+                          if (action.onClick) {
+                            action.onClick();
+                          } else {
+                            router.push(action.href);
+                          }
                         }}
                         className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted/50 transition-colors text-sm text-muted-foreground group"
                       >
@@ -1562,7 +1600,6 @@ Todo el equipo de ${companyName} te desea un día lleno de alegría, éxitos y m
                         </span>
                       </div>
 
-                      {/* Iconos decorativos para publicaciones de cumpleaños */}
                       {post.isBirthdayPost && (
                         <div className="flex gap-2 mt-2 mb-1">
                           <PartyPopper className="w-5 h-5 text-amber-500" />
@@ -1648,18 +1685,7 @@ Todo el equipo de ${companyName} te desea un día lleno de alegría, éxitos y m
                     <div
                       className={cn(
                         "space-y-0.5 max-h-[280px] overflow-y-auto overflow-x-hidden pr-1",
-                        "[&::-webkit-scrollbar]:w-1.5",
-                        "[&::-webkit-scrollbar]:h-1.5",
-                        "[&::-webkit-scrollbar-track]:bg-muted/20",
-                        "[&::-webkit-scrollbar-track]:rounded-full",
-                        "[&::-webkit-scrollbar-thumb]:bg-muted-foreground/25",
-                        "[&::-webkit-scrollbar-thumb]:rounded-full",
-                        "[&::-webkit-scrollbar-thumb]:hover:bg-muted-foreground/40",
-                        "dark:[&::-webkit-scrollbar-track]:bg-muted/15",
-                        "dark:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/30",
-                        "dark:[&::-webkit-scrollbar-thumb]:hover:bg-muted-foreground/50",
-                        "scrollbar-width:thin",
-                        "scrollbar-color:hsl(var(--muted-foreground)/0.25) transparent",
+                        scrollbarStyles,
                       )}
                     >
                       {todayBirthdays.length > 0 ? (
@@ -1685,7 +1711,6 @@ Todo el equipo de ${companyName} te desea un día lleno de alegría, éxitos y m
                       )}
                     </div>
 
-                    {/* Mostrar todos los cumpleaños del mes */}
                     {allMonthBirthdays.length > 0 && (
                       <div className="mt-4 pt-3 border-t border-border/50">
                         <div className="flex items-center gap-2 mb-2">
@@ -1700,21 +1725,9 @@ Todo el equipo de ${companyName} te desea un día lleno de alegría, éxitos y m
                         <div
                           className={cn(
                             "space-y-0.5 max-h-[200px] overflow-y-auto overflow-x-hidden pr-1",
-                            "[&::-webkit-scrollbar]:w-1.5",
-                            "[&::-webkit-scrollbar]:h-1.5",
-                            "[&::-webkit-scrollbar-track]:bg-muted/20",
-                            "[&::-webkit-scrollbar-track]:rounded-full",
-                            "[&::-webkit-scrollbar-thumb]:bg-muted-foreground/25",
-                            "[&::-webkit-scrollbar-thumb]:rounded-full",
-                            "[&::-webkit-scrollbar-thumb]:hover:bg-muted-foreground/40",
-                            "dark:[&::-webkit-scrollbar-track]:bg-muted/15",
-                            "dark:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/30",
-                            "dark:[&::-webkit-scrollbar-thumb]:hover:bg-muted-foreground/50",
-                            "scrollbar-width:thin",
-                            "scrollbar-color:hsl(var(--muted-foreground)/0.25) transparent",
+                            scrollbarStyles,
                           )}
                         >
-                          {/* Mostrar todos los cumpleaños del mes */}
                           {allMonthBirthdays.map((birthday) => (
                             <div
                               key={birthday.id}
@@ -1777,6 +1790,11 @@ Todo el equipo de ${companyName} te desea un día lleno de alegría, éxitos y m
         currentUser={currentUser}
       />
 
+      <CertificatesModal
+        isOpen={isCertificatesModalOpen}
+        onClose={() => setIsCertificatesModalOpen(false)}
+      />
+
       <CommentsModal
         isOpen={isCommentsModalOpen}
         onClose={() => {
@@ -1789,6 +1807,11 @@ Todo el equipo de ${companyName} te desea un día lleno de alegría, éxitos y m
         onAddComment={handleAddComment}
         onLikeComment={handleLikeComment}
         onAddReply={handleAddReply}
+      />
+
+      <AbsencesModal
+        isOpen={isAbsencesModalOpen}
+        onClose={() => setIsAbsencesModalOpen(false)}
       />
     </>
   );

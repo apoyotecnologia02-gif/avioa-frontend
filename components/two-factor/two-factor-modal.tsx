@@ -16,7 +16,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/axios";
-import router from "next/router";
+
 
 interface TwoFactorModalProps {
   open: boolean;
