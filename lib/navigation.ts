@@ -13,6 +13,7 @@ import {
   UserPlus,
   Users,
   Key,
+  Calculator,
 } from "lucide-react";
 
 /**
@@ -118,6 +119,12 @@ export const NAV_SECTIONS: NavSection[] = [
       //   ],
       // },
       { key: "forms", label: "Formularios", icon: FileText, href: "/forms" },
+      {
+        key: "cotizador",
+        label: "Cotizador",
+        icon: Calculator,
+        href: "/cotizador",
+      },
       // PROXIMAMENTE
       //   {
       //     key: "comunicacion",
