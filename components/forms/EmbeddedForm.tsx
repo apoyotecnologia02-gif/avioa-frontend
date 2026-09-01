@@ -44,7 +44,7 @@ export function EmbeddedForm({ url, title }: EmbeddedFormProps) {
         )}
 
         <iframe
-          src="https://docs.google.com/forms/d/e/1FAIpQLSeCOZkDYNIFM-D9aCsS3eSyr2vVLO01vavFuGGsEQYsC2o2PQ/viewform?embedded=true"
+          src="https://docs.google.com/forms/d/e/1FAIpQLScOwyfsKHQC8NBC0Ou-B_ULi1gyUhT2l0wbZ_C8QXBdv6dd4A/viewform?embedded=true"
           title={title}
           className="w-full"
           style={{

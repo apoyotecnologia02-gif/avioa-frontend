@@ -85,7 +85,7 @@ export default function TwoFactorModal({
         </DialogHeader>
 
         <div className="flex flex-col items-center gap-5">
-          <div className="rounded-lg border bg-white p-4">
+          <div className="rounded-lg border bg-card p-4">
             <Image
               text={qrCode}
               options={{

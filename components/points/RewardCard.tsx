@@ -21,7 +21,7 @@ export function RewardCard({ reward, userPoints, onRedeem, isRedeeming }: Reward
       onClick={() => onRedeem && canRedeem && !isRedeeming ? onRedeem(reward.rewardId) : undefined}
     >
       <div 
-        className={`w-full h-full rounded-2xl flex items-center justify-between p-6 pl-8 overflow-hidden transition-colors ${canRedeem ? 'bg-white' : 'bg-gray-50 opacity-90'}`}
+        className={`w-full h-full rounded-2xl flex items-center justify-between p-6 pl-8 overflow-hidden transition-colors ${canRedeem ? 'bg-card' : 'bg-muted opacity-90'}`}
         style={{
           WebkitMaskImage: 'radial-gradient(circle at 0 50%, transparent 12px, black 13px), radial-gradient(circle at 100% 50%, transparent 12px, black 13px)',
           WebkitMaskPosition: 'left center, right center',
@@ -39,7 +39,7 @@ export function RewardCard({ reward, userPoints, onRedeem, isRedeeming }: Reward
             <Trophy className="w-3.5 h-3.5 text-primary" />
             <span className="font-bold text-sm">{reward.cost.toLocaleString()} pts</span>
           </Badge>
-          <p className="text-[15px] text-gray-800 font-medium leading-tight line-clamp-2">
+          <p className="text-[15px] text-foreground font-medium leading-tight line-clamp-2">
             {reward.name}
           </p>
         </div>
@@ -56,8 +56,8 @@ export function RewardCard({ reward, userPoints, onRedeem, isRedeeming }: Reward
         
         {/* Overlay for redeeming state */}
         {isRedeeming && (
-          <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] flex items-center justify-center">
-            <span className="font-bold text-primary bg-white px-3 py-1 rounded-full shadow-sm text-sm">Procesando...</span>
+          <div className="absolute inset-0 bg-background/60 backdrop-blur-[1px] flex items-center justify-center">
+            <span className="rounded-full bg-card px-3 py-1 text-sm font-bold text-primary shadow-sm">Procesando...</span>
           </div>
         )}
       </div>

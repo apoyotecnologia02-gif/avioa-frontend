@@ -15,9 +15,11 @@ export function Providers({ children }: ProvidersProps) {
 
   return (
     <QueryClientProvider client={queryClient}>
-     <ThemeProvider> {children} </ThemeProvider>
-      <Toaster />
-      <SonnerToaster />
+      <ThemeProvider>
+        {children}
+        <Toaster />
+        <SonnerToaster />
+      </ThemeProvider>
     </QueryClientProvider>
   )
 }
