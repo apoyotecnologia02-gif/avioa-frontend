@@ -35,7 +35,7 @@ export function useRestoreVault(onSuccess?: () => void) {
   const restore = async (id: string) => {
     setIsSubmitting(true);
     try {
-      await api.post(`/password-vault/restore/${id}`, {
+      await api.patch(`/password-vault/restore/${id}`, {
         skip401Redirect: true,
       });
       onSuccess?.();
