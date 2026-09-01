@@ -177,39 +177,41 @@ export function PostCard({ post }: { post: FeedPost }) {
     //   {showComments && <CommentSection post={post} />}
     // </article>
     <article
-      className={`group rounded-2xl border bg-card/60 p-5 shadow-sm backdrop-blur-sm transition-all hover:shadow-md ${post.pinned ? "border-primary/30 bg-primary/5" : "border-border/50"}`}
+      className={`group rounded-2xl border bg-card/60 p-4 shadow-sm backdrop-blur-sm transition-all hover:shadow-md sm:p-5 ${post.pinned ? "border-primary/30 bg-primary/5" : "border-border/50"}`}
     >
-      <div className="flex items-start justify-between">
-        <div className="flex items-start gap-4">
-          <Avatar className="h-11 w-11 ring-2 ring-background">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex min-w-0 flex-1 items-start gap-3 sm:gap-4">
+          <Avatar className="h-10 w-10 shrink-0 ring-2 ring-background sm:h-11 sm:w-11">
             <AvatarImage src={post.author.avatarUrl} />
             <AvatarFallback className="bg-primary/5 text-primary">
               {post.author.name[0]}
             </AvatarFallback>
           </Avatar>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-semibold text-foreground">
-              {post.author.name}
-            </span>
-            {post.pinned && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
-                <Pin className="h-3 w-3" />
-                Fijado
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm font-semibold text-foreground">
+                {post.author.name}
               </span>
-            )}
-            <span className="text-xs text-muted-foreground">.</span>
-            <time className="text-xs text-muted-foreground">
-              {formatDistanceToNow(new Date(post.createdAt), {
-                addSuffix: true,
-                locale: es,
-              })}
-            </time>
+              {post.pinned && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                  <Pin className="h-3 w-3" />
+                  Fijado
+                </span>
+              )}
+              <span className="text-xs text-muted-foreground">.</span>
+              <time className="text-xs text-muted-foreground">
+                {formatDistanceToNow(new Date(post.createdAt), {
+                  addSuffix: true,
+                  locale: es,
+                })}
+              </time>
+            </div>
+            <span
+              className={`mt-1.5 inline-block rounded-full px-3 py-0.5 text-[11px] font-medium ${badge.className}`}
+            >
+              {badge.label}
+            </span>
           </div>
-          <span
-            className={`mt-1.5 inline-block rounded-full px-3 py-0.5 text-[11px] font-medium ${badge.className}`}
-          >
-            {badge.label}
-          </span>
         </div>
 
         {canManage && (
@@ -218,7 +220,7 @@ export function PostCard({ post }: { post: FeedPost }) {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 opacity-0 transition-opacity group-hover:opacity-100"
+                className="h-8 w-8 shrink-0 opacity-100 md:opacity-0 md:transition-opacity md:group-hover:opacity-100"
               >
                 <MoreHorizontal className="h-4 w-4" />
               </Button>

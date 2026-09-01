@@ -23,6 +23,8 @@ export default function FormPage({ params }: FormPageProps) {
   const { id } = use(params);
   const { data: form, isLoading, error } = useForm(id);
 
+  console.log("FormPage - form:", form);
+
   if (isLoading) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
@@ -67,7 +69,7 @@ export default function FormPage({ params }: FormPageProps) {
           <CardDescription>{form.description}</CardDescription>
         </CardHeader>
         <CardContent>
-          {form.type === "EMBEDDED" && form.embedUrl ? (
+          {form.type === "EMBEDDED".toLowerCase() && form.embedUrl ? (
             <EmbeddedForm url={form.embedUrl} title={form.title} />
           ) : form.type === "NATIVE" && form.schema ? (
             <DynamicForm formId={form.formId} schema={form.schema} />

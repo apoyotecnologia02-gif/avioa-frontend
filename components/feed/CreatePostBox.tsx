@@ -146,7 +146,7 @@ export function CreatePostBox() {
     //   </div>
     // </Card>
     <Card className="overflow-hidden border-0 bg-gradient-to-br from-card to-muted/30 p-0 shadow-sm transition-shadow hover:shadow-md">
-      <div className="flex items-start gap-4 p-5">
+      <div className="flex items-start gap-3 p-4 sm:gap-4 sm:p-5">
         <Avatar className="h-11 w-11 ring-2 ring-primary/10">
           <AvatarImage src={user?.avatarUrl} />
           <AvatarFallback className="bg-primary/5 text-primary">
@@ -165,7 +165,7 @@ export function CreatePostBox() {
 
           {open && (
             <>
-              <div className="flex flex-wrap items-center gap-3 border-t border-border/60 pt-4">
+              <div className="flex flex-col gap-3 border-t border-border/60 pt-4 sm:flex-row sm:flex-wrap sm:items-center">
                 <Select
                   value={type}
                   onValueChange={(v) => {
@@ -192,7 +192,7 @@ export function CreatePostBox() {
                   />
                 )}
 
-                <div className="ml-auto flex items-center gap-2">
+                <div className="flex w-full items-center justify-end gap-2 sm:ml-auto sm:w-auto">
                   <Button
                     variant="ghost"
                     size="sm"

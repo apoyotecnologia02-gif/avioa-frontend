@@ -71,8 +71,8 @@ export default function PointsRequestPage() {
                 <TableRow>
                   <TableHead>Colaborador</TableHead>
                   <TableHead>Puntos</TableHead>
-                  <TableHead>Motivo</TableHead>
-                  <TableHead>Fecha</TableHead>
+                  <TableHead className="hidden md:table-cell">Motivo</TableHead>
+                  <TableHead className="hidden sm:table-cell">Fecha</TableHead>
                   <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
@@ -85,20 +85,20 @@ export default function PointsRequestPage() {
                     <TableCell>
                       <span className="font-semibold text-primary">{req.points} pts</span>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden md:table-cell">
                       <span className="line-clamp-1 max-w-[300px]" title={req.action}>
                         {req.action}
                       </span>
                     </TableCell>
-                    <TableCell>{formatDate(req.createdAt)}</TableCell>
+                    <TableCell className="hidden sm:table-cell">{formatDate(req.createdAt)}</TableCell>
                     <TableCell className="text-right">
                       <Button 
                         size="sm" 
                         variant="outline"
                         onClick={() => router.push(`/points-request/${req.pointRequestId}`)}
                       >
-                        <Eye className="h-4 w-4 mr-2" />
-                        Revisar
+                        <Eye className="h-4 w-4 sm:mr-2" />
+                        <span className="hidden sm:inline">Revisar</span>
                       </Button>
                     </TableCell>
                   </TableRow>

@@ -208,9 +208,9 @@ const INITIAL_FORMS: Form[] = [
     title: "Encuesta de Clima Laboral",
     description: "Encuesta anónima sobre el ambiente de trabajo",
     category: "General",
-    type: "embedded",
+    type: "EMBEDDED",
     embedUrl:
-      "https://docs.google.com/forms/d/e/1FAIpQLSe-climate-survey/viewform?embedded=true",
+      "https://docs.google.com/forms/d/e/1FAIpQLSeCOZkDYNIFM-D9aCsS3eSyr2vVLO01vavFuGGsEQYsC2o2PQ/viewform?embedded=true",
   },
   {
     id: "form-7",
