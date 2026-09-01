@@ -95,16 +95,16 @@ function LoginPageContent() {
 
   if (authLoading) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center bg-white overflow-hidden">
+      <div className="flex h-screen w-screen items-center justify-center bg-background overflow-hidden">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen w-screen items-center justify-center bg-white p-4 overflow-hidden bg-background">
+    <div className="flex h-screen w-screen items-center justify-center overflow-hidden bg-background p-4">
       {/* Contenedor principal con fondo tenue */}
-      <div className="flex w-full h-full max-h-[98vh] flex-col overflow-hidden rounded-2xl bg-[#F8F9FA] shadow-lg lg:flex-row">
+      <div className="flex h-full w-full max-h-[98vh] flex-col overflow-hidden rounded-2xl border bg-card shadow-lg lg:flex-row">
         {/* Columna izquierda - Formulario */}
         <div className="flex w-full lg:w-1/2 items-center justify-center p-4 md:p-6 lg:p-8 overflow-y-auto">
           <div className="w-full max-w-[380px]">
@@ -141,7 +141,7 @@ function LoginPageContent() {
                 <div>
                   <Label
                     htmlFor="documentNumber"
-                    className="text-sm font-medium text-gray-700"
+                    className="text-sm font-medium text-foreground"
                   >
                     Número de documento
                   </Label>
@@ -151,7 +151,7 @@ function LoginPageContent() {
                     type="text"
                     placeholder="Ingresa tu número de documento"
                     {...register("documentNumber")}
-                    className="mt-1 h-10 rounded-lg border-gray-200 bg-white px-3 text-gray-900 placeholder:text-gray-400 focus:border-primary focus:ring-primary"
+                    className="mt-1 h-10 rounded-lg border-border bg-background px-3 text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-primary"
                     aria-invalid={!!errors.documentNumber}
                   />
                   {errors.documentNumber && (
@@ -165,7 +165,7 @@ function LoginPageContent() {
                 <div>
                   <Label
                     htmlFor="password"
-                    className="text-sm font-medium text-gray-700"
+                    className="text-sm font-medium text-foreground"
                   >
                     Contraseña
                   </Label>
@@ -175,7 +175,7 @@ function LoginPageContent() {
                       type={showPassword ? "text" : "password"}
                       placeholder="********"
                       {...register("password")}
-                      className="h-10 w-full rounded-lg border-gray-200 bg-white px-3 pr-10 text-gray-900 placeholder:text-gray-400 focus:border-primary focus:ring-primary"
+                      className="h-10 w-full rounded-lg border-border bg-background px-3 pr-10 text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-primary"
                       aria-invalid={!!errors.password}
                     />
                     <Button
@@ -186,9 +186,9 @@ function LoginPageContent() {
                       onClick={() => setShowPassword(!showPassword)}
                     >
                       {showPassword ? (
-                        <EyeOff className="h-4 w-4 text-gray-400" />
+                        <EyeOff className="h-4 w-4 text-muted-foreground" />
                       ) : (
-                        <Eye className="h-4 w-4 text-gray-400" />
+                        <Eye className="h-4 w-4 text-muted-foreground" />
                       )}
                     </Button>
                   </div>
@@ -221,13 +221,13 @@ function LoginPageContent() {
               <Button
                 variant="link"
                 asChild
-                className="text-sm text-gray-500 hover:text-gray-700 p-0 h-auto"
+                className="h-auto p-0 text-sm text-muted-foreground hover:text-foreground"
               >
                 <Link href="/send-forgot-password">
                   ¿Olvidaste tu contraseña?
                 </Link>
               </Button>
-              <div className="mt-1 text-xs text-gray-400">
+              <div className="mt-1 text-xs text-muted-foreground">
                 Privacidad y protección de datos
               </div>
             </div>
@@ -235,7 +235,7 @@ function LoginPageContent() {
         </div>
 
         {/* R image */}
-        <div className="hidden lg:block lg:w-1/2 bg-[#F8F9FA] p-4">
+        <div className="hidden bg-card p-4 lg:block lg:w-1/2">
           <div className="relative h-full w-full overflow-hidden rounded-2xl min-h-[300px]">
             <Image
               src="/login.png"
@@ -255,7 +255,7 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex h-screen w-screen items-center justify-center bg-white overflow-hidden">
+        <div className="flex h-screen w-screen items-center justify-center bg-background overflow-hidden">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       }

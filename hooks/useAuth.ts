@@ -16,6 +16,7 @@ export function useAuth() {
     logout,
     hydrate,
     setUser,
+    refreshAccessToken,
   } = useAuthStore();
 
   useEffect(() => {
@@ -49,5 +50,6 @@ export function useAuth() {
     login,
     logout: handleLogout,
     setUser,
+    refreshAccessToken,
   };
 }

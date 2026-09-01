@@ -14,7 +14,7 @@ export async function POST(request: Request) {
       body: JSON.stringify(body),
     });
 
-    const data = parseResponseData(response);
+    const data = await parseResponseData(response);
 
     if (!response.ok) {
       return NextResponse.json(data, { status: response.status });
