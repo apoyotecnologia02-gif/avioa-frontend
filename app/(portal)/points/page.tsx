@@ -60,34 +60,35 @@ export default function PointsPage() {
   // }, [rewards]);
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-7xl space-y-8 animate-in fade-in duration-500">
+    <div className="container mx-auto max-w-7xl space-y-8 py-2 sm:py-4 animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div className="flex flex-col gap-1">
-          <h1 className="text-3xl font-bold tracking-tight">
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
             Centro de Recompensas
           </h1>
           <p className="text-muted-foreground">
             Canjea tus puntos acumulados o solicita puntos a tu líder.
           </p>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
           <Button
             variant="outline"
             size="sm"
-            className="gap-2"
+            className="gap-2 flex-1 sm:flex-none"
             onClick={() => router.push("/points/my-requests")}
           >
             <ClipboardList className="h-4 w-4" />
-            Mis Solicitudes
+            <span className="sm:hidden">Solicitudes</span>
+            <span className="hidden sm:inline">Mis Solicitudes</span>
           </Button>
           <Button
             variant="outline"
             size="sm"
-            className="gap-2"
+            className="gap-2 flex-1 sm:flex-none"
             onClick={() => router.push("/points/history")}
           >
             <History className="h-4 w-4" />
-            Ver Historial
+            Historial
           </Button>
         </div>
       </div>

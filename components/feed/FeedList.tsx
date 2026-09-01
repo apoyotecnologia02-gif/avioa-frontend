@@ -76,10 +76,16 @@ export function FeedList() {
 
     //   <BirthdaysSidebar />
     // </div>
-    <div className="mx-auto max-w-5xl px-4 py-8 lg:grid lg:grid-cols-[1fr_280px] lg:gap-8">
-      <div className="flex min-w-0 flex-col gap-6">
+    <div className="mx-auto grid max-w-5xl grid-cols-1 items-start gap-6 pb-2 sm:pb-4 lg:pb-8 lg:grid-cols-[minmax(0,1fr)_280px] lg:gap-8">
+      <div className="order-1 flex min-w-0 flex-col gap-6 lg:col-start-1">
         <CreatePostBox />
+      </div>
 
+      <div className="order-2 min-w-0 lg:order-none lg:col-start-2 lg:row-start-1 lg:row-span-2">
+        <BirthdaysSidebar />
+      </div>
+
+      <div className="order-3 flex min-w-0 flex-col gap-6 lg:order-none lg:col-start-1 lg:row-start-2">
         {isLoading ? (
           <FeedSkeleton />
         ) : posts.length === 0 ? (
@@ -97,8 +103,6 @@ export function FeedList() {
           </>
         )}
       </div>
-
-      <BirthdaysSidebar />
     </div>
   );
 }

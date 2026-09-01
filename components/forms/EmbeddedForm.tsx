@@ -1,17 +1,19 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { ExternalLink } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
+import { useState } from "react";
+import { ExternalLink } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface EmbeddedFormProps {
-  url: string
-  title: string
+  url: string;
+  title: string;
 }
 
 export function EmbeddedForm({ url, title }: EmbeddedFormProps) {
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(true);
+
+  console.log("EmbeddedForm - url:", url);
 
   return (
     <div className="space-y-4">
@@ -24,29 +26,35 @@ export function EmbeddedForm({ url, title }: EmbeddedFormProps) {
         </Button>
       </div>
 
-      <div className="relative min-h-[700px] overflow-hidden rounded-lg border border-border">
+      <div className="relative w-full overflow-hidden rounded-lg border border-border">
         {isLoading && (
-          <div className="absolute inset-0 space-y-4 p-6">
+          <div className="absolute inset-0 z-10 space-y-4 bg-background p-6">
             <Skeleton className="h-8 w-3/4" />
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-5/6" />
+
             <div className="space-y-3 pt-4">
               <Skeleton className="h-10 w-full" />
               <Skeleton className="h-10 w-full" />
               <Skeleton className="h-10 w-full" />
             </div>
+
             <Skeleton className="mt-4 h-10 w-32" />
           </div>
         )}
+
         <iframe
-          src={url}
+          src="https://docs.google.com/forms/d/e/1FAIpQLSeCOZkDYNIFM-D9aCsS3eSyr2vVLO01vavFuGGsEQYsC2o2PQ/viewform?embedded=true"
           title={title}
-          className="h-full min-h-[700px] w-full"
+          className="w-full"
+          style={{
+            border: 0,
+            height: "1800px",
+          }}
           onLoad={() => setIsLoading(false)}
-          style={{ border: 0 }}
           allowFullScreen
         />
       </div>
     </div>
-  )
+  );
 }

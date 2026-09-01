@@ -106,7 +106,7 @@ export default function PortalLayout({
       <AppShell>
         {/* ===== CONTENIDO CON SCROLL PERSONALIZADO ===== */}
         <div className={cn(
-          "h-full w-full overflow-y-auto",
+          "h-full min-h-0 w-full min-w-0 overflow-x-hidden overflow-y-auto",
           scrollbarStyles
         )}>
           {children}

@@ -146,11 +146,11 @@ export default function OvertimePage() {
   }, [reloadTeam, reloadSummary, reloadMy]);
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-7xl space-y-6 animate-in fade-in duration-500">
+    <div className="container mx-auto max-w-7xl space-y-6 py-2 sm:py-4 animate-in fade-in duration-500">
       {/* Page header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div className="flex flex-col gap-1">
-          <h1 className="text-3xl font-bold tracking-tight">
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
             Control de Horas
           </h1>
           <p className="text-muted-foreground">
@@ -193,7 +193,7 @@ export default function OvertimePage() {
         }`}
       >
         {/* Calendar */}
-        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+        <div className="rounded-xl border border-border bg-card p-3 shadow-sm sm:p-5">
           <OvertimeCalendar
             currentDate={currentDate}
             onMonthChange={handleMonthChange}

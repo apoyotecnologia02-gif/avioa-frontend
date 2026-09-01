@@ -79,9 +79,9 @@ export default function LeavesPage() {
   };
 
   return (
-    <div className="container mx-auto max-w-7xl space-y-6 px-4 py-8 animate-in fade-in duration-500">
+    <div className="container mx-auto max-w-7xl space-y-6 py-2 sm:py-4 animate-in fade-in duration-500">
       {/* Header */}
-      <div className="flex itemss-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">
             Vacaciones y ausencias
@@ -90,7 +90,7 @@ export default function LeavesPage() {
             Tu saldo, solicitudes y estado de cada una
           </p>
         </div>
-        <Button onClick={() => setRequestOpen(true)}>
+        <Button onClick={() => setRequestOpen(true)} className="w-full sm:w-auto">
           <Plus className="mr-2 h-4 w-4" />
           Solicitar
         </Button>
