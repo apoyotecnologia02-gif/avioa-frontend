@@ -88,6 +88,7 @@ export default function VaultPage() {
           />
         </div>
 
+        {/* Columna de la lista */}
         <div
           className={`flex min-h-0 w-full flex-col border-r md:w-80 ${selectedItem ? "hidden md:flex" : "flex"}`}
         >
@@ -99,61 +100,55 @@ export default function VaultPage() {
             />
           </div>
           <div className="min-h-0 flex-1">
-            <div className="min-h-0 flex-1">
-              <VaultList
-                items={items}
-                isLoading={isLoading}
-                selectedId={selectedId}
-                onSelect={handleSelect}
-                onCreateNew={handleCreateNew}
-              />
-            </div>
+            <VaultList
+              items={items}
+              isLoading={isLoading}
+              selectedId={selectedId}
+              onSelect={handleSelect}
+              onCreateNew={handleCreateNew}
+            />
           </div>
+        </div>
 
-          <div
-            className={`min-h-0 min-w-0 flex-1 ${selectedItem ? "block" : "hidden md:block"}`}
-          >
-            {selectedItem ? (
-              <>
-                <div className="shrink-0 border-b p-2 md:hidden">
-                  <Button
-                    onClick={() => setSelectedId(null)}
-                    className="text-sm text-muted-foreground"
-                  >
-                    ← Volver
-                  </Button>
-                </div>
-
-                <div className="min-w-0 flex-1 overflow-hidden">
-                  <VaultDetails
-                    item={selectedItem}
-                    revealedPassword={revealedPassword}
-                    onRevealed={(password) => {
-                      setRevealedPassword({
-                        password,
-                        itemId: selectedItem.passwordVaultId,
-                      });
-
-                      setTimeout(() => {
-                        setRevealedPassword(null);
-                      }, 15000);
-                    }}
-                    onEdit={handleEdit}
-                    onDeleted={() => {
-                      setSelectedId(null);
-                      setRevealedPassword(null);
-                      reload();
-                    }}
-                    onFavoriteToggled={reload}
-                  />
-                </div>
-              </>
-            ) : (
-              <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-                Selecciona una credencial para ver sus detalles
+        <div
+          className={`min-h-0 min-w-0 flex-1 ${selectedItem ? "block" : "hidden md:block"}`}
+        >
+          {selectedItem ? (
+            <>
+              <div className="shrink-0 border-b p-2 md:hidden">
+                <Button
+                  onClick={() => setSelectedId(null)}
+                  className="text-sm text-muted-foreground"
+                >
+                  ← Volver
+                </Button>
               </div>
-            )}
-          </div>
+              <div className="min-w-0 flex-1 overflow-hidden">
+                <VaultDetails
+                  item={selectedItem}
+                  revealedPassword={revealedPassword}
+                  onRevealed={(password) => {
+                    setRevealedPassword({
+                      password,
+                      itemId: selectedItem.passwordVaultId,
+                    });
+                    setTimeout(() => setRevealedPassword(null), 15000);
+                  }}
+                  onEdit={handleEdit}
+                  onDeleted={() => {
+                    setSelectedId(null);
+                    setRevealedPassword(null);
+                    reload();
+                  }}
+                  onFavoriteToggled={reload}
+                />
+              </div>
+            </>
+          ) : (
+            <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+              Selecciona una credencial para ver sus detalles
+            </div>
+          )}
         </div>
 
         <VaultFormModal

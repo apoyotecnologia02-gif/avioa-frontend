@@ -159,8 +159,8 @@ function ChangePasswordPageContent() {
   }
 
   return (
-    <div className="flex h-screen w-screen items-center justify-center bg-white p-4 overflow-hidden">
-      <div className="flex w-full h-full max-h-[98vh] flex-col overflow-hidden rounded-2xl bg-[#F8F9FA] shadow-lg lg:flex-row">
+    <div className="flex h-screen w-screen items-center justify-center overflow-hidden bg-background p-4">
+      <div className="flex h-full w-full max-h-[98vh] flex-col overflow-hidden rounded-2xl border bg-card shadow-lg lg:flex-row">
         {/* Formulario */}
         <div className="flex w-full lg:w-1/2 items-center justify-center p-4 md:p-6 lg:p-8 overflow-y-auto">
           <div className="w-full max-w-[380px]">
@@ -212,7 +212,7 @@ function ChangePasswordPageContent() {
               <div>
                 <Label
                   htmlFor="newPassword"
-                  className="text-sm font-medium text-gray-700"
+                  className="text-sm font-medium text-foreground"
                 >
                   Nueva contraseña
                 </Label>
@@ -223,7 +223,7 @@ function ChangePasswordPageContent() {
                     type={showPassword ? "text" : "password"}
                     placeholder="********"
                     {...register("newPassword")}
-                    className="h-10 w-full rounded-lg border-gray-200 bg-white px-3 pr-10 text-gray-900 placeholder:text-gray-400 focus:border-primary focus:ring-primary"
+                    className="h-10 w-full rounded-lg border-border bg-background px-3 pr-10 text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-primary"
                     aria-invalid={!!errors.newPassword}
                   />
 
@@ -235,9 +235,9 @@ function ChangePasswordPageContent() {
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? (
-                      <EyeOff className="h-4 w-4 text-gray-400" />
+                      <EyeOff className="h-4 w-4 text-muted-foreground" />
                     ) : (
-                      <Eye className="h-4 w-4 text-gray-400" />
+                      <Eye className="h-4 w-4 text-muted-foreground" />
                     )}
                   </Button>
                 </div>
@@ -253,7 +253,7 @@ function ChangePasswordPageContent() {
               <div>
                 <Label
                   htmlFor="confirmPassword"
-                  className="text-sm font-medium text-gray-700"
+                  className="text-sm font-medium text-foreground"
                 >
                   Confirmar contraseña
                 </Label>
@@ -264,7 +264,7 @@ function ChangePasswordPageContent() {
                     type={showConfirmPassword ? "text" : "password"}
                     placeholder="********"
                     {...register("confirmPassword")}
-                    className="h-10 w-full rounded-lg border-gray-200 bg-white px-3 pr-10 text-gray-900 placeholder:text-gray-400 focus:border-primary focus:ring-primary"
+                    className="h-10 w-full rounded-lg border-border bg-background px-3 pr-10 text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-primary"
                     aria-invalid={!!errors.confirmPassword}
                   />
 
@@ -276,9 +276,9 @@ function ChangePasswordPageContent() {
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   >
                     {showConfirmPassword ? (
-                      <EyeOff className="h-4 w-4 text-gray-400" />
+                      <EyeOff className="h-4 w-4 text-muted-foreground" />
                     ) : (
-                      <Eye className="h-4 w-4 text-gray-400" />
+                      <Eye className="h-4 w-4 text-muted-foreground" />
                     )}
                   </Button>
                 </div>
@@ -292,7 +292,7 @@ function ChangePasswordPageContent() {
 
               {/* Requisitos */}
               <div className="rounded-lg bg-muted/50 p-3">
-                <p className="mb-2 text-xs font-medium text-gray-700">
+                <p className="mb-2 text-xs font-medium text-foreground">
                   La contraseña debe contener:
                 </p>
 
@@ -322,7 +322,7 @@ function ChangePasswordPageContent() {
             </form>
 
             <div className="mt-4 text-center">
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-muted-foreground">
                 Por seguridad, no compartas tu contraseña con otras personas.
               </p>
             </div>
@@ -330,7 +330,7 @@ function ChangePasswordPageContent() {
         </div>
 
         {/* Imagen */}
-        <div className="hidden lg:block lg:w-1/2 bg-[#F8F9FA] p-4">
+        <div className="hidden bg-card p-4 lg:block lg:w-1/2">
           <div className="relative h-full w-full overflow-hidden rounded-2xl min-h-[300px]">
             <Image
               src="/login.png"
@@ -350,7 +350,7 @@ export default function ChangePasswordPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex h-screen w-screen items-center justify-center bg-white">
+        <div className="flex h-screen w-screen items-center justify-center bg-background">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       }
