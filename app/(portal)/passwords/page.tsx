@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { VaultDetails } from "@/components/vault/vault-details";
 import { VaultFormModal } from "@/components/vault/vault-form-modal";
 import { VaultHeader } from "@/components/vault/vault-header";
@@ -69,13 +70,12 @@ export default function VaultPage() {
 
   return (
     // <div className="flex h-[calc(100vh-4rem)] flex-col overflow-hidden">
-    <div className="flex h-screen flex-col overflow-hidden">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden">
       <VaultHeader
         onCreateNew={handleCreateNew}
         scope={scope}
         onScopeChange={setScope}
       />
-
       <div className="flex min-h-0 flex-1 overflow-hidden">
         <div className="hidden md:block">
           <VaultSidebar
@@ -89,72 +89,83 @@ export default function VaultPage() {
         </div>
 
         <div
-          className={`w-full border-r md:w-80 ${selectedItem ? "hidden md:block" : "block"}`}
+          className={`flex min-h-0 w-full flex-col border-r md:w-80 ${selectedItem ? "hidden md:flex" : "flex"}`}
         >
-          <VaultList
-            items={items}
-            isLoading={isLoading}
-            selectedId={selectedId}
-            onSelect={handleSelect}
-            onCreateNew={handleCreateNew}
-          />
-        </div>
-
-        <div
-          className={`min-h-0 min-w-0 flex-1 ${selectedItem ? "block" : "hidden md:block"}`}
-        >
-          {selectedItem ? (
-            <>
-              <div className="shrink-0 border-b p-2 md:hidden">
-                <Button
-                  onClick={() => setSelectedId(null)}
-                  className="text-sm text-muted-foreground"
-                >
-                  ← Volver
-                </Button>
-              </div>
-
-              <div className="min-w-0 flex-1 overflow-hidden">
-                <VaultDetails
-                  item={selectedItem}
-                  revealedPassword={revealedPassword}
-                  onRevealed={(password) => {
-                    setRevealedPassword({
-                      password,
-                      itemId: selectedItem.passwordVaultId,
-                    });
-
-                    setTimeout(() => {
-                      setRevealedPassword(null);
-                    }, 15000);
-                  }}
-                  onEdit={handleEdit}
-                  onDeleted={() => {
-                    setSelectedId(null);
-                    setRevealedPassword(null);
-                    reload();
-                  }}
-                  onFavoriteToggled={reload}
-                />
-              </div>
-            </>
-          ) : (
-            <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-              Selecciona una credencial para ver sus detalles
+          <div className="border-b p-3 md:hidden">
+            <Input
+              placeholder="Buscar..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <div className="min-h-0 flex-1">
+            <div className="min-h-0 flex-1">
+              <VaultList
+                items={items}
+                isLoading={isLoading}
+                selectedId={selectedId}
+                onSelect={handleSelect}
+                onCreateNew={handleCreateNew}
+              />
             </div>
-          )}
-        </div>
-      </div>
+          </div>
 
-      <VaultFormModal
-        open={formOpen}
-        onOpenChange={setFormOpen}
-        mode={formMode}
-        item={formTarget}
-        categories={categories}
-        tags={tags}
-        onSaved={reload}
-      />
+          <div
+            className={`min-h-0 min-w-0 flex-1 ${selectedItem ? "block" : "hidden md:block"}`}
+          >
+            {selectedItem ? (
+              <>
+                <div className="shrink-0 border-b p-2 md:hidden">
+                  <Button
+                    onClick={() => setSelectedId(null)}
+                    className="text-sm text-muted-foreground"
+                  >
+                    ← Volver
+                  </Button>
+                </div>
+
+                <div className="min-w-0 flex-1 overflow-hidden">
+                  <VaultDetails
+                    item={selectedItem}
+                    revealedPassword={revealedPassword}
+                    onRevealed={(password) => {
+                      setRevealedPassword({
+                        password,
+                        itemId: selectedItem.passwordVaultId,
+                      });
+
+                      setTimeout(() => {
+                        setRevealedPassword(null);
+                      }, 15000);
+                    }}
+                    onEdit={handleEdit}
+                    onDeleted={() => {
+                      setSelectedId(null);
+                      setRevealedPassword(null);
+                      reload();
+                    }}
+                    onFavoriteToggled={reload}
+                  />
+                </div>
+              </>
+            ) : (
+              <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                Selecciona una credencial para ver sus detalles
+              </div>
+            )}
+          </div>
+        </div>
+
+        <VaultFormModal
+          open={formOpen}
+          onOpenChange={setFormOpen}
+          mode={formMode}
+          item={formTarget}
+          categories={categories}
+          tags={tags}
+          onSaved={reload}
+        />
+      </div>
     </div>
   );
 }

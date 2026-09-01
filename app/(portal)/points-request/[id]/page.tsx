@@ -116,7 +116,7 @@ export default function PointRequestDetailPage() {
 
       <Card>
         <CardHeader>
-          <div className="flex justify-between items-start">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <CardTitle>Detalle de la Solicitud</CardTitle>
               <CardDescription>ID: {request.pointRequestId || id}</CardDescription>
@@ -132,7 +132,7 @@ export default function PointRequestDetailPage() {
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-1">
               <span className="text-sm text-muted-foreground">Colaborador</span>
               <p className="font-medium">{request.user?.name || 'Desconocido'}</p>

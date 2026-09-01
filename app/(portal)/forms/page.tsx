@@ -64,7 +64,7 @@ export default function FormsPage() {
             Selecciona un formulario para completar o visualizar
           </p>
         </div>
-        <Button asChild>
+        <Button asChild className="w-full sm:w-auto">
           <Link href="/forms/new">Crear Formulario</Link>
         </Button>
       </div>
@@ -86,8 +86,9 @@ export default function FormsPage() {
           onValueChange={(value) =>
             setActiveCategory(value as FormCategory | "Todos")
           }
+          className="w-full min-w-0 sm:w-auto"
         >
-          <TabsList>
+          <TabsList className="flex h-auto w-full flex-nowrap justify-start overflow-x-auto sm:w-fit">
             {categories.map((category) => (
               <TabsTrigger
                 key={category}
@@ -176,7 +177,9 @@ export default function FormsPage() {
                   </CardHeader>
                   <CardFooter className="mt-auto pt-0">
                     <Button asChild className="w-full">
-                      <Link href={`/forms/${form.formId}`}>
+                      <Link
+                        href={`/forms/${form.formId ? form.formId : form.id}`}
+                      >
                         {form.type === "EMBEDDED" && (
                           <ExternalLink className="mr-2 h-4 w-4" />
                         )}

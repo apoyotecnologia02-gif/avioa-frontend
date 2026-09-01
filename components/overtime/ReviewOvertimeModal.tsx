@@ -148,7 +148,7 @@ export function ReviewOvertimeModal({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
+        <DialogContent className="flex max-h-[90dvh] w-[calc(100%-1.5rem)] flex-col overflow-hidden sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Revisar Solicitudes de Horas Extra</DialogTitle>
             <DialogDescription>
@@ -175,7 +175,7 @@ export function ReviewOvertimeModal({
             onValueChange={(v) => setActiveTab(v as TabValue)}
             className="flex flex-col flex-1 min-h-0"
           >
-            <TabsList className="w-full grid grid-cols-4 shrink-0">
+            <TabsList className="grid w-full shrink-0 grid-cols-2 sm:grid-cols-4">
               {TAB_ITEMS.map((tab) => (
                 <TabsTrigger key={tab.value} value={tab.value} className="relative text-xs gap-1.5">
                   {tab.label}
@@ -190,7 +190,7 @@ export function ReviewOvertimeModal({
 
             {TAB_ITEMS.map((tab) => (
               <TabsContent key={tab.value} value={tab.value} className="flex-1 min-h-0 mt-3 data-[state=active]:flex data-[state=active]:flex-col">
-                <ScrollArea className="h-[420px] shrink min-h-0 pr-1">
+                <ScrollArea className="h-[min(420px,50dvh)] min-h-0 shrink pr-1">
                   <div className="space-y-3 pb-2">
                     {isLoading ? (
                       Array.from({ length: 3 }).map((_, i) => (

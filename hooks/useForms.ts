@@ -9,7 +9,7 @@ export function useForms() {
   return useQuery<Form[]>({
     queryKey: ["forms"],
     queryFn: async () => {
-      const { data } = await api.get<Form[]>(FORMS_URL);
+      const { data } = await api.get<Form[]>("/forms");
       return data;
     },
   });
@@ -19,7 +19,7 @@ export function useForm(id: string) {
   return useQuery<Form>({
     queryKey: ["forms", id],
     queryFn: async () => {
-      const { data } = await api.get<Form>(`${FORMS_URL}/${id}`);
+      const { data } = await api.get<Form>(`/forms/${id}`);
       return data;
     },
     enabled: !!id,

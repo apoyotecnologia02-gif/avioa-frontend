@@ -94,14 +94,18 @@ export function Header() {
   }, [fetchNotifications]);
 
   return (
-    <header className="flex h-16 items-center justify-between border-b border-border bg-card px-4 lg:px-6">
+    <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-border bg-card px-3 sm:h-16 sm:px-4 lg:px-6">
       {/* Left side - Breadcrumbs + Menu button */}
-      <div className="flex items-center gap-3 min-w-0">
+      <div className="flex min-w-0 items-center gap-2 sm:gap-3">
         {/* SidebarTrigger - controla la sidebar de shadcn */}
-        <SidebarTrigger className="lg:hidden" />
+        <SidebarTrigger className="md:hidden" />
+
+        <span className="truncate text-sm font-medium md:hidden">
+          {breadcrumbs[breadcrumbs.length - 1]?.label ?? "Portal"}
+        </span>
 
         {/* Breadcrumbs - Oculto en móvil */}
-        <nav className="hidden lg:flex items-center gap-1 text-sm truncate">
+        <nav className="hidden min-w-0 items-center gap-1 truncate text-sm md:flex">
           {breadcrumbs.map((crumb, index) => (
             <span
               key={index}
@@ -146,7 +150,7 @@ export function Header() {
               )}
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-80">
+          <DropdownMenuContent align="end" className="w-[min(20rem,calc(100vw-1.5rem))]">
             <div className="flex items-center justify-between px-4 py-2 border-b">
               <span className="font-semibold text-sm">Notificaciones</span>
               {unreadCount > 0 && (
@@ -221,7 +225,7 @@ export function Header() {
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="gap-2 pl-2 pr-3">
+            <Button variant="ghost" className="gap-2 px-2 sm:pl-2 sm:pr-3">
               <Avatar className="h-8 w-8">
                 {user?.avatarUrl && (
                   <AvatarImage

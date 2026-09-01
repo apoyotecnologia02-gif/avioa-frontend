@@ -620,19 +620,19 @@ export default function FormBuilderPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen -mx-4 -my-6 lg:-mx-8">
+    <div className="flex min-h-[calc(100dvh-3.5rem)] flex-col sm:min-h-[calc(100dvh-4rem)] -mx-3 -my-3 sm:-mx-6 sm:-my-6">
       {/* Premium Sticky Top Bar */}
-      <header className="sticky -top-6 z-40 bg-background/95 backdrop-blur-md border-b border-border/80 px-6 py-4 flex items-center justify-between shadow-xs">
-        <div className="flex items-center gap-3">
+      <header className="sticky top-0 z-40 flex flex-wrap items-center justify-between gap-3 border-b border-border/80 bg-background/95 px-3 py-3 shadow-xs backdrop-blur-md sm:px-6 sm:py-4">
+        <div className="flex min-w-0 items-center gap-3">
           <Button variant="ghost" size="icon" asChild className="rounded-full">
             <Link href="/forms">
               <ArrowLeft className="h-5 w-5" />
             </Link>
           </Button>
           <div>
-            <h1 className="text-lg font-semibold flex items-center gap-2">
-              <FileText className="h-5 w-5 text-primary" />
-              Creador de Formularios
+            <h1 className="text-base font-semibold flex items-center gap-2 sm:text-lg">
+              <FileText className="h-5 w-5 shrink-0 text-primary" />
+              <span className="truncate">Creador de Formularios</span>
             </h1>
             <p className="text-xs text-muted-foreground hidden sm:block">
               Diseña formularios interactivos de forma visual y rápida
@@ -676,7 +676,8 @@ export default function FormBuilderPage() {
             ) : (
               <>
                 <Save className="h-4 w-4" />
-                Guardar Formulario
+                <span className="sm:hidden">Guardar</span>
+                <span className="hidden sm:inline">Guardar Formulario</span>
               </>
             )}
           </Button>
@@ -684,7 +685,7 @@ export default function FormBuilderPage() {
       </header>
 
       {/* Main 3-Column Layout Container */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 p-6 bg-muted/20">
+      <div className="grid flex-1 grid-cols-1 gap-4 bg-muted/20 p-3 sm:gap-6 sm:p-6 lg:grid-cols-12">
         {/* PANEL IZQUIERDO: Componentes Arrastrables (lg:col-span-3) */}
         <aside className="lg:col-span-3 flex flex-col gap-4 lg:sticky lg:top-16 lg:self-start lg:max-h-[calc(100vh-100px)]">
           <Card className="border border-border/80 shadow-xs flex-1">
@@ -699,7 +700,7 @@ export default function FormBuilderPage() {
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 gap-2 overflow-y-auto max-h-[calc(100vh-270px)] pr-1">
+              <div className="grid max-h-[min(40vh,24rem)] grid-cols-2 gap-2 overflow-y-auto pr-1 sm:grid-cols-2 lg:max-h-[calc(100vh-270px)] lg:grid-cols-1">
                 {COMPONENT_TYPES.map((comp) => {
                   const Icon = comp.icon;
                   return (
@@ -735,7 +736,7 @@ export default function FormBuilderPage() {
                 </span>
               </div>
 
-              <div className="mt-2 pt-3 border-t border-border/50 space-y-1.5">
+              <div className="mt-2 hidden space-y-1.5 border-t border-border/50 pt-3 lg:block">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
                   Atajos de teclado
                 </p>
