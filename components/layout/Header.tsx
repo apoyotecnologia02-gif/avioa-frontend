@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, Search, ChevronRight, User, Menu, X } from "lucide-react";
+import { Bell, ChevronRight, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -13,13 +13,10 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
 import { useNotificationStore } from "@/store/notificationStore";
-import { NotificationType } from "@/types/notification.types";
 import { useOvertimeStore } from "@/store/overtimeStore";
 import { usePathname, useRouter } from "next/navigation";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { Input } from "@/components/ui/input";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { cn } from "@/lib/utils";
 import { useEffect } from "react";
 
 interface Breadcrumb {
@@ -47,6 +44,8 @@ function getBreadcrumbs(pathname: string): Breadcrumb[] {
     profile: "Perfil",
     "points-request": "Solicitudes de puntos",
     approvePost: "Aprobar Publicaciones",
+    trash: "Papelera",
+    cotizador: "Cotizador",
   };
 
   let currentPath = "";
@@ -150,7 +149,10 @@ export function Header() {
               )}
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-[min(20rem,calc(100vw-1.5rem))]">
+          <DropdownMenuContent
+            align="end"
+            className="w-[min(20rem,calc(100vw-1.5rem))]"
+          >
             <div className="flex items-center justify-between px-4 py-2 border-b">
               <span className="font-semibold text-sm">Notificaciones</span>
               {unreadCount > 0 && (
