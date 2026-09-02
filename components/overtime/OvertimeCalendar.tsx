@@ -42,6 +42,7 @@ export interface OvertimeEntry {
   startTime: string;
   endTime: string;
   comment?: string;
+  createdAt: string;
 }
 
 export interface DaySummary {

@@ -5,7 +5,7 @@ const MARK_NOTIFICATION_AS_READ_URL = `${process.env.NEXT_PUBLIC_API_URL}/notifi
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;

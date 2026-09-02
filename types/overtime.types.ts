@@ -11,6 +11,7 @@ export interface OvertimeRecord {
   description: string;
   status: OvertimeStatus;
   comment?: string; // leader comment after review
+  createdAt: string; // ISO date string e.g. "2026-05-07T14:30:00Z"
 }
 
 export interface OvertimeDaySummary {
