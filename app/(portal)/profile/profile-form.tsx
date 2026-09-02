@@ -212,10 +212,10 @@ export function ProfileForm() {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="space-y-8 max-w-xl animate-in fade-in-50 duration-500"
+        className="mx-auto w-full max-w-2xl space-y-8 animate-in fade-in-50 duration-500"
       >
         {/* Avatar */}
-        <div className="flex items-center gap-6">
+        <div className="flex flex-col items-center gap-5 text-center sm:flex-row sm:items-center sm:gap-6 sm:text-left">
           <div className="relative group">
             <Avatar className="size-24 border-2 border-border transition-all duration-300 group-hover:border-primary/50 shadow-sm">
               {avatarUrl ? (
@@ -241,7 +241,7 @@ export function ProfileForm() {
             <p className="text-sm text-muted-foreground">
               Recomendamos una imagen de al menos 400x400px.
             </p>
-            <div className="pt-1 flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-center gap-2 pt-1 sm:justify-start">
               <input
                 ref={fileInputRef}
                 type="file"
@@ -284,7 +284,7 @@ export function ProfileForm() {
                 size="sm"
                 onClick={handleConnectGoogle}
                 disabled={isConnectingGoogle}
-                className="gap-2 hover:bg-gray-100 data-[state=active]:bg-gray-200"
+                className="gap-2"
               >
                 {isConnectingGoogle ? (
                   <Loader2 className="size-4 animate-spin" />
@@ -347,8 +347,8 @@ export function ProfileForm() {
             />
           </FormItem>
         </div>
-        <div className="flex items-center justify-end">
-          <Button type="submit" disabled={form.formState.isSubmitting}>
+        <div className="flex justify-stretch sm:justify-end">
+          <Button type="submit" className="w-full sm:w-auto" disabled={form.formState.isSubmitting}>
             {form.formState.isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

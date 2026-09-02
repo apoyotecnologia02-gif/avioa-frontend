@@ -119,17 +119,15 @@ export function Sidebar() {
 
   const pathname = usePathname();
   const { user, logout } = useAuth();
-  const { state } = useSidebar();
-  const collapsed = state === "collapsed";
+  const { state, isMobile } = useSidebar();
+  // El estado de apertura de escritorio se conserva en la misma store que el
+  // drawer móvil. En móvil el sidebar siempre debe mostrar los grupos y sus
+  // submenús, aunque el sidebar de escritorio esté colapsado.
+  const collapsed = !isMobile && state === "collapsed";
 
   // Estado abiert/cerrado de cada grupo, persistido en localStorage
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const [hydrated, setHydrated] = useState(false);
-
-  <SidebarRail 
-  className="hover:bg-sidebar-accent hover:w-2" 
-  // O personaliza el comportamiento
-/>
 
   useEffect(() => {
     try {

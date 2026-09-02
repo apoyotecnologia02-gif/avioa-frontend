@@ -227,7 +227,6 @@ export function VaultFormModal({
             />
           </div>
 
-          {/* Contraseña ocupa todo el ancho: necesita espacio para input + generador + medidor */}
           <div className="space-y-1 sm:col-span-2">
             <Label htmlFor="password">
               {mode === "create"

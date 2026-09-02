@@ -77,7 +77,7 @@ export default function VaultPage() {
         onScopeChange={setScope}
       />
       <div className="flex min-h-0 flex-1 overflow-hidden">
-        <div className="hidden md:block">
+        <div className="hidden xl:block">
           <VaultSidebar
             search={search}
             onSearchChange={setSearch}
@@ -90,9 +90,9 @@ export default function VaultPage() {
 
         {/* Columna de la lista */}
         <div
-          className={`flex min-h-0 w-full flex-col border-r md:w-80 ${selectedItem ? "hidden md:flex" : "flex"}`}
+          className={`flex min-h-0 w-full flex-col border-r lg:w-80 ${selectedItem ? "hidden lg:flex" : "flex"}`}
         >
-          <div className="border-b p-3 md:hidden">
+          <div className="border-b p-3 xl:hidden">
             <Input
               placeholder="Buscar..."
               value={search}
@@ -111,11 +111,11 @@ export default function VaultPage() {
         </div>
 
         <div
-          className={`min-h-0 min-w-0 flex-1 ${selectedItem ? "block" : "hidden md:block"}`}
+          className={`min-h-0 min-w-0 flex-1 flex-col ${selectedItem ? "flex" : "hidden lg:flex"}`}
         >
           {selectedItem ? (
             <>
-              <div className="shrink-0 border-b p-2 md:hidden">
+              <div className="shrink-0 border-b p-2 lg:hidden">
                 <Button
                   onClick={() => setSelectedId(null)}
                   className="text-sm text-muted-foreground"
@@ -123,7 +123,7 @@ export default function VaultPage() {
                   ← Volver
                 </Button>
               </div>
-              <div className="min-w-0 flex-1 overflow-hidden">
+              <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
                 <VaultDetails
                   item={selectedItem}
                   revealedPassword={revealedPassword}
