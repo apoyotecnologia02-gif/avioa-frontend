@@ -1,5 +1,5 @@
 import { api } from "@/lib/axios";
-import { Birthday, FeedPost } from "@/types/feed.types";
+import { Birthday, FeedPost, ReactionType } from "@/types/feed.types";
 import { create } from "zustand";
 
 interface FeedState {
@@ -20,7 +20,7 @@ interface FeedState {
     images?: string[];
     recognizedUserId?: string;
   }) => Promise<void>;
-  react: (postId: string, type: string) => Promise<void>;
+  react: (postId: string, type: ReactionType) => Promise<void>;
   unreact: (postId: string) => Promise<void>;
   addComment: (postId: string, content: string) => Promise<void>;
   removeComment: (postId: string, content: string) => Promise<void>;
@@ -158,16 +158,21 @@ export const useFeedStore = create<FeedState>((set, get) => ({
   },
 
   react: async (postId, type) => {
-    const prev = get().posts;
+    const previousPost = get().posts.find((p) => p.feedPostId === postId);
+
+    if (!previousPost) return;
 
     set((state) => ({
       posts: state.posts.map((p) =>
         p.feedPostId === postId
           ? {
               ...p,
+              // Cambiar de emoji conserva una sola reacción por usuario.
+              // Por eso solo se incrementa al pasar de no reaccionar a reaccionar.
               reactionsCount: p.myReaction
                 ? p.reactionsCount
                 : p.reactionsCount + 1,
+              myReaction: type,
             }
           : p,
       ),
@@ -181,12 +186,19 @@ export const useFeedStore = create<FeedState>((set, get) => ({
       );
     } catch (error) {
       console.error("Error al reaccionar:", error);
-      set({ posts: prev });
+      set((state) => ({
+        posts: state.posts.map((p) =>
+          p.feedPostId === postId ? previousPost : p,
+        ),
+      }));
     }
   },
 
   unreact: async (postId) => {
-    const prev = get().posts;
+    const previousPost = get().posts.find((p) => p.feedPostId === postId);
+
+    if (!previousPost?.myReaction) return;
+
     set((state) => ({
       posts: state.posts.map((p) =>
         p.feedPostId === postId
@@ -203,7 +215,11 @@ export const useFeedStore = create<FeedState>((set, get) => ({
       await api.delete(`/feed/${postId}/reactions`, { skip401Redirect: true });
     } catch (error) {
       console.error("Error al desreaccionar:", error);
-      set({ posts: prev });
+      set((state) => ({
+        posts: state.posts.map((p) =>
+          p.feedPostId === postId ? previousPost : p,
+        ),
+      }));
     }
   },
 

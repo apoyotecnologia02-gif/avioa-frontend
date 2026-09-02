@@ -99,9 +99,9 @@ export function VaultDetails({
 
   return (
     <div className="flex h-full min-w-0 flex-col overflow-hidden">
-      <div className="flex items-start justify-between border-b p-4">
-        <div>
-          <h2 className="text-lg font-semibold">{item.title}</h2>
+      <div className="flex min-w-0 items-start justify-between gap-3 border-b p-4">
+        <div className="min-w-0">
+          <h2 className="truncate text-lg font-semibold">{item.title}</h2>
           {item.website && (
             <a
               href={
@@ -111,14 +111,14 @@ export function VaultDetails({
               }
               target="_blank"
               rel="noreferrer"
-              className="flex items-center gap-1 text-xs text-muted-foreground hover:underline"
+              className="flex min-w-0 items-center gap-1 text-xs text-muted-foreground hover:underline"
             >
-              {item.website}
-              <ExternalLink className="h-3 w-3" />
+              <span className="truncate">{item.website}</span>
+              <ExternalLink className="h-3 w-3 shrink-0" />
             </a>
           )}
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex shrink-0 items-center gap-1">
           <Button
             variant="ghost"
             size="icon"
