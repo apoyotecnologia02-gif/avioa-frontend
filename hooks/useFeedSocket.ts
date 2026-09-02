@@ -39,8 +39,14 @@ export function useFeedSocket() {
     socket.on("feed:post:pinned", ({ postId, pinned }) =>
       receivePinToggled(postId, pinned),
     );
-    socket.on("feed:post:reaction", ({ postId, reactionsCount }) =>
-      receiveReaction(postId, reactionsCount),
+    socket.on(
+      "feed:post:reaction",
+      ({ postId, reactionsCount, reactionCount, total }) => {
+        const count = reactionsCount ?? reactionCount ?? total;
+        if (typeof postId === "string" && typeof count === "number") {
+          receiveReaction(postId, count);
+        }
+      },
     );
     socket.on("feed:comment:new", ({ postId, comment, commentsCount }) =>
       receiveNewComment(postId, comment, commentsCount),

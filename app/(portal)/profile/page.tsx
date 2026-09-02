@@ -1,7 +1,6 @@
 "use client";
 
-import { useToast } from "@/hooks/use-toast";
-import { User, Settings, Palette, Bell, ChevronRight } from "lucide-react";
+import { Bell, ChevronRight, Palette, Settings, User } from "lucide-react";
 import { useState } from "react";
 import { ProfileForm } from "./profile-form";
 import { Separator } from "@/components/ui/separator";
@@ -35,147 +34,94 @@ const SECTIONS = [
 ];
 
 export default function ProfilePage() {
-  const [activeSection, setActiveSection] = useState<string>("profile");
-  const activeSectionData = SECTIONS.find((s) => s.id === activeSection);
+  const [activeSection, setActiveSection] = useState("profile");
+  const activeSectionData = SECTIONS.find((section) => section.id === activeSection)!;
 
   return (
-    <div className="w-full h-full">
-      <div className="flex flex-col h-full">
-        {/* Header con gradiente sutil */}
-        <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-blue-500/5 via-transparent to-transparent p-6 md:p-8">
-          <div className="absolute right-0 top-0 h-32 w-32 rounded-full bg-blue-500/10 blur-2xl" />
-          <div className="absolute bottom-0 left-1/4 h-24 w-24 rounded-full bg-blue-500/5 blur-xl" />
-          
-          <div className="relative z-10">
-            <h2 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-              Configuración
-            </h2>
-            <p className="text-muted-foreground mt-1 max-w-2xl">
-              Administra la configuración de tu cuenta y preferencias personales.
-            </p>
-          </div>
+    <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+      <header className="relative overflow-hidden rounded-2xl border bg-card px-5 py-6 shadow-sm sm:px-8 sm:py-8">
+        <div className="pointer-events-none absolute -right-12 -top-16 size-48 rounded-full bg-primary/10 blur-3xl" />
+        <div className="relative max-w-2xl">
+          <p className="mb-2 text-sm font-medium text-primary">Mi cuenta</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+            Configuración
+          </h1>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground sm:text-base">
+            Administra la configuración de tu cuenta y tus preferencias personales.
+          </p>
         </div>
+      </header>
 
-        <Separator className="my-6" />
+      <div className="mt-6 lg:grid lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-8">
+        <aside className="lg:border-r lg:border-border lg:pr-6">
+          <nav
+            className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:px-6 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0 lg:pb-0"
+            aria-label="Secciones de configuración"
+          >
+            {SECTIONS.map((section) => {
+              const isActive = activeSection === section.id;
+              const Icon = section.icon;
 
-        {/* Layout principal con mejor espaciado */}
-        <div className="flex flex-1 flex-col gap-6 lg:flex-row lg:gap-8">
-          {/* Navegación lateral mejorada */}
-          <aside className="lg:w-[240px] lg:shrink-0">
-            <nav className="flex flex-row gap-1 pb-2 lg:flex-col lg:pb-0">
-              {SECTIONS.map((section) => {
-                const isActive = activeSection === section.id;
-                return (
-                  <button
-                    key={section.id}
-                    type="button"
-                    onClick={() => setActiveSection(section.id)}
-                    className={cn(
-                      "group relative flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200",
-                      "hover:bg-muted/80 hover:scale-[1.02] active:scale-[0.98]",
-                      "lg:w-full lg:justify-start",
-                      isActive
-                        ? "bg-blue-500/10 text-blue-600 shadow-sm ring-1 ring-blue-500/20 dark:bg-blue-500/20 dark:text-blue-400"
-                        : "text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    {/* Icono sin fondo, solo el color de las líneas */}
-                    <section.icon 
-                      className={cn(
-                        "h-5 w-5 shrink-0 transition-colors duration-200",
-                        isActive ? "text-blue-500" : "text-muted-foreground group-hover:text-foreground"
-                      )}
-                    />
-                    
-                    <span className="hidden lg:inline">{section.label}</span>
-                    
-                    {/* Indicador de sección activa */}
-                    {isActive && (
-                      <ChevronRight className="ml-auto h-4 w-4 text-blue-500/70 hidden lg:block" />
-                    )}
-                    
-                    {/* Badge de estado (opcional) */}
-                    {section.id === "notifications" && (
-                      <span className="ml-auto flex h-2 w-2 rounded-full bg-red-500 ring-2 ring-background lg:hidden" />
-                    )}
-                  </button>
-                );
-              })}
-            </nav>
-          </aside>
+              return (
+                <button
+                  key={section.id}
+                  type="button"
+                  onClick={() => setActiveSection(section.id)}
+                  className={cn(
+                    "group flex min-w-32 shrink-0 items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 lg:w-full lg:justify-start",
+                    isActive
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                  )}
+                  aria-current={isActive ? "page" : undefined}
+                >
+                  <Icon className="size-4 shrink-0" aria-hidden="true" />
+                  <span>{section.label}</span>
+                  {isActive && (
+                    <ChevronRight className="ml-auto hidden size-4 lg:block" aria-hidden="true" />
+                  )}
+                </button>
+              );
+            })}
+          </nav>
+        </aside>
 
-          {/* Separador vertical en desktop */}
-          <div className="hidden lg:block">
-            <Separator orientation="vertical" className="h-full" />
-          </div>
-          <Separator className="lg:hidden" />
-
-          {/* Contenido - ocupa todo el espacio restante */}
-          <div className="flex-1 min-w-0">
-            {/* Encabezado de sección - Avatar completamente redondeado */}
-            <div className="mb-6 flex items-start gap-4">
-              <div
-                className={cn(
-                  "flex h-12 w-12 shrink-0 items-center justify-center rounded-full",
-                  "bg-gradient-to-br from-blue-600 to-blue-400 text-white shadow-sm"
-                )}
-              >
-                {activeSectionData && (
-                  <activeSectionData.icon className="h-6 w-6" />
-                )}
+        <section className="mt-6 min-w-0 lg:mt-0">
+          <div className="rounded-2xl border bg-card p-5 shadow-sm sm:p-8">
+            <div className="flex items-start gap-3 sm:gap-4">
+              <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
+                <activeSectionData.icon className="size-5" aria-hidden="true" />
               </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="text-2xl font-semibold tracking-tight">
-                  {activeSectionData?.label}
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  {activeSectionData?.description}
+              <div className="min-w-0">
+                <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">
+                  {activeSectionData.label}
+                </h2>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                  {activeSectionData.description}
                 </p>
               </div>
             </div>
 
-            <Separator className="my-6" />
+            <Separator className="my-6 sm:my-8" />
 
-            {/* Contenido dinámico */}
-            <div className="pt-2">
-              {activeSection === "profile" ? (
-                <div className="animate-in fade-in-50 slide-in-from-bottom-5 duration-300">
-                  <ProfileForm />
+            {activeSection === "profile" ? (
+              <div className="animate-in fade-in-50 slide-in-from-bottom-2 duration-300">
+                <ProfileForm />
+              </div>
+            ) : (
+              <div className="flex min-h-64 flex-col items-center justify-center rounded-xl border border-dashed bg-muted/30 p-6 text-center">
+                <div className="mb-4 flex size-14 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <activeSectionData.icon className="size-6" aria-hidden="true" />
                 </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-muted-foreground/20 bg-muted/5 p-12 text-center transition-all hover:bg-muted/10">
-                  <div
-                    className={cn(
-                      "mb-4 flex h-16 w-16 items-center justify-center rounded-full",
-                      "bg-gradient-to-br from-blue-600 to-blue-400 text-white shadow-sm"
-                    )}
-                  >
-                    {activeSectionData && (
-                      <activeSectionData.icon className="h-8 w-8" />
-                    )}
-                  </div>
-                  <h3 className="text-lg font-medium mb-1">
-                    Sección en desarrollo
-                  </h3>
-                  <p className="text-sm text-muted-foreground max-w-md">
-                    Estamos trabajando para traerte las mejores opciones de
-                    configuración en el apartado de{" "}
-                    <span className="font-medium text-foreground">
-                      {activeSectionData?.label.toLowerCase()}
-                    </span>
-                    .
-                  </p>
-                  <div className="mt-6 flex items-center gap-2 text-xs text-muted-foreground">
-                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-blue-500/40" />
-                    <span>Próximamente</span>
-                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-blue-500/40" />
-                  </div>
-                </div>
-              )}
-            </div>
+                <h3 className="text-base font-semibold">Sección en desarrollo</h3>
+                <p className="mt-1 max-w-md text-sm leading-6 text-muted-foreground">
+                  Estamos preparando las opciones de {activeSectionData.label.toLowerCase()}.
+                </p>
+              </div>
+            )}
           </div>
-        </div>
+        </section>
       </div>
-    </div>
+    </main>
   );
 }

@@ -1,50 +1,34 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { SidebarProvider, useSidebar } from "@/components/ui/sidebar";
 
 function AppShellContent({ children }: { children: React.ReactNode }) {
-  const { state, setOpen } = useSidebar();
-  const [isHovering, setIsHovering] = useState(false);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const { state, setOpen, isMobile } = useSidebar();
 
-  const handleMouseEnter = useCallback(() => {
-    setIsHovering(true);
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
-    setOpen(true);
-  }, [setOpen]);
+  const supportsHover = () =>
+    !isMobile &&
+    window.matchMedia("(hover: hover) and (pointer: fine)").matches;
 
-  const handleMouseLeave = useCallback(() => {
-    setIsHovering(false);
-    timeoutRef.current = setTimeout(() => {
-      setIsHovering(false);
-      setOpen(false);
-    }, 300);
-  }, [setOpen]);
+  const handleSidebarMouseEnter = () => {
+    if (supportsHover()) setOpen(true);
+  };
 
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, []);
+  const handleSidebarMouseLeave = () => {
+    if (supportsHover()) setOpen(false);
+  };
 
   const isCollapsed = state === "collapsed";
   const SIDEBAR_EXPANDED = 240;
   const SIDEBAR_COLLAPSED = 56;
-  const sidebarWidth = isCollapsed && !isHovering ? SIDEBAR_COLLAPSED : SIDEBAR_EXPANDED;
+  const sidebarWidth = isCollapsed ? SIDEBAR_COLLAPSED : SIDEBAR_EXPANDED;
 
   return (
     <div className="flex h-svh w-full max-w-[100vw] overflow-hidden bg-background">
       <div
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
+        onMouseEnter={handleSidebarMouseEnter}
+        onMouseLeave={handleSidebarMouseLeave}
         className="relative h-full w-0 shrink-0 md:w-[var(--app-sidebar-width)] md:transition-[width] md:duration-300 md:ease-[cubic-bezier(0.4,0,0.2,1)]"
         style={
           {
