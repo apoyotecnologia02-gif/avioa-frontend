@@ -2,7 +2,7 @@
 
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
-import { X, Clock, MessageSquare } from "lucide-react";
+import { X, Clock, MessageSquare, CalendarClock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { OvertimeStatusBadge } from "./OvertimeStatusBadge";
@@ -93,6 +93,22 @@ export function OvertimeDayPanel({
                 <p className="text-sm text-foreground leading-relaxed">
                   {record.description}
                 </p>
+
+                {record.createdAt && (
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <CalendarClock className="h-3.5 w-3.5" />
+                    <span>
+                      Registrado el{" "}
+                      {format(
+                        parseISO(record.createdAt),
+                        "d 'de' MMMM, h:mm a",
+                        {
+                          locale: es,
+                        },
+                      )}
+                    </span>
+                  </div>
+                )}
 
                 {/* Status */}
                 <div className="flex items-start gap-2 flex-wrap">

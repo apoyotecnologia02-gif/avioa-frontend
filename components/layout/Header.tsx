@@ -175,51 +175,75 @@ export function Header() {
                   No tienes notificaciones
                 </div>
               ) : (
-                notifications.map((notification) => (
-                  <DropdownMenuItem
-                    key={notification.notificationId}
-                    className={`flex flex-col items-start gap-1 p-4 cursor-pointer border-b last:border-0 ${!notification.isRead ? "bg-primary/5" : ""}`}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      console.log(
-                        "notification marked as read",
-                        notification.notificationId,
-                      );
+                notifications.map((notification) => {
+                  const targetId =
+                    notification.notificationId ||
+                    (notification as any).id ||
+                    (notification as any)._id;
 
-                      switch (notification.type) {
-                        case "POINT_REQUEST":
-                          let target = `/points-request`;
-                          if (pathname !== target) router.push(target);
-                          break;
+                  return (
+                    <DropdownMenuItem
+                      key={targetId}
+                      className={`flex flex-col items-start gap-1 p-4 cursor-pointer border-b last:border-0 ${!notification.isRead ? "bg-primary/5" : ""}`}
+                      onClick={(e) => {
+                        e.preventDefault();
 
-                        case "OVERTIME_REQUEST":
-                          let target1 = `overtime`;
+                        if (targetId && !notification.isRead) {
+                          markAsRead(targetId);
+                        }
 
-                          if (pathname !== target1) {
-                            router.push(target1);
+                        switch (notification.type) {
+                          case "POINT_REQUEST":
+                            if (pathname !== "/points-request") {
+                              router.push("/points-request");
+                            }
+                            break;
 
-                            setTimeout(() => {
+                          case "POINT_REQUEST_APPROVED":
+                          case "POINT_REQUEST_REJECTED":
+                            if (pathname !== "/points/my-requests") {
+                              router.push("/points/my-requests");
+                            }
+                            break;
+
+                          case "OVERTIME_REQUEST":
+                          case "OVERTIME_REQUEST_APPROVED":
+                          case "OVERTIME_REQUEST_REJECTED":
+                            const overtimeTarget = "/overtime";
+                            if (pathname !== overtimeTarget) {
+                              router.push(overtimeTarget);
+                              setTimeout(() => {
+                                triggerModal();
+                              }, 300);
+                            } else {
                               triggerModal();
-                            }, 300);
-                          } else {
-                            triggerModal();
-                          }
-                      }
-                    }}
-                  >
-                    <div className="flex items-center justify-between w-full">
-                      <span className="font-medium text-sm">
-                        {notification.title}
+                            }
+                            break;
+
+                          case "LEAVE_REQUEST_RECEIVED":
+                          case "LEAVE_REQUEST_APPROVED":
+                          case "LEAVE_REQUEST_REJECTED":
+                            if (pathname !== "/leaves") {
+                              router.push("/leaves");
+                            }
+                            break;
+                        }
+                      }}
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <span className="font-medium text-sm">
+                          {notification.title}
+                        </span>
+                        {!notification.isRead && (
+                          <span className="h-2 w-2 rounded-full bg-primary" />
+                        )}
+                      </div>
+                      <span className="text-xs text-muted-foreground line-clamp-2">
+                        {notification.message}
                       </span>
-                      {!notification.isRead && (
-                        <span className="h-2 w-2 rounded-full bg-primary" />
-                      )}
-                    </div>
-                    <span className="text-xs text-muted-foreground line-clamp-2">
-                      {notification.message}
-                    </span>
-                  </DropdownMenuItem>
-                ))
+                    </DropdownMenuItem>
+                  );
+                })
               )}
             </div>
           </DropdownMenuContent>

@@ -36,12 +36,18 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
 
       const notifications: Notification[] = raw.map((n) => ({
         ...n,
-        isRead: n.isRead ?? n.read ?? false,
+        notificationId: String(n.notificationId ?? n.id ?? n._id),
+        isRead: Boolean(n.isRead ?? n.read ?? false),
       }));
+
+      const unreadCount =
+        typeof data.unread === "number"
+          ? data.unread
+          : notifications.filter((n) => !n.isRead).length;
 
       set({
         notifications,
-        unreadCount: data.unread,
+        unreadCount,
         isLoading: false,
       });
     } catch (error) {
@@ -57,40 +63,63 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
 
   addNotification: (payload) =>
     set((state) => {
+      const id = String(
+        payload.notificationId ??
+          (payload as any).id ??
+          (payload as any)._id ??
+          (typeof crypto !== "undefined" && crypto.randomUUID
+            ? crypto.randomUUID()
+            : Math.random().toString(36).substring(2, 9)),
+      );
+
       const newNotification: Notification = {
         ...payload,
-        notificationId: payload.notificationId ?? undefined,
-        isRead: payload.isRead ?? false,
+        notificationId: id,
+        isRead: Boolean(payload.isRead ?? false),
         receivedAt: new Date(),
       };
 
+      const exists = state.notifications.some(
+        (n) => n.notificationId === id,
+      );
+      if (exists) return state;
+
       return {
         notifications: [newNotification, ...state.notifications],
-        unreadCount: state.unreadCount + 1,
+        unreadCount: state.unreadCount + (newNotification.isRead ? 0 : 1),
       };
     }),
 
-  markAsRead: async (id) => {
+  markAsRead: async (id: string) => {
+    if (!id) return;
+
+    // Optimistic local state update
+    set((state) => {
+      let marked = false;
+      const updated = state.notifications.map((n) => {
+        const matches =
+          n.notificationId === id ||
+          (n as any).id === id ||
+          (n as any)._id === id;
+
+        if (matches && !n.isRead) {
+          marked = true;
+          return { ...n, isRead: true };
+        }
+        return n;
+      });
+
+      if (!marked) return state;
+
+      return {
+        notifications: updated,
+        unreadCount: Math.max(0, state.unreadCount - 1),
+      };
+    });
+
     try {
       await api.patch(`/notifications/read/${id}`, {
         skip401Redirect: true,
-      });
-
-      set((state) => {
-        const notification = state.notifications.find(
-          (n) => n.notificationId === id,
-        );
-
-        if (!notification || notification.isRead) {
-          return state;
-        }
-
-        return {
-          notifications: state.notifications.map((n) =>
-            n.notificationId === id ? { ...n, isRead: true } : n,
-          ),
-          unreadCount: Math.max(0, state.unreadCount - 1),
-        };
       });
     } catch (error) {
       console.error("Error marcando notificación como leída:", error);
@@ -98,18 +127,18 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   },
 
   markAllAsRead: async () => {
+    set((state) => ({
+      notifications: state.notifications.map((n) => ({
+        ...n,
+        isRead: true,
+      })),
+      unreadCount: 0,
+    }));
+
     try {
       await api.patch("/notifications/read-all", {
         skip401Redirect: true,
       });
-
-      set((state) => ({
-        notifications: state.notifications.map((n) => ({
-          ...n,
-          isRead: true,
-        })),
-        unreadCount: 0,
-      }));
     } catch (error) {
       console.error(
         "Error marcando todas las notificaciones como leídas:",
