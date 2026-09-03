@@ -151,14 +151,13 @@ export const NAV_SECTIONS: NavSection[] = [
       //   href: "/points-request",
       //   visibility: "leader",
       // },
-
-      {
-        key: "Public",
-        label: "Aprobar Publicaciones",
-        icon: Users,
-        href: "/approvePost",
-        visibility: "admin",
-      },
+      // {
+      //   key: "Public",
+      //   label: "Aprobar Publicaciones",
+      //   icon: Users,
+      //   href: "/approvePost",
+      //   visibility: "admin",
+      // },
     ],
   },
   {
