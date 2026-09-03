@@ -199,7 +199,9 @@ export default function AdminUsersPage() {
   const selectedEmergencyContact = watch("emergencyContactPhone");
 
   const leaders = users.filter(
-    (user) => user.role === Role.LEADER && user.status === UserStatus.ACTIVE,
+    (user) =>
+      (user.role === Role.LEADER || user.isLeader === true) &&
+      user.status === UserStatus.ACTIVE,
   );
   const managers = users.filter(
     (user) => user.role === Role.MANAGER && user.status === UserStatus.ACTIVE,

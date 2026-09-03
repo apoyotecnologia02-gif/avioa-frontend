@@ -197,6 +197,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       ...(payload?.role && {
         role: payload.role,
       }),
+
+      ...(payload?.isLeader !== undefined && {
+        isLeader: Boolean(payload.isLeader),
+      }),
     };
 
     setSession(accessToken, refreshToken);
@@ -235,8 +239,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       try {
         let user = JSON.parse(userJson) as User;
         const payload = decodeJwt(token);
-        if (payload && payload.area && !user.area) {
-          user.area = payload.area;
+        let userUpdated = false;
+        if (payload) {
+          if (payload.area && !user.area) {
+            user.area = payload.area;
+            userUpdated = true;
+          }
+          if (payload.isLeader !== undefined && user.isLeader !== Boolean(payload.isLeader)) {
+            user.isLeader = Boolean(payload.isLeader);
+            userUpdated = true;
+          }
+        }
+        if (userUpdated) {
           localStorage.setItem(USER_KEY, JSON.stringify(user));
         }
         setAuthCookie(token);

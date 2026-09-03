@@ -11,6 +11,9 @@ export type LeaveType =
   | "PERMISO_REMUNERADO"
   | "PERMISO_NO_REMUNERADO"
   | "CALAMIDAD_DOMESTICA"
+  | "DILIGENCIA_PERSONAL"
+  | "OBLIGACION_COMO_ACUDIENTE"
+  | "CITA_MEDICA_PARTICULAR"
   | "OTRO";
 
 export interface LeaveRequest {
@@ -166,6 +169,33 @@ export const LEAVE_TYPE_META: Record<LeaveType, LeaveTypeMeta> = {
     accent:
       "text-amber-600 bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800",
     dot: "bg-amber-500",
+  },
+  DILIGENCIA_PERSONAL: {
+    label: "Diligencias personales",
+    short: "Diligencia",
+    consumesBalance: false,
+    needsAttachment: false,
+    accent:
+      "text-rose-600 bg-rose-50 border-rose-200 dark:bg-rose-900/20 dark:border-rose-800",
+    dot: "bg-rose-500",
+  },
+  OBLIGACION_COMO_ACUDIENTE: {
+    label: "Permiso para asistir a obligaciones escolares como acudiente",
+    short: "Acudiente",
+    consumesBalance: false,
+    needsAttachment: false,
+    accent:
+      "text-sky-600 bg-sky-50 border-sky-200 dark:bg-sky-900/20 dark:border-sky-800",
+    dot: "bg-sky-500",
+  },
+  CITA_MEDICA_PARTICULAR: {
+    label: "Cita médica particular",
+    short: "Cita médica",
+    consumesBalance: false,
+    needsAttachment: true,
+    accent:
+      "text-violet-600 bg-violet-50 border-violet-200 dark:bg-violet-900/20 dark:border-violet-800",
+    dot: "bg-violet-500",
   },
   OTRO: {
     label: "Otro",

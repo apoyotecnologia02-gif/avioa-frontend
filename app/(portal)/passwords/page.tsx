@@ -11,6 +11,7 @@ import {
   VaultSidebar,
 } from "@/components/vault/vault-sidebar";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { usePasswordVaultSocket } from "@/hooks/usePasswordVaultSocket";
 import { useVaultCategories } from "@/hooks/useVaultCategories";
 import { useVaultList } from "@/hooks/useVaultList";
 import { useVaultTags } from "@/hooks/useVaultTags";
@@ -47,6 +48,8 @@ export default function VaultPage() {
   }, [selection, debouncedSearch, scope]);
 
   const { items, isLoading, reload } = useVaultList(filters);
+
+  usePasswordVaultSocket();
 
   const selectedItem =
     items.find((i) => i.passwordVaultId === selectedId) ?? null;

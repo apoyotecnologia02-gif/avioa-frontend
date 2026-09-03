@@ -52,30 +52,6 @@ export function FeedList() {
   }, [handleObserver]);
 
   return (
-    // <div className="mx-auto grid max-w-4xl grid-cols-1 gap-5 py-6 lg:grid-cols-[minmax(0,1fr)_260px]">
-    //   <div className="flex min-w-0 flex-col gap-4">
-    //     <CreatePostBox />
-
-    //     {isLoading ? (
-    //       <FeedSkeleton />
-    //     ) : posts.length === 0 ? (
-    //       <div className="rounded-2xl border border-dashed p-8 text-center text-sm text-muted-foreground">
-    //         Todavía no hay publicaciones en el feed.
-    //       </div>
-    //     ) : (
-    //       <>
-    //         {posts.map((post) => (
-    //           <PostCard key={post.feedPostId} post={post} />
-    //         ))}
-    //         <div ref={observerTarget} className="h-4">
-    //           {isLoadingMore && <FeedSkeleton count={1} />}
-    //         </div>
-    //       </>
-    //     )}
-    //   </div>
-
-    //   <BirthdaysSidebar />
-    // </div>
     <div className="mx-auto grid max-w-5xl grid-cols-1 items-start gap-6 pb-2 sm:pb-4 lg:pb-8 lg:grid-cols-[minmax(0,1fr)_280px] lg:gap-8">
       <div className="order-1 flex min-w-0 flex-col gap-6 lg:col-start-1">
         <CreatePostBox />

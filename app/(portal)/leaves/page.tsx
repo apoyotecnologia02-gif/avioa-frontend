@@ -23,7 +23,7 @@ import { useState } from "react";
 
 export default function LeavesPage() {
   const { user } = useAuth();
-  const isLeader = isLeaderOrManagerOrAdminRole(user?.role);
+  const isLeader = isLeaderOrManagerOrAdminRole(user);
 
   const [requestOpen, setRequestOpen] = useState(false);
   const [reviewLeave, setReviewLeave] = useState<LeaveRequest | null>(null);
@@ -90,7 +90,10 @@ export default function LeavesPage() {
             Tu saldo, solicitudes y estado de cada una
           </p>
         </div>
-        <Button onClick={() => setRequestOpen(true)} className="w-full sm:w-auto">
+        <Button
+          onClick={() => setRequestOpen(true)}
+          className="w-full sm:w-auto"
+        >
           <Plus className="mr-2 h-4 w-4" />
           Solicitar
         </Button>
