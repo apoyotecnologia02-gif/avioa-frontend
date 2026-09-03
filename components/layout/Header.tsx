@@ -46,6 +46,7 @@ function getBreadcrumbs(pathname: string): Breadcrumb[] {
     approvePost: "Aprobar Publicaciones",
     trash: "Papelera",
     cotizador: "Cotizador",
+    vacations: "Saldo de vacaciones",
   };
 
   let currentPath = "";

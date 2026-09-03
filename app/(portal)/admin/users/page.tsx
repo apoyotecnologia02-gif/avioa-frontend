@@ -88,6 +88,7 @@ const createUserSchema = z
     emergencyContactRel: z.string().optional(),
     leaderId: z.string().optional(),
     managerId: z.string().optional(),
+    vacationDaysAdjustment: z.coerce.number().optional(),
   })
   .superRefine((data, ctx) => {
     if (data.documentType && !data.documentNumber) {
@@ -188,6 +189,7 @@ export default function AdminUsersPage() {
       emergencyContactName: undefined,
       emergencyContactPhone: undefined,
       emergencyContactRel: undefined,
+      vacationDaysAdjustment: undefined,
     },
   });
 
@@ -273,6 +275,11 @@ export default function AdminUsersPage() {
         emergencyContactName: data.emergencyContactName || undefined,
         emergencyContactPhone: data.emergencyContactPhone || undefined,
         emergencyContactRel: data.emergencyContactRel || undefined,
+        vacationDaysAdjustment:
+          data.vacationDaysAdjustment !== undefined &&
+          !Number.isNaN(data.vacationDaysAdjustment)
+            ? Number(data.vacationDaysAdjustment)
+            : undefined,
       };
       await api.post("/admin/users", payload, { skip401Redirect: true });
       toast({
@@ -301,6 +308,7 @@ export default function AdminUsersPage() {
         emergencyContactName: undefined,
         emergencyContactPhone: undefined,
         emergencyContactRel: undefined,
+        vacationDaysAdjustment: undefined,
       });
       setIsSheetOpen(false);
       await loadUsers();
@@ -636,6 +644,21 @@ export default function AdminUsersPage() {
                         {...register("startDate")}
                         placeholder="Fecha de incorporación"
                       />
+                    </Field>
+
+                    <Field>
+                      <FieldLabel htmlFor="vacationDaysAdjustment">
+                        Ajuste de días de vacaciones
+                      </FieldLabel>
+                      <Input
+                        id="vacationDaysAdjustment"
+                        type="number"
+                        {...register("vacationDaysAdjustment")}
+                        placeholder="Ej: 3 (otorgados) o -2 (descontados)"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Días adicionales a sumar o restar al acumulado por tiempo laborado.
+                      </p>
                     </Field>
 
                     <Field>
