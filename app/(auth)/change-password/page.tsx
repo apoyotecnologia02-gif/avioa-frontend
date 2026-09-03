@@ -83,10 +83,14 @@ function ChangePasswordPageContent() {
     }
 
     try {
-      const response = await api.post("/auth/change-temporary-password", {
-        temporaryToken,
-        newPassword: data.newPassword,
-      });
+      const response = await api.post(
+        "/auth/change-temporary-password",
+        {
+          temporaryToken,
+          newPassword: data.newPassword,
+        },
+        { skip401Redirect: true },
+      );
 
       setSuccess(true);
 
