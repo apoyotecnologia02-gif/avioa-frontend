@@ -35,7 +35,7 @@ function toDateOnly(value: string) {
 
 export default function OvertimePage() {
   const { user } = useAuth();
-  const isLeaderOrManager = isLeaderOrManagerOrAdminRole(user?.role);
+  const isLeaderOrManager = isLeaderOrManagerOrAdminRole(user);
 
   //obtener el estado del store (zustand)
   const { shouldOpenModal, clearModalTrigger } = useOvertimeStore();

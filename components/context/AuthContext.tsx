@@ -13,6 +13,7 @@ interface User {
   avatar?: string;
   area?: string | null;
   leaderId?: string | null;
+  isLeader?: boolean;
 }
 
 interface AuthContextType {
@@ -67,6 +68,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         avatar: data.avatar || '',
         area: data.area || null,
         leaderId: data.leaderId || null,
+        isLeader: Boolean(data.isLeader),
       };
       
       return userData;
@@ -107,6 +109,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         avatar: payload.avatar || '',
         area: payload.area || null,
         leaderId: payload.leaderId || null,
+        isLeader: Boolean(payload.isLeader),
       };
       
       localStorage.setItem('portal_user', JSON.stringify(userData));
@@ -184,12 +187,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const hasRole = useCallback((roles: UserRole[]): boolean => {
     if (!user) return false;
+    if ((roles.includes('LEADER') || (roles as string[]).includes('leader')) && user.isLeader) {
+      return true;
+    }
     return roles.includes(user.role);
   }, [user]);
 
   const isAdminOrLeader = useCallback((): boolean => {
     if (!user) return false;
-    return user.role === 'ADMIN' || user.role === 'LEADER';
+    return user.role === 'ADMIN' || user.role === 'LEADER' || Boolean(user.isLeader);
   }, [user]);
 
   const logout = useCallback(() => {

@@ -12,6 +12,7 @@ export interface User {
   leaderName?: string;
   avatarUrl?: string;
   twoFactorEnabled: boolean;
+  isLeader?: boolean;
 }
 
 export interface AuthTokens {

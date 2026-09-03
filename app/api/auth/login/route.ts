@@ -37,6 +37,7 @@ export async function POST(request: Request) {
         name: data.user?.name,
         avatar: data.user?.avatar,
         role: normalizeRole(data.user?.role),
+        isLeader: Boolean(data.user?.isLeader),
         area: data.user?.area,
         leaderId: data.user?.leaderId,
         leaderName: data.user?.leaderName,

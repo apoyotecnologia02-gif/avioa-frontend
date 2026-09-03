@@ -84,67 +84,6 @@ export function CreatePostBox() {
   };
 
   return (
-    // <Card className="p-4">
-    //   <div className="flex gap-3">
-    //     <Avatar>
-    //       <AvatarImage src={user?.avatarUrl} />
-    //       <AvatarFallback>{user?.name?.[0] ?? "U"}</AvatarFallback>
-    //     </Avatar>
-
-    //     <div className="flex-1 space-y-3">
-    //       <Textarea
-    //         placeholder="Comparte algo con el equipo..."
-    //         value={content}
-    //         onChange={(e) => setContent(e.target.value)}
-    //         onFocus={() => setOpen(true)}
-    //         className="min-h-[44px] resize-none"
-    //       />
-
-    //       {open && (
-    //         <>
-    //           <Select
-    //             value={type}
-    //             onValueChange={(v) => {
-    //               setType(v as FeedPostType);
-    //               if (v !== FeedPostType.RECOGNITION) setRecognizedUser(null);
-    //             }}
-    //           >
-    //             <SelectTrigger className="w-full sm:w-[220px]">
-    //               <SelectValue />
-    //             </SelectTrigger>
-    //             <SelectContent>
-    //               {availableTypes.map((t) => (
-    //                 <SelectItem key={t} value={t}>
-    //                   {TYPE_LABELS[t]}
-    //                 </SelectItem>
-    //               ))}
-    //             </SelectContent>
-    //           </Select>
-
-    //           {isRecognition && (
-    //             <RecognitionUserPicker
-    //               value={recognizedUser}
-    //               onChange={setRecognizedUser}
-    //             />
-    //           )}
-
-    //           <div className="flex justify-end gap-2">
-    //             <Button variant="ghost" size="sm" onClick={resetForm}>
-    //               Cancelar
-    //             </Button>
-    //             <Button
-    //               size="sm"
-    //               disabled={!canSubmit || isSubmitting}
-    //               onClick={handleSubmit}
-    //             >
-    //               Publicar
-    //             </Button>
-    //           </div>
-    //         </>
-    //       )}
-    //     </div>
-    //   </div>
-    // </Card>
     <Card className="overflow-hidden border-0 bg-gradient-to-br from-card to-muted/30 p-0 shadow-sm transition-shadow hover:shadow-md">
       <div className="flex items-start gap-3 p-4 sm:gap-4 sm:p-5">
         <Avatar className="h-11 w-11 ring-2 ring-primary/10">
