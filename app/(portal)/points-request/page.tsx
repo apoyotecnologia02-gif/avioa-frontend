@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 
-const ALLOWED_ROLES = ['leader', 'manager', 'admin', 'LEADER', 'MANAGER', 'ADMIN']
+import { isLeaderOrManagerOrAdminRole } from '@/lib/roles'
 
 export default function PointsRequestPage() {
   const router = useRouter()
@@ -24,12 +24,12 @@ export default function PointsRequestPage() {
   const { requests, isLoading, error } = usePendingRequests()
 
   useEffect(() => {
-    if (!isAuthLoading && user && !ALLOWED_ROLES.includes(user.role)) {
+    if (!isAuthLoading && user && !isLeaderOrManagerOrAdminRole(user)) {
       router.push('/dashboard')
     }
   }, [user, isAuthLoading, router])
 
-  if (isAuthLoading || (user && !ALLOWED_ROLES.includes(user.role))) {
+  if (isAuthLoading || (user && !isLeaderOrManagerOrAdminRole(user))) {
     return (
       <div className="flex h-64 items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

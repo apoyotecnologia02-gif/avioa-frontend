@@ -83,12 +83,6 @@ export const useFeedStore = create<FeedState>((set, get) => ({
       const { data } = await api.get(`/feed?limit=10`, {
         skip401Redirect: true,
       });
-      // set((state) => ({
-      //   posts: reset ? data.posts : [...state.posts, ...data.posts],
-      //   hasMore: data.hasMore,
-      //   page: page + 1,
-      //   isLoading: false,
-      // }));
       set({
         posts: data.posts,
         hasMore: data.hasMore,
@@ -167,8 +161,6 @@ export const useFeedStore = create<FeedState>((set, get) => ({
         p.feedPostId === postId
           ? {
               ...p,
-              // Cambiar de emoji conserva una sola reacción por usuario.
-              // Por eso solo se incrementa al pasar de no reaccionar a reaccionar.
               reactionsCount: p.myReaction
                 ? p.reactionsCount
                 : p.reactionsCount + 1,

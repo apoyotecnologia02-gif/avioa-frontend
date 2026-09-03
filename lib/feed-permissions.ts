@@ -4,6 +4,7 @@ import { User } from "@/types/auth.types";
 interface CurrentUser {
   id: string;
   role: string;
+  isLeader?: boolean;
   canPublishInFeed?: boolean;
 }
 
@@ -12,6 +13,7 @@ export function canPublish(user?: CurrentUser | null): boolean {
   return (
     user.role === "ADMIN" ||
     user.role === "LEADER" ||
+    user.isLeader === true ||
     user.canPublishInFeed === true
   );
 }

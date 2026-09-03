@@ -46,6 +46,7 @@ export interface User {
   createdAt: string;
   updatedAt: string;
   canPublishInFeed?: boolean;
+  isLeader?: boolean;
 }
 
 export interface CreateUserDto {
