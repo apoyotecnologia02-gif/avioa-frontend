@@ -62,7 +62,7 @@ function LoginPageContent() {
             "No se recibió el token necesario para cambiar la contraseña.",
           );
         router.push(
-          `/change-password?temporaryToken=\${encodeURIComponent(result.temporaryToken)}`,
+          `/change-password?temporaryToken=${encodeURIComponent(result.temporaryToken)}`,
         );
         return;
       }
@@ -70,7 +70,7 @@ function LoginPageContent() {
         if (!result.temporaryToken)
           throw new Error("No se recibió el token temporal para 2FA.");
         router.push(
-          `/two-factor?temporaryToken=\${encodeURIComponent(result.temporaryToken)}`,
+          `/two-factor?temporaryToken=${encodeURIComponent(result.temporaryToken)}`,
         );
         return;
       }
