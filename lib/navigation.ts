@@ -14,6 +14,7 @@ import {
   Users,
   Key,
   Calculator,
+  CalendarDays,
 } from "lucide-react";
 
 /**
@@ -172,9 +173,7 @@ export const NAV_SECTIONS: NavSection[] = [
         items: [
           { href: "/admin/users", label: "Usuarios", icon: UserPlus },
           { href: "/admin/rewards", label: "Recompensas", icon: Gift },
-          // PROXIMAMENTE
-          // { href: "/admin/templates", label: "Plantillas", icon: FolderOpen },
-          // { href: "/admin/rewards", label: "Recompensas", icon: Gift }
+          { href: "/admin/vacations", label: "Saldos de Vacaciones", icon: CalendarDays },
         ],
       },
     ],

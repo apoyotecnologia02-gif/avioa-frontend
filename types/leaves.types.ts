@@ -50,6 +50,7 @@ export interface VacationBalance {
   pending: number; // días en solicitudes pendientes
   available: number; // accrued - taken
   projectedAvailable: number;
+  adjustment?: number; // ajuste de días otorgado o descontado por RRHH
 }
 
 export interface CreateLeaveDto {

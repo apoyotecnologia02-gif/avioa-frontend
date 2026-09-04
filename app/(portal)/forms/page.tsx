@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { Search, FileText, ExternalLink } from "lucide-react";
+import { Search, FileText, ExternalLink, Plus, Trash2 } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -15,15 +15,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useForms } from "@/hooks/useForms";
+import { useDeleteForm, useForms } from "@/hooks/useForms";
 import type { FormCategory } from "@/types/form.types";
+import CreateFormModal from "./new/page";
+import { toast } from "sonner";
 
 const categories: (FormCategory | "Todos")[] = [
   "Todos",
-  "RRHH",
-  "Operaciones",
-  "Finanzas",
-  "General",
+  // "RRHH",
+  // "Operaciones",
+  // "Finanzas",
+  // "General",
 ];
 
 const categoryColors: Record<FormCategory, string> = {
@@ -39,6 +41,9 @@ export default function FormsPage() {
   const [activeCategory, setActiveCategory] = useState<FormCategory | "Todos">(
     "Todos",
   );
+  const [createOpen, setCreateOpen] = useState(false);
+
+  const { mutateAsync: deleteForm } = useDeleteForm();
 
   const filteredForms = useMemo(() => {
     if (!forms) return [];
@@ -53,6 +58,15 @@ export default function FormsPage() {
     });
   }, [forms, search, activeCategory]);
 
+  const handleDelete = async (formId: string) => {
+    try {
+      await deleteForm(formId);
+      toast.success("Formulario eliminado correctamente.");
+    } catch (error) {
+      toast.error("Error al eliminar el formulario.");
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -64,8 +78,13 @@ export default function FormsPage() {
             Selecciona un formulario para completar o visualizar
           </p>
         </div>
-        <Button asChild className="w-full sm:w-auto">
-          <Link href="/forms/new">Crear Formulario</Link>
+        <Button
+          onClick={() => setCreateOpen(true)}
+          className="w-full sm:w-auto"
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          Crear Formulario
+          {/* <Link href="/forms/new">Crear Formulario</Link> */}
         </Button>
       </div>
 
@@ -167,6 +186,16 @@ export default function FormsPage() {
                       >
                         {form.category}
                       </span>
+
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 tect-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => deleteForm(form.formId)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        {/* <span className="sr-only">Eliminar</span> */}
+                      </Button>
                     </div>
                     <CardTitle className="mt-3 text-base">
                       {form.title}
@@ -177,10 +206,8 @@ export default function FormsPage() {
                   </CardHeader>
                   <CardFooter className="mt-auto pt-0">
                     <Button asChild className="w-full">
-                      <Link
-                        href={`/forms/${form.formId ? form.formId : form.id}`}
-                      >
-                        {form.type === "EMBEDDED" && (
+                      <Link href={`/forms/${form.formId}`}>
+                        {form.type === "GOOGLE_FORM" && (
                           <ExternalLink className="mr-2 h-4 w-4" />
                         )}
                         Abrir
@@ -193,6 +220,11 @@ export default function FormsPage() {
           )}
         </>
       )}
+
+      <CreateFormModal
+        isOpen={createOpen}
+        onClose={() => setCreateOpen(false)}
+      />
     </div>
   );
 }

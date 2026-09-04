@@ -195,6 +195,18 @@ export default function LeavesPage() {
                 </span>
               </p>
             )}
+
+            {Boolean(balance?.adjustment) && (
+              <p className="text-xs text-muted-foreground pt-1 border-t border-border">
+                Incluye ajuste de RRHH:{" "}
+                <span className="font-medium">
+                  {balance!.adjustment! > 0
+                    ? `+${balance!.adjustment}`
+                    : balance!.adjustment}{" "}
+                  días
+                </span>
+              </p>
+            )}
           </div>
         </div>
       </div>
