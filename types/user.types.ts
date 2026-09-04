@@ -47,6 +47,7 @@ export interface User {
   updatedAt: string;
   canPublishInFeed?: boolean;
   isLeader?: boolean;
+  vacationDaysAdjustment?: number;
 }
 
 export interface CreateUserDto {
@@ -71,6 +72,7 @@ export interface CreateUserDto {
   emergencyContactName?: string;
   emergencyContactPhone?: string;
   emergencyContactRel?: string;
+  vacationDaysAdjustment?: number;
 }
 
 export interface AcceptInviteDto {

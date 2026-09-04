@@ -118,13 +118,6 @@ function ChangePasswordPageContent() {
         );
       }
 
-      /**
-       * Aquí debemos guardar la sesión.
-       *
-       * Si tu store tiene setAuth, lo podemos utilizar.
-       */
-      // get().setAuth(...)
-
       setAuth(accessToken, refreshToken, user);
 
       router.push("/dashboard");

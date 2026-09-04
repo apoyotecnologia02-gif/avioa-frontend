@@ -39,3 +39,40 @@ export function useSubmitForm() {
     },
   });
 }
+
+export function useCreateForm() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: {
+      title: string;
+      description: string;
+      category: string;
+      type: string;
+      embedUrl: string;
+    }) => {
+      const { data } = await api.post<Form>("/forms", payload, {
+        skip401Redirect: true,
+      });
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["forms"] });
+    },
+  });
+}
+
+export function useDeleteForm() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await api.delete(`/forms/${id}`, {
+        skip401Redirect: true,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["forms"] });
+    },
+  });
+}

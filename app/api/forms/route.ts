@@ -5,11 +5,35 @@ import { parseResponseData } from "@/utils/parse-response-data.util";
 
 const FORMS_URL = `${process.env.NEXT_PUBLIC_API_URL}/forms`;
 
-export async function GET() {
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 300));
+export async function GET(request: Request) {
+  try {
+    const { search } = new URL(request.url);
+    const authorization = request.headers.get("authorization");
 
-  return NextResponse.json(MOCK_FORMS);
+    const response = await fetch(`${FORMS_URL}${search}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        ...(authorization ? { Authorization: authorization } : {}),
+      },
+      cache: "no-store",
+    });
+
+    const data = await parseResponseData(response);
+
+    if (!response.ok) {
+      return NextResponse.json(data, {
+        status: response.status,
+      });
+    }
+
+    return NextResponse.json(data, { status: response.status });
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Error al obtener los formularios" },
+      { status: 500 },
+    );
+  }
 }
 
 export async function POST(request: Request) {
@@ -29,28 +53,12 @@ export async function POST(request: Request) {
     const data = await parseResponseData(response);
 
     if (!response.ok) {
-      return new NextResponse(JSON.stringify(data), {
+      return NextResponse.json(data, {
         status: response.status,
       });
     }
 
-    return new NextResponse(JSON.stringify(data), { status: 200 });
-
-    // const newForm: Form = {
-    //   id: `form-${Date.now()}`,
-    //   title: body.title || "Formulario sin título",
-    //   description: body.description || "",
-    //   category: body.category || "General",
-    //   type: body.type || "native",
-    //   schema: body.schema || { fields: [] },
-    //   embedUrl: body.embedUrl,
-    //   createdAt: new Date().toISOString(),
-    //   updatedAt: new Date().toISOString(),
-    // };
-
-    // MOCK_FORMS.push(newForm);
-
-    // return NextResponse.json(newForm, { status: 201 });
+    return NextResponse.json(data, { status: response.status });
   } catch (error) {
     return NextResponse.json(
       { error: "Error al crear el formulario" },

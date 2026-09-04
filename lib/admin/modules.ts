@@ -1,4 +1,4 @@
-import { Clapperboard, Gift, Shield, UserPlus } from 'lucide-react'
+import { CalendarDays, Gift, Shield, UserPlus } from 'lucide-react'
 
 export interface AdminModule {
   key: string
@@ -22,6 +22,13 @@ export const ADMIN_MODULES: AdminModule[] = [
     title: 'Recompensas',
     description: 'Crear o actualizar recompensas',
     icon: Gift
+  },
+  {
+    key: 'vacations',
+    href: '/admin/vacations',
+    title: 'Saldos de Vacaciones',
+    description: 'Gestión y ajuste de vacaciones acumuladas de colaboradores.',
+    icon: CalendarDays,
   }
 ]
 
