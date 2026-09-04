@@ -26,7 +26,7 @@ export interface FormSchema {
   fields: FormField[];
 }
 
-export type FormType = "EMBEDDED" | "NATIVE";
+export type FormType = "EMBEDDED" | "NATIVE" | "GOOGLE_FORM";
 
 export type FormCategory = "RRHH" | "Operaciones" | "Finanzas" | "General";
 
