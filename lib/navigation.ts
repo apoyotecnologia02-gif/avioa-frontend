@@ -15,6 +15,7 @@ import {
   Key,
   Calculator,
   CalendarDays,
+  Book,
 } from "lucide-react";
 
 /**
@@ -126,6 +127,12 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: Calculator,
         href: "/cotizador",
       },
+      {
+        key: "biblioteca",
+        label: "Biblioteca",
+        icon: Book,
+        href: "/knowledge",
+      },
       // PROXIMAMENTE
       //   {
       //     key: "comunicacion",
@@ -173,7 +180,11 @@ export const NAV_SECTIONS: NavSection[] = [
         items: [
           { href: "/admin/users", label: "Usuarios", icon: UserPlus },
           { href: "/admin/rewards", label: "Recompensas", icon: Gift },
-          { href: "/admin/vacations", label: "Saldos de Vacaciones", icon: CalendarDays },
+          {
+            href: "/admin/vacations",
+            label: "Saldos de Vacaciones",
+            icon: CalendarDays,
+          },
         ],
       },
     ],
