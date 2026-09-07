@@ -182,11 +182,15 @@ export default function AdminVacationsPage() {
 
   const formatDate = (dateStr?: string | null) => {
     if (!dateStr) return "-";
-    const date = new Date(dateStr);
-    if (Number.isNaN(date.getTime())) return "-";
-    return new Intl.DateTimeFormat("es-CO", { dateStyle: "medium" }).format(
-      date,
-    );
+
+    const [year, month, day] = dateStr.split("T")[0].split("-");
+
+    if (!year || !month || !day) return "-";
+
+    return new Intl.DateTimeFormat("es-CO", {
+      dateStyle: "medium",
+      timeZone: "UTC",
+    }).format(new Date(`${dateStr.split("T")[0]}T00:00:00`));
   };
 
   const getInitials = (name: string) => {

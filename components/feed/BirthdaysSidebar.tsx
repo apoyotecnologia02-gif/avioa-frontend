@@ -18,36 +18,6 @@ export function BirthdaysSidebar() {
   }
 
   return (
-    // <aside className="lg:sticky lg:top-4 lg:self-start">
-    //   <div className="rounded-2xl border bg-card p-5">
-    //     <div className="mb-1 flex items-center gap-2">
-    //       <Gift className="h-4 w-4 text-primary" />
-    //       <h3 className="text-sm font-medium">Cumpleaños del mes</h3>
-    //     </div>
-    //     <p className="mb-4 text-xs text-muted-foreground">
-    //       {birthdays.length}{" "}
-    //       {birthdays.length === 1 ? "persona este mes" : "personas este mes"}
-    //     </p>
-
-    //     <div className="flex max-h-72 flex-col gap-3.5 overflow-y-auto pr-1">
-    //       {birthdays.map((b) => (
-    //         <div key={b.userId} className="flex items-center gap-2.5">
-    //           <Avatar>
-    //             <AvatarImage src={b.avatarUrl ?? undefined} />
-    //             <AvatarFallback>{b.name[0]}</AvatarFallback>
-    //           </Avatar>
-    //           <div className="min-w-0">
-    //             <p className="truncate text-sm font-medium">{b.name}</p>
-    //             <p className="text-xs text-muted-foreground">
-    //               {/* {format(new Date(b.birthDay), "d MMM", { locale: es })} */}
-    //               {formatBirthday(b.birthDay, b.birthMonth)}
-    //             </p>
-    //           </div>
-    //         </div>
-    //       ))}
-    //     </div>
-    //   </div>
-    // </aside>
     <aside className="lg:sticky lg:top-8 lg:self-start">
       <div className="overflow-hidden rounded-2xl border border-border/50 bg-gradient-to-br from-card to-muted/30 p-5 shadow-sm">
         <div className="mb-1 flex items-center gap-2">
