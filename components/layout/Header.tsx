@@ -47,6 +47,7 @@ function getBreadcrumbs(pathname: string): Breadcrumb[] {
     trash: "Papelera",
     cotizador: "Cotizador",
     vacations: "Saldo de vacaciones",
+    knowledge: "Biblioteca de Conocimiento",
   };
 
   let currentPath = "";
