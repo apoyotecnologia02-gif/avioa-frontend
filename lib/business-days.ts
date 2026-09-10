@@ -82,7 +82,8 @@ export function countBusinessDays(start: Date, end: Date): number {
   const cursor = new Date(s);
   while (cursor <= e) {
     const day = cursor.getDay();
-    const weekend = day === 0 || day === 6;
+    // const weekend = day === 0 || day === 6;
+    const weekend = day === 0;
     const holiday = getH(cursor.getFullYear()).has(key(cursor));
     if (!weekend && !holiday) count++;
     cursor.setDate(cursor.getDate() + 1);
