@@ -13,7 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { Area } from "@/types/user.types";
+import { Area, Office } from "@/types/user.types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Camera, Loader2, UserIcon } from "lucide-react";
 import { ChangeEvent, useRef, useState, useEffect } from "react";
@@ -31,6 +31,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
@@ -73,6 +80,13 @@ const profileFormSchema = z.object({
   // area: z.nativeEnum(Area).optional().or(z.literal("")),
   birthDate: z.string().optional().or(z.literal("")),
   // avatar: z.any().optional().or(z.literal("")),
+  phone: z
+    .string()
+    .min(10, "El número de teléfono debe tener 10 dígitos")
+    .optional()
+    .or(z.literal("")),
+
+  office: z.string().optional().or(z.literal("")),
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -105,6 +119,8 @@ export function ProfileForm() {
       email: user?.email || "",
       // area: user?.area || "",
       birthDate: "",
+      phone: "",
+      office: "",
     },
   });
 
@@ -115,6 +131,8 @@ export function ProfileForm() {
         email: user.email || "",
         // area: user.area,
         birthDate: "",
+        phone: "",
+        office: "",
       });
       hasResetRef.current = true;
     }
@@ -144,11 +162,15 @@ export function ProfileForm() {
     try {
       setError(null);
 
+      console.log("data", data);
+
       const formData = new FormData();
       if (data.name) formData.append("name", data.name);
       if (data.email) formData.append("email", data.email);
       // if (data.area) formData.append("area", data.area);
       if (data.birthDate) formData.append("birthDate", data.birthDate);
+      if (data.phone) formData.append("phone", data.phone);
+      if (data.office) formData.append("office", data.office);
       if (avatarFile) formData.append("file", avatarFile);
 
       const response = await api.patch(
@@ -330,10 +352,68 @@ export function ProfileForm() {
                     {...field}
                   />
                 </FormControl>
-                <FormDescription>
-                  Se usará para notificaciones y para iniciar sesión.
-                </FormDescription>
                 <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="phone"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Teléfono Corporativo</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="Escribe tu número de teléfono corporativo"
+                    className="bg-background"
+                    {...field}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="office"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Oficina</FormLabel>
+                <FormControl>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccione una oficina" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={Office.BOGOTA}>BOGOTA</SelectItem>
+                      <SelectItem value={Office.EL_PENOL}>EL PEÑOL</SelectItem>
+                      <SelectItem value={Office.GUARNE}>GUARNE</SelectItem>
+                      <SelectItem value={Office.MARINILLA_INDUSTRIAL}>
+                        MARINILLA INDUSTRIAL
+                      </SelectItem>
+                      <SelectItem value={Office.MARINILLA_PARQUE}>
+                        MARINILLA PARQUE
+                      </SelectItem>
+                      <SelectItem value={Office.MEDELLIN}>MEDELLIN</SelectItem>
+                      <SelectItem value={Office.NUEVA_AVENIDA}>
+                        NUEVA AVENIDA
+                      </SelectItem>
+                      <SelectItem value={Office.SANTUARIO_CALLE_DEL_COMERCIO}>
+                        SANTUARIO CALLE DEL COMERCIO
+                      </SelectItem>
+                      <SelectItem value={Office.SANTUARIO_PARQUE}>
+                        SANTUARIO PARQUE
+                      </SelectItem>
+                      <SelectItem value={Office.SAN_ANTONIO}>
+                        SAN ANTONIO
+                      </SelectItem>
+                      <SelectItem value={Office.TELETRABAJO}>
+                        TELETRABAJO
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormControl>
               </FormItem>
             )}
           />
@@ -348,7 +428,11 @@ export function ProfileForm() {
           </FormItem>
         </div>
         <div className="flex justify-stretch sm:justify-end">
-          <Button type="submit" className="w-full sm:w-auto" disabled={form.formState.isSubmitting}>
+          <Button
+            type="submit"
+            className="w-full sm:w-auto"
+            disabled={form.formState.isSubmitting}
+          >
             {form.formState.isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
