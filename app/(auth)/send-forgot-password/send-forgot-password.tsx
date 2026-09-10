@@ -21,17 +21,17 @@ import z from "zod";
 
 const sendForgotPasswordSchema = z
   .object({
-    email: z.string().email("Ingresa un correo electrónico válido"),
+    documentNumber: z.string().min(1, "El número de documento es requerido"),
+    email: z.string().email("Ingresa un correo válido"),
   })
-  .refine((data) => data.email, {
-    message: "El correo es requerido",
-    path: ["email"],
+  .refine((data) => data.documentNumber, {
+    message: "El número de documento es requerido",
+    path: ["documentNumber"],
   });
 
 type SendForgotPasswordSchema = z.infer<typeof sendForgotPasswordSchema>;
 
 function SendForgotPasswordContent() {
-  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -47,12 +47,14 @@ function SendForgotPasswordContent() {
     setError(null);
     try {
       await api.post("/auth/forgot-password/send", data);
-      setSuccessMessage("Ingresa a tu correo para restablecer tu contraseña");
+      setSuccessMessage(
+        "Hemos enviado un enlace al correo para restablecer tu contraseña",
+      );
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError("Error al enviar el correo. Intenta de nuevo.");
+        setError("Error al enviar el número de documento. Intenta de nuevo.");
       }
     }
   };
@@ -73,7 +75,7 @@ function SendForgotPasswordContent() {
           </div>
           <CardTitle className="text-2xl">Restablecer contraseña</CardTitle>
           <CardDescription>
-            Ingresa tu correo electr&oacute;nico y te enviaremos un enlace para
+            Ingresa tu nùmero de documento y te enviaremos un enlace para
             restablecer tu contraseña
           </CardDescription>
         </CardHeader>
@@ -97,18 +99,33 @@ function SendForgotPasswordContent() {
                   Correo electr&oacute;nico
                 </FieldLabel> */}
                 <Input
-                  id="email"
-                  type="email"
-                  placeholder="Correo electr&oacute;nico"
-                  {...register("email")}
-                  aria-invalid={!!errors.email}
+                  id="documentNumber"
+                  type="text"
+                  placeholder="Nº de documento"
+                  {...register("documentNumber")}
+                  aria-invalid={!!errors.documentNumber}
                 />
-                {errors.email && (
+                {errors.documentNumber && (
                   <p className="text-sm text-destructive">
-                    {errors.email.message}
+                    {errors.documentNumber.message}
                   </p>
                 )}
               </Field>
+            </FieldGroup>
+
+            <FieldGroup>
+              <Input
+                id="email"
+                type="email"
+                placeholder="Correo electr&oacute;nico"
+                {...register("email")}
+                aria-invalid={!!errors.email}
+              />
+              {errors.email && (
+                <p className="text-sm text-destructive">
+                  {errors.email.message}
+                </p>
+              )}
             </FieldGroup>
 
             <Button type="submit" className="w-full" disabled={isSubmitting}>
