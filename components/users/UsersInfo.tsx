@@ -35,6 +35,7 @@ interface User {
   phone?: string;
   schedule?: string;
   avatar?: string;
+  office?: string;
 }
 
 export function UsersInfo() {
@@ -50,6 +51,7 @@ export function UsersInfo() {
       user.email?.toLowerCase().includes(searchLower) ||
       user.role?.toLowerCase().includes(searchLower) ||
       user.area?.toLowerCase().includes(searchLower) ||
+      user.office?.toLowerCase().includes(searchLower) ||
       false
     );
   });
@@ -182,6 +184,7 @@ export function UsersInfo() {
                 <TableHead className="hidden lg:table-cell">Email</TableHead>
                 <TableHead className="hidden xl:table-cell">Teléfono</TableHead>
                 {/* <TableHead className="text-right">Horario</TableHead> */}
+                <TableHead className="text-right">Oficina</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -260,6 +263,11 @@ export function UsersInfo() {
                         {user.schedule || "9:00 - 18:00"}
                       </Badge>
                     </TableCell> */}
+                    <TableCell className="text-right">
+                      <Badge variant="outline" className="font-normal">
+                        {user.office || "—"}
+                      </Badge>
+                    </TableCell>
                   </TableRow>
                 ))
               )}
