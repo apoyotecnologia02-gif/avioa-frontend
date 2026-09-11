@@ -130,7 +130,7 @@ export function EquipmentLoans() {
   const role = user?.role?.toLowerCase();
   const isAdmin = role === "admin";
   const isLeader =
-    user?.isLeader === true || role === "manager" || role === "admin";
+    user?.isLeader === true || role === "leader" || role === "admin";
 
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("equipment");
@@ -457,7 +457,7 @@ export function EquipmentLoans() {
             <Plus className="mr-2 h-4 w-4" />
             Solicitar Préstamo
           </Button>
-          {isAdmin && (
+          {(isAdmin || isLeader) && (
             <Button
               variant="outline"
               onClick={() => setShowEquipmentDialog(true)}
@@ -679,6 +679,7 @@ export function EquipmentLoans() {
                                   Aprobado por: {loan.approvedBy.name}
                                 </p>
                               )}
+                              
                             </div>
                             {loan.status === LoanStatus.PENDING && (
                               <Button
@@ -935,7 +936,7 @@ export function EquipmentLoans() {
         </DialogContent>
       </Dialog>
 
-      {isAdmin && (
+      {(isAdmin || isLeader) && (
         <Dialog open={showEquipmentDialog} onOpenChange={setShowEquipmentDialog}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>

@@ -237,8 +237,8 @@ export function Header() {
                           case "EQUIPMENT_LOAN_APPROVED":
                           case "EQUIPMENT_LOAN_REJECTED":
                           case "EQUIPMENT_LOAN_RETURNED":
-                            if (pathname !== "/equipment-loans") {
-                              router.push("/equipment-loans");
+                            if (pathname !== "/loans") {
+                              router.push("/loans");
                             }
                             break;
                             // Si es una aprobación pendiente, abrir el tab de "Todos los Préstamos"
