@@ -9,11 +9,12 @@ const API_URL = "/api/equipment-loans";
 export const EQUIPMENT_LOAN_KEYS = {
   equipment: ["equipment"] as const,
   equipmentList: () => [...EQUIPMENT_LOAN_KEYS.equipment, "list"] as const,
-  
+
   loans: ["loans"] as const,
-  loansList: (filters?: any) => [...EQUIPMENT_LOAN_KEYS.loans, "list", { filters }] as const,
+  loansList: (filters?: any) =>
+    [...EQUIPMENT_LOAN_KEYS.loans, "list", { filters }] as const,
   myLoans: () => [...EQUIPMENT_LOAN_KEYS.loans, "my"] as const,
-  
+
   locations: ["locations"] as const,
   locationsList: () => [...EQUIPMENT_LOAN_KEYS.locations, "list"] as const,
 };
@@ -60,13 +61,17 @@ const api = {
       return res.json();
     }),
 
-  getAllLoans: (filters?: { status?: string; userId?: string; equipmentId?: string }) => {
+  getAllLoans: (filters?: {
+    status?: string;
+    userId?: string;
+    equipmentId?: string;
+  }) => {
     const params = new URLSearchParams();
     if (filters?.status) params.append("status", filters.status);
     if (filters?.userId) params.append("userId", filters.userId);
     if (filters?.equipmentId) params.append("equipmentId", filters.equipmentId);
     const query = params.toString() ? `&${params.toString()}` : "";
-    
+
     return fetch(`${API_URL}?path=loans${query}`, {
       credentials: "include",
     }).then((res) => {
@@ -120,7 +125,9 @@ export function useEquipmentLoans() {
     return useMutation({
       mutationFn: api.createEquipment,
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: EQUIPMENT_LOAN_KEYS.equipmentList() });
+        queryClient.invalidateQueries({
+          queryKey: EQUIPMENT_LOAN_KEYS.equipmentList(),
+        });
         toast.success("Equipo creado exitosamente");
       },
       onError: (error: any) => {
@@ -136,10 +143,14 @@ export function useEquipmentLoans() {
     });
   };
 
-  const useAllLoans = (filters?: { status?: string; userId?: string; equipmentId?: string }) => {
+  const useAllLoans = (
+    filters?: { status?: string; userId?: string; equipmentId?: string },
+    options?: { enabled?: boolean },
+  ) => {
     return useQuery({
       queryKey: EQUIPMENT_LOAN_KEYS.loansList(filters),
       queryFn: () => api.getAllLoans(filters),
+      enabled: options?.enabled ?? true, // ← Acepta opción enabled
     });
   };
 
@@ -147,8 +158,12 @@ export function useEquipmentLoans() {
     return useMutation({
       mutationFn: api.createLoan,
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: EQUIPMENT_LOAN_KEYS.myLoans() });
-        queryClient.invalidateQueries({ queryKey: EQUIPMENT_LOAN_KEYS.loansList() });
+        queryClient.invalidateQueries({
+          queryKey: EQUIPMENT_LOAN_KEYS.myLoans(),
+        });
+        queryClient.invalidateQueries({
+          queryKey: EQUIPMENT_LOAN_KEYS.loansList(),
+        });
         toast.success("Solicitud creada exitosamente");
       },
       onError: (error: any) => {
@@ -162,8 +177,12 @@ export function useEquipmentLoans() {
       mutationFn: ({ id, status }: { id: string; status: string }) =>
         api.updateLoanStatus(id, status),
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: EQUIPMENT_LOAN_KEYS.loansList() });
-        queryClient.invalidateQueries({ queryKey: EQUIPMENT_LOAN_KEYS.myLoans() });
+        queryClient.invalidateQueries({
+          queryKey: EQUIPMENT_LOAN_KEYS.loansList(),
+        });
+        queryClient.invalidateQueries({
+          queryKey: EQUIPMENT_LOAN_KEYS.myLoans(),
+        });
         toast.success("Estado actualizado");
       },
       onError: (error: any) => {
@@ -176,8 +195,12 @@ export function useEquipmentLoans() {
     return useMutation({
       mutationFn: api.cancelLoan,
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: EQUIPMENT_LOAN_KEYS.loansList() });
-        queryClient.invalidateQueries({ queryKey: EQUIPMENT_LOAN_KEYS.myLoans() });
+        queryClient.invalidateQueries({
+          queryKey: EQUIPMENT_LOAN_KEYS.loansList(),
+        });
+        queryClient.invalidateQueries({
+          queryKey: EQUIPMENT_LOAN_KEYS.myLoans(),
+        });
         toast.success("Préstamo cancelado");
       },
       onError: (error: any) => {

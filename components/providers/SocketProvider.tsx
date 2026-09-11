@@ -1,3 +1,4 @@
+// components/providers/SocketProvider.tsx
 "use client";
 
 import React, { createContext, useContext, useEffect, useRef } from "react";
@@ -7,6 +8,7 @@ import { useNotificationStore } from "@/store/notificationStore";
 import {
   AddOvertimeRequestPayload,
   NotificationPayload,
+  NotificationType,
 } from "@/types/notification.types";
 import { toast } from "sonner";
 
@@ -16,7 +18,6 @@ interface SocketContextType {
 
 const SocketContext = createContext<SocketContextType>({ socket: null });
 
-/** JWT que el backend lee en handshake.auth.token */
 function handshakeAuthToken(rawToken: string) {
   const t = rawToken.trim();
   if (!t) return t;
@@ -29,7 +30,6 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   const { user, token, isAuthenticated } = useAuthStore();
 
   useEffect(() => {
-    // Si no está autenticado, nos aseguramos de desconectar el socket
     if (!isAuthenticated || !token || !user) {
       if (socketRef.current) {
         socketRef.current.disconnect();
@@ -38,10 +38,8 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       return;
     }
 
-    // Si ya existe una conexión para este usuario, no creamos otra (Singleton Provider)
     if (socketRef.current) return;
 
-    // Inferir la URL base desde la URL de la API (para apuntar correctamente al puerto del backend ej: 3001)
     const apiUrl =
       process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
     let socketUrl = "http://localhost:3001";
@@ -50,24 +48,22 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       socketUrl = `${urlObj.protocol}//${urlObj.host}`;
     } catch (e) {}
 
-    // Permitir sobrescribir con una variable de entorno específica si existe
     if (process.env.NEXT_PUBLIC_SOCKET_URL) {
       socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL;
     }
 
     const socket = io(`${socketUrl}/portal`, {
-      // handshake.auth debe incluir JWT en `token`; sin esto el servidor desconecta por seguridad.
       auth: {
         token: handshakeAuthToken(token),
         userId: (user as { userId?: string }).userId ?? user.id,
       },
-      transports: ["websocket"], // Forzar uso de WebSocket (evitar polling)
+      transports: ["websocket"],
     });
 
     socketRef.current = socket;
 
     socket.on("connect", () => {
-      console.log("✅ Conectado a websockets (/portal) de forma global");
+      console.log("Conectado a websockets (/portal) de forma global");
     });
 
     socket.on("disconnect", () => {
@@ -78,7 +74,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       console.error("⚠️ Error de conexión a websockets:", err.message);
     });
 
-    // Handler de notificaciones
+    // ===== HANDLER GENÉRICO =====
     const handleNotification = (data: NotificationPayload) => {
       console.log("handleNotification", data);
       useNotificationStore.getState().addNotification(data);
@@ -88,6 +84,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       });
     };
 
+    // ===== HANDLERS DE OVERTIME =====
     const handleAddOvertimeRequest = (data: AddOvertimeRequestPayload) => {
       window.dispatchEvent(
         new CustomEvent("overtime-request-created", {
@@ -96,7 +93,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       );
     };
 
-    const handleOvertimeRequestApproved = (data) => {
+    const handleOvertimeRequestApproved = (data: any) => {
       window.dispatchEvent(
         new CustomEvent("overtime_request_approved", {
           detail: data,
@@ -104,7 +101,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       );
     };
 
-    const handleOvertimeRequestRejected = (data) => {
+    const handleOvertimeRequestRejected = (data: any) => {
       window.dispatchEvent(
         new CustomEvent("overtime_request_rejected", {
           detail: data,
@@ -112,6 +109,90 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       );
     };
 
+    // ===== HANDLERS DE EQUIPMENT LOANS =====
+
+    // Nueva solicitud de préstamo (llega al creador)
+    // components/providers/SocketProvider.tsx
+
+    // ===== HANDLERS DE EQUIPMENT LOANS =====
+
+    // Nueva solicitud de préstamo (llega al creador)
+    const handleLoanNewRequest = (data: any) => {
+      console.log("handleLoanNewRequest:", data);
+      useNotificationStore.getState().addNotification({
+        notificationId: `loan-new-${data.loanId}-${Date.now()}`,
+        title: "Solicitud de préstamo creada",
+        message:
+          data.message ||
+          `Tu solicitud para ${data.equipmentName} ha sido creada`,
+        type: NotificationType.EQUIPMENT_LOAN_REQUEST,
+        isRead: false,
+      } as any);
+
+      // Disparar evento global para que el componente refetchee
+      window.dispatchEvent(new CustomEvent("equipment-loan-update"));
+    };
+
+    // Cambio de estado del préstamo (llega al creador)
+    const handleLoanStatusChange = (data: any) => {
+      console.log("handleLoanStatusChange:", data);
+
+      let notificationType: NotificationType;
+      let title: string;
+
+      switch (data.status) {
+        case "APPROVED":
+          notificationType = NotificationType.EQUIPMENT_LOAN_APPROVED;
+          title = "Préstamo aprobado";
+          break;
+        case "REJECTED":
+          notificationType = NotificationType.EQUIPMENT_LOAN_REJECTED;
+          title = "Préstamo rechazado";
+          break;
+        case "RETURNED":
+          notificationType = NotificationType.EQUIPMENT_LOAN_RETURNED;
+          title = "Equipo devuelto";
+          break;
+        case "CANCELLED":
+          notificationType = NotificationType.EQUIPMENT_LOAN_REQUEST;
+          title = "Solicitud cancelada";
+          break;
+        default:
+          notificationType = NotificationType.EQUIPMENT_LOAN_REQUEST;
+          title = "Actualización de préstamo";
+      }
+
+      useNotificationStore.getState().addNotification({
+        notificationId: `loan-status-${data.loanId}-${Date.now()}`,
+        title,
+        message: data.message || `El estado cambió a ${data.status}`,
+        type: notificationType,
+        isRead: false,
+      } as any);
+
+      // Disparar evento global para que el componente refetchee
+      window.dispatchEvent(new CustomEvent("equipment-loan-update"));
+    };
+
+    // Nueva solicitud pendiente (llega a líderes/admins)
+    const handleLoanPendingApproval = (data: any) => {
+      console.log("handleLoanPendingApproval:", data);
+      useNotificationStore.getState().addNotification({
+        notificationId: `loan-pending-${data.loanId}-${Date.now()}`,
+        title: "Nueva solicitud de préstamo",
+        message:
+          data.message || `${data.userName} solicita ${data.equipmentName}`,
+        type: NotificationType.EQUIPMENT_LOAN_REQUEST,
+        isRead: false,
+      } as any);
+
+      // Disparar evento global para que el componente refetchee
+      window.dispatchEvent(new CustomEvent("equipment-loan-update"));
+    };
+
+    // ===== REGISTRO DE LISTENERS =====
+
+    // Notificaciones generales
     socket.on("point_request_received", handleNotification);
     socket.on("point_request_approved", handleNotification);
     socket.on("point_request_rejected", handleNotification);
@@ -122,13 +203,22 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     socket.on("leave_request_approved", handleNotification);
     socket.on("leave_request_rejected", handleNotification);
 
-    // overtime
+    // Overtime
     socket.on("overtime_request_received", handleAddOvertimeRequest);
     socket.on("overtime_request_approved", handleOvertimeRequestApproved);
     socket.on("overtime_request_rejected", handleOvertimeRequestRejected);
 
+    // Equipment Loans
+    socket.on("loan:newRequest", handleLoanNewRequest);
+    socket.on("loan:statusChange", handleLoanStatusChange);
+    socket.on("loan:pendingApproval", handleLoanPendingApproval);
+
+    // Debug (opcional, puedes quitarlo después)
+    // socket.onAny((eventName, ...args) => {
+    //   console.log("📨 Evento recibido:", eventName, args);
+    // });
+
     return () => {
-      // La limpieza solo ocurre si el componente se desmonta por completo (ej: saliendo de la app)
       socket.disconnect();
       socketRef.current = null;
     };

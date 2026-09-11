@@ -4,12 +4,9 @@ import { NextRequest, NextResponse } from "next/server";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
 const TOKEN_KEY = "portal_access_token";
 
-// Helper para obtener el token - CORREGIDO
 const getAuthHeaders = (req: NextRequest) => {
-  // 1. Intentar obtener de cookies con el nombre correcto
   let token = req.cookies.get(TOKEN_KEY)?.value;
   
-  // 2. Si no está en cookies, buscar en el header Authorization
   if (!token) {
     const authHeader = req.headers.get("authorization");
     if (authHeader?.startsWith("Bearer ")) {
@@ -17,7 +14,6 @@ const getAuthHeaders = (req: NextRequest) => {
     }
   }
   
-  // 3. Si no hay token, buscar en el header x-access-token
   if (!token) {
     token = req.headers.get("x-access-token") || undefined;
   }
@@ -30,10 +26,21 @@ const getAuthHeaders = (req: NextRequest) => {
     headers["Authorization"] = `Bearer ${token}`;
   }
   
-  console.log("🔑 Token encontrado:", token ? `Sí (${token.substring(0, 20)}...)` : "No");
-  console.log("📡 Headers enviados:", Object.keys(headers));
-  
   return headers;
+};
+
+// Helper para parsear el body de forma segura
+const safeJsonParse = async (req: NextRequest): Promise<any> => {
+  try {
+    const text = await req.text();
+    if (!text || text.trim() === "") {
+      return {}; // Body vacío → objeto vacío
+    }
+    return JSON.parse(text);
+  } catch (error) {
+    console.error("Error parsing JSON body:", error);
+    return {}; // Si falla el parseo, devolver objeto vacío
+  }
 };
 
 // GET
@@ -41,16 +48,12 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const path = searchParams.get("path") || "";
   
-  console.log(`📡 GET /api/equipment-loans?path=${path}`);
-  
   try {
     const headers = getAuthHeaders(req);
     const response = await fetch(`${API_URL}/equipment-loans/${path}`, {
       headers,
       cache: "no-store",
     });
-
-    console.log(`📡 Respuesta del backend: ${response.status}`);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -63,7 +66,7 @@ export async function GET(req: NextRequest) {
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error) {
-    console.error("❌ Error en GET equipment-loans:", error);
+    console.error("❌ Error en GET:", error);
     return NextResponse.json(
       { error: "Error de conexión con el servidor" },
       { status: 500 }
@@ -75,9 +78,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const path = searchParams.get("path") || "";
-  const body = await req.json();
-
-  console.log(`📡 POST /api/equipment-loans?path=${path}`);
+  const body = await safeJsonParse(req); // ← CAMBIO
 
   try {
     const headers = getAuthHeaders(req);
@@ -87,8 +88,6 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify(body),
       cache: "no-store",
     });
-
-    console.log(`📡 Respuesta del backend: ${response.status}`);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -101,7 +100,7 @@ export async function POST(req: NextRequest) {
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error) {
-    console.error("❌ Error en POST equipment-loans:", error);
+    console.error("❌ Error en POST:", error);
     return NextResponse.json(
       { error: "Error de conexión con el servidor" },
       { status: 500 }
@@ -113,20 +112,20 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const path = searchParams.get("path") || "";
-  const body = await req.json();
-
-  console.log(`📡 PATCH /api/equipment-loans?path=${path}`);
+  const body = await safeJsonParse(req); // ← CAMBIO CLAVE
 
   try {
     const headers = getAuthHeaders(req);
+    
+    // Solo enviar body si tiene contenido
+    const hasBody = Object.keys(body).length > 0;
+    
     const response = await fetch(`${API_URL}/equipment-loans/${path}`, {
       method: "PATCH",
       headers,
-      body: JSON.stringify(body),
+      ...(hasBody && { body: JSON.stringify(body) }),
       cache: "no-store",
     });
-
-    console.log(`📡 Respuesta del backend: ${response.status}`);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -139,7 +138,7 @@ export async function PATCH(req: NextRequest) {
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error) {
-    console.error("❌ Error en PATCH equipment-loans:", error);
+    console.error("❌ Error en PATCH:", error);
     return NextResponse.json(
       { error: "Error de conexión con el servidor" },
       { status: 500 }
@@ -152,8 +151,6 @@ export async function DELETE(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const path = searchParams.get("path") || "";
 
-  console.log(`📡 DELETE /api/equipment-loans?path=${path}`);
-
   try {
     const headers = getAuthHeaders(req);
     const response = await fetch(`${API_URL}/equipment-loans/${path}`, {
@@ -161,8 +158,6 @@ export async function DELETE(req: NextRequest) {
       headers,
       cache: "no-store",
     });
-
-    console.log(`📡 Respuesta del backend: ${response.status}`);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -172,10 +167,12 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    const data = await response.json();
+    // DELETE puede no devolver body
+    const text = await response.text();
+    const data = text ? JSON.parse(text) : {};
     return NextResponse.json(data);
   } catch (error) {
-    console.error("❌ Error en DELETE equipment-loans:", error);
+    console.error("❌ Error en DELETE:", error);
     return NextResponse.json(
       { error: "Error de conexión con el servidor" },
       { status: 500 }

@@ -229,6 +229,29 @@ export function Header() {
                               router.push("/leaves");
                             }
                             break;
+
+                          // components/layout/Header.tsx
+
+                          // En el switch dentro del onClick:
+                          case "EQUIPMENT_LOAN_REQUEST":
+                          case "EQUIPMENT_LOAN_APPROVED":
+                          case "EQUIPMENT_LOAN_REJECTED":
+                          case "EQUIPMENT_LOAN_RETURNED":
+                            if (pathname !== "/equipment-loans") {
+                              router.push("/equipment-loans");
+                            }
+                            break;
+                            // Si es una aprobación pendiente, abrir el tab de "Todos los Préstamos"
+                            if (
+                              notification.type ===
+                              "EQUIPMENT_LOAN_PENDING_APPROVAL"
+                            ) {
+                              // Opcional: disparar evento para cambiar el tab
+                              window.dispatchEvent(
+                                new CustomEvent("equipment-loans:open-pending"),
+                              );
+                            }
+                            break;
                         }
                       }}
                     >

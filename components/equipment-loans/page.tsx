@@ -1,7 +1,7 @@
 // components/equipment-loans/EquipmentLoans.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -57,7 +57,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
-// Importamos los hooks
 import { useEquipmentLoans } from "@/hooks/useEquipmentLoans";
 import {
   EquipmentStatus,
@@ -128,17 +127,10 @@ const ITEMS_PER_PAGE = 6;
 export function EquipmentLoans() {
   const { user } = useAuth();
 
- 
   const role = user?.role?.toLowerCase();
   const isAdmin = role === "admin";
   const isLeader =
-    user?.isLeader === true ||
-    role === "manager" ||
-    role === "admin";
-
-  console.log("User role:", user?.role);
-  console.log("Normalized role:", role);
-  console.log("isAdmin:", isAdmin);
+    user?.isLeader === true || role === "manager" || role === "admin";
 
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("equipment");
@@ -150,8 +142,7 @@ export function EquipmentLoans() {
   const [loanReason, setLoanReason] = useState("");
   const [loanObservation, setLoanObservation] = useState("");
   const [loanReturnDate, setLoanReturnDate] = useState("");
-  
-  // Paginación
+
   const [currentPage, setCurrentPage] = useState(1);
 
   const {
@@ -181,7 +172,7 @@ export function EquipmentLoans() {
     data: allLoans,
     isLoading: isLoadingAllLoans,
     refetch: refetchAllLoans,
-  } = useAllLoans();
+  } = useAllLoans(undefined, { enabled: isLeader });
 
   const { data: locations } = useLocations();
 
@@ -190,11 +181,28 @@ export function EquipmentLoans() {
   const updateStatus = useUpdateLoanStatus();
   const cancelLoan = useCancelLoan();
 
+  // Refetch automático cuando lleguen eventos de equipment loans por websocket
+  useEffect(() => {
+    const handleEquipmentLoanUpdate = () => {
+      refetchEquipment();
+      refetchMyLoans();
+      if (isLeader) refetchAllLoans();
+    };
+
+    window.addEventListener("equipment-loan-update", handleEquipmentLoanUpdate);
+
+    return () => {
+      window.removeEventListener(
+        "equipment-loan-update",
+        handleEquipmentLoanUpdate,
+      );
+    };
+  }, [isLeader, refetchEquipment, refetchMyLoans, refetchAllLoans]);
+
   const pendingCount = (allLoans ?? []).filter(
-    (l: any) => l.status === LoanStatus.PENDING
+    (l: any) => l.status === LoanStatus.PENDING,
   ).length;
 
-  // Filtros
   const filteredEquipment = (equipment ?? []).filter((item: any) => {
     const searchLower = searchTerm.toLowerCase();
     return (
@@ -225,7 +233,6 @@ export function EquipmentLoans() {
     );
   });
 
-  // Paginación
   const totalPages = (items: any[]) => Math.ceil(items.length / ITEMS_PER_PAGE);
   const paginate = (items: any[]) => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -233,7 +240,6 @@ export function EquipmentLoans() {
     return items.slice(start, end);
   };
 
-  // Resetear página al cambiar de tab o búsqueda
   const handleTabChange = (value: string) => {
     setActiveTab(value);
     setCurrentPage(1);
@@ -244,7 +250,6 @@ export function EquipmentLoans() {
     setCurrentPage(1);
   };
 
-  // Renderizar paginación
   const renderPagination = (items: any[]) => {
     const total = totalPages(items);
     if (total <= 1) return null;
@@ -260,11 +265,11 @@ export function EquipmentLoans() {
         >
           <ChevronLeft className="h-4 w-4" />
         </Button>
-        
+
         <span className="text-sm font-medium min-w-[40px] text-center">
           {currentPage}
         </span>
-        
+
         <Button
           variant="outline"
           size="icon"
@@ -296,9 +301,10 @@ export function EquipmentLoans() {
           setLoanObservation("");
           setLoanReturnDate("");
           refetchMyLoans();
+          refetchEquipment();
           if (isLeader) refetchAllLoans();
         },
-      }
+      },
     );
   };
 
@@ -310,7 +316,7 @@ export function EquipmentLoans() {
           refetchAllLoans();
           refetchEquipment();
         },
-      }
+      },
     );
   };
 
@@ -321,7 +327,7 @@ export function EquipmentLoans() {
         onSuccess: () => {
           refetchAllLoans();
         },
-      }
+      },
     );
   };
 
@@ -341,7 +347,7 @@ export function EquipmentLoans() {
             refetchAllLoans();
             refetchEquipment();
           },
-        }
+        },
       );
     }
   };
@@ -350,6 +356,7 @@ export function EquipmentLoans() {
     cancelLoan.mutate(id, {
       onSuccess: () => {
         refetchMyLoans();
+        refetchEquipment();
         if (isLeader) refetchAllLoans();
       },
     });
@@ -373,7 +380,7 @@ export function EquipmentLoans() {
           setShowEquipmentDialog(false);
           refetchEquipment();
         },
-      }
+      },
     );
   };
 
@@ -403,7 +410,6 @@ export function EquipmentLoans() {
     );
   };
 
-  // Estados de carga
   if (isLoadingEquipment && isLoadingMyLoans) {
     return (
       <div className="space-y-6">
@@ -464,11 +470,24 @@ export function EquipmentLoans() {
       </div>
 
       <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList className="grid w-full max-w-md grid-cols-2">
-          <TabsTrigger value="equipment">Equipos</TabsTrigger>
-          <TabsTrigger value="my-loans">Mis Préstamos</TabsTrigger>
+        <TabsList className="inline-flex h-auto w-auto items-center justify-start gap-2 bg-transparent p-0">
+          <TabsTrigger
+            value="equipment"
+            className="rounded-md border px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+          >
+            Equipos
+          </TabsTrigger>
+          <TabsTrigger
+            value="my-loans"
+            className="rounded-md border px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+          >
+            Mis Préstamos
+          </TabsTrigger>
           {isLeader && (
-            <TabsTrigger value="all-loans" className="relative">
+            <TabsTrigger
+              value="all-loans"
+              className="relative rounded-md border px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+            >
               Todos los Préstamos
               {pendingCount > 0 && (
                 <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs text-white">
@@ -578,7 +597,7 @@ export function EquipmentLoans() {
                       {filteredEquipment.length} equipos
                     </p>
                   </div>
-                  
+
                   {renderPagination(filteredEquipment)}
                 </>
               )}
@@ -645,7 +664,8 @@ export function EquipmentLoans() {
                               )}
                               <p className="text-sm text-muted-foreground">
                                 <Calendar className="inline h-3 w-3 mr-1" />
-                                Devolución esperada: {formatDate(loan.expectedReturnDate)}
+                                Devolución esperada:{" "}
+                                {formatDate(loan.expectedReturnDate)}
                               </p>
                               {loan.actualReturnDate && (
                                 <p className="text-sm text-muted-foreground">
@@ -664,7 +684,9 @@ export function EquipmentLoans() {
                               <Button
                                 variant="destructive"
                                 size="sm"
-                                onClick={() => handleCancelLoan(loan.equipmentLoanId)}
+                                onClick={() =>
+                                  handleCancelLoan(loan.equipmentLoanId)
+                                }
                                 disabled={cancelLoan.isPending}
                               >
                                 Cancelar
@@ -675,14 +697,14 @@ export function EquipmentLoans() {
                       </Card>
                     ))}
                   </div>
-                  
+
                   <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
                     <p>
                       Mostrando {paginate(filteredMyLoans).length} de{" "}
                       {filteredMyLoans.length} solicitudes
                     </p>
                   </div>
-                  
+
                   {renderPagination(filteredMyLoans)}
                 </>
               )}
@@ -816,14 +838,14 @@ export function EquipmentLoans() {
                         </Card>
                       ))}
                     </div>
-                    
+
                     <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
                       <p>
                         Mostrando {paginate(filteredAllLoans).length} de{" "}
                         {filteredAllLoans.length} solicitudes
                       </p>
                     </div>
-                    
+
                     {renderPagination(filteredAllLoans)}
                   </>
                 )}
@@ -833,7 +855,6 @@ export function EquipmentLoans() {
         )}
       </Tabs>
 
-      {/* Dialog: Solicitar Préstamo */}
       <Dialog open={showLoanDialog} onOpenChange={setShowLoanDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -852,10 +873,13 @@ export function EquipmentLoans() {
                 <SelectContent>
                   {equipment
                     ?.filter(
-                      (e: any) => e.status === EquipmentStatus.AVAILABLE
+                      (e: any) => e.status === EquipmentStatus.AVAILABLE,
                     )
                     .map((item: any) => (
-                      <SelectItem key={item.equipmentId} value={item.equipmentId}>
+                      <SelectItem
+                        key={item.equipmentId}
+                        value={item.equipmentId}
+                      >
                         {item.name}{" "}
                         {item.serialNumber && `(${item.serialNumber})`}
                       </SelectItem>
@@ -896,10 +920,7 @@ export function EquipmentLoans() {
             </div>
           </div>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowLoanDialog(false)}
-            >
+            <Button variant="outline" onClick={() => setShowLoanDialog(false)}>
               Cancelar
             </Button>
             <Button
@@ -914,7 +935,6 @@ export function EquipmentLoans() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog: Registrar Equipo (Solo Admin) */}
       {isAdmin && (
         <Dialog open={showEquipmentDialog} onOpenChange={setShowEquipmentDialog}>
           <DialogContent className="sm:max-w-md">
@@ -928,7 +948,12 @@ export function EquipmentLoans() {
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Nombre del Equipo *</Label>
-                  <Input id="name" name="name" placeholder="Ej: Laptop HP" required />
+                  <Input
+                    id="name"
+                    name="name"
+                    placeholder="Ej: Laptop HP"
+                    required
+                  />
                 </div>
 
                 <div className="space-y-2">
@@ -1001,13 +1026,13 @@ export function EquipmentLoans() {
         </Dialog>
       )}
 
-      {/* Dialog: Confirmar Devolución */}
       <Dialog open={showReturnDialog} onOpenChange={setShowReturnDialog}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Confirmar Devolución</DialogTitle>
             <DialogDescription>
-              ¿Estás seguro de que deseas registrar la devolución de este equipo?
+              ¿Estás seguro de que deseas registrar la devolución de este
+              equipo?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -1018,7 +1043,9 @@ export function EquipmentLoans() {
               Cancelar
             </Button>
             <Button onClick={confirmReturn} disabled={updateStatus.isPending}>
-              {updateStatus.isPending ? "Procesando..." : "Confirmar Devolución"}
+              {updateStatus.isPending
+                ? "Procesando..."
+                : "Confirmar Devolución"}
             </Button>
           </DialogFooter>
         </DialogContent>
