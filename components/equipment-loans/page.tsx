@@ -1,4 +1,3 @@
-// components/equipment-loans/EquipmentLoans.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -184,6 +183,7 @@ export function EquipmentLoans() {
   // Refetch automático cuando lleguen eventos de equipment loans por websocket
   useEffect(() => {
     const handleEquipmentLoanUpdate = () => {
+      console.log("🔄 Refetcheando equipment loans...");
       refetchEquipment();
       refetchMyLoans();
       if (isLeader) refetchAllLoans();
@@ -205,13 +205,18 @@ export function EquipmentLoans() {
 
   const filteredEquipment = (equipment ?? []).filter((item: any) => {
     const searchLower = searchTerm.toLowerCase();
+
+    const activeLoan = item.loans?.find((l: any) => l.status === "APPROVED");
+    const holderName = (activeLoan?.user?.name ?? "").toLowerCase();
+
     return (
       item.name.toLowerCase().includes(searchLower) ||
       item.category.toLowerCase().includes(searchLower) ||
       (item.serialNumber &&
         item.serialNumber.toLowerCase().includes(searchLower)) ||
       (item.location?.name &&
-        item.location.name.toLowerCase().includes(searchLower))
+        item.location.name.toLowerCase().includes(searchLower)) ||
+      holderName.includes(searchLower)
     );
   });
 
@@ -486,14 +491,16 @@ export function EquipmentLoans() {
           {isLeader && (
             <TabsTrigger
               value="all-loans"
-              className="relative rounded-md border px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              className="rounded-md border px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
             >
-              Todos los Préstamos
-              {pendingCount > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs text-white">
-                  {pendingCount}
-                </span>
-              )}
+              <span className="flex items-center gap-2">
+                Todos los Préstamos
+                {pendingCount > 0 && (
+                  <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-medium text-white">
+                    {pendingCount > 99 ? "99+" : pendingCount}
+                  </span>
+                )}
+              </span>
             </TabsTrigger>
           )}
         </TabsList>
@@ -540,6 +547,7 @@ export function EquipmentLoans() {
                           <TableHead>Categoría</TableHead>
                           <TableHead>Serial</TableHead>
                           <TableHead>Ubicación</TableHead>
+                          <TableHead>En posesión de</TableHead>
                           <TableHead className="text-right">Estado</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -550,11 +558,23 @@ export function EquipmentLoans() {
                               {item.name}
                             </TableCell>
                             <TableCell>
-                              {categoryLabels[item.category as EquipmentCategory]}
+                              {
+                                categoryLabels[
+                                  item.category as EquipmentCategory
+                                ]
+                              }
                             </TableCell>
                             <TableCell>{item.serialNumber || "—"}</TableCell>
                             <TableCell>
                               {item.location?.name || "Sin ubicación"}
+                            </TableCell>
+                            <TableCell>
+                              {(() => {
+                                const activeLoan = item.loans?.find(
+                                  (l: any) => l.status === "APPROVED",
+                                );
+                                return activeLoan?.user?.name || "—";
+                              })()}
                             </TableCell>
                             <TableCell className="text-right">
                               {getEquipmentStatusBadge(item.status)}
@@ -573,7 +593,11 @@ export function EquipmentLoans() {
                             <div>
                               <p className="font-medium">{item.name}</p>
                               <p className="text-sm text-muted-foreground">
-                                {categoryLabels[item.category as EquipmentCategory]}
+                                {
+                                  categoryLabels[
+                                    item.category as EquipmentCategory
+                                  ]
+                                }
                               </p>
                               {item.serialNumber && (
                                 <p className="text-sm text-muted-foreground">
@@ -583,6 +607,17 @@ export function EquipmentLoans() {
                               <p className="text-sm text-muted-foreground">
                                 {item.location?.name || "Sin ubicación"}
                               </p>
+                              {(() => {
+                                const activeLoan = item.loans?.find(
+                                  (l: any) => l.status === "APPROVED",
+                                );
+                                return activeLoan?.user?.name ? (
+                                  <p className="text-sm text-muted-foreground">
+                                    <User className="inline h-3 w-3 mr-1" />
+                                    En posesión de: {activeLoan.user.name}
+                                  </p>
+                                ) : null;
+                              })()}
                             </div>
                             {getEquipmentStatusBadge(item.status)}
                           </div>
@@ -679,7 +714,6 @@ export function EquipmentLoans() {
                                   Aprobado por: {loan.approvedBy.name}
                                 </p>
                               )}
-                              
                             </div>
                             {loan.status === LoanStatus.PENDING && (
                               <Button
@@ -873,9 +907,7 @@ export function EquipmentLoans() {
                 </SelectTrigger>
                 <SelectContent>
                   {equipment
-                    ?.filter(
-                      (e: any) => e.status === EquipmentStatus.AVAILABLE,
-                    )
+                    ?.filter((e: any) => e.status === EquipmentStatus.AVAILABLE)
                     .map((item: any) => (
                       <SelectItem
                         key={item.equipmentId}
@@ -937,7 +969,10 @@ export function EquipmentLoans() {
       </Dialog>
 
       {(isAdmin || isLeader) && (
-        <Dialog open={showEquipmentDialog} onOpenChange={setShowEquipmentDialog}>
+        <Dialog
+          open={showEquipmentDialog}
+          onOpenChange={setShowEquipmentDialog}
+        >
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>Registrar Nuevo Equipo</DialogTitle>
