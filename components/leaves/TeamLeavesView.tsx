@@ -173,7 +173,7 @@ function TeamCalendar({ leaves }: { leaves: LeaveRequest[] }) {
     const arr: Array<Date | null> = [];
 
     for (let i = 0; i < startOffset; i++) arr.push(null);
-    for (let d = 0; d <= daysInMonth; d++) arr.push(new Date(year, month, d));
+    for (let d = 1; d <= daysInMonth; d++) arr.push(new Date(year, month, d));
     return arr;
   }, [year, month]);
 

@@ -36,7 +36,6 @@ type ForgotPasswordFormValues = z.infer<typeof forgotPasswordFormSchema>;
 
 function ForgotPasswordContent() {
   const router = useRouter();
-  const params = useParams();
   const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -51,13 +50,20 @@ function ForgotPasswordContent() {
     resolver: zodResolver(forgotPasswordFormSchema),
   });
 
+  console.log("searchParamas", searchParams);
+
   const onSubmit = async (data: ForgotPasswordFormValues) => {
     setError(null);
     try {
-      await api.patch("/auth/forgot-password", {
-        email: searchParams.get("email"),
-        ...data,
-      });
+      await api.patch(
+        "/auth/forgot-password",
+        {
+          documentNumber: searchParams.get("documentNumber"),
+          password: data.password,
+          confirmPassword: data.confirmPassword,
+        },
+        { skip401Redirect: true },
+      );
       setSuccessMessage("Contrasena creada, ya puedes iniciar sesion");
       setTimeout(() => {
         router.push("/login");
