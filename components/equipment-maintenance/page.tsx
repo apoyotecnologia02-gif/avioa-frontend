@@ -1,3 +1,4 @@
+// components/maintenance/Maintenance.tsx
 "use client";
 
 import {
@@ -15,7 +16,6 @@ import {
 } from "@/components/ui/popover";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-
 
 import { useState, useEffect } from "react";
 import {
@@ -92,6 +92,9 @@ export function Maintenance() {
   const [activeTab, setActiveTab] = useState("my-requests");
   const [currentPage, setCurrentPage] = useState(1);
   const [equipmentPopoverOpen, setEquipmentPopoverOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<MaintenanceStatus | "ALL">(
+    "ALL",
+  );
 
   // Modal de crear
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -160,9 +163,16 @@ export function Maintenance() {
     (r: any) => r.status === MaintenanceStatus.PENDING,
   ).length;
 
-  // Filtros
+  // Filtros — Mis Solicitudes
   const filteredMyRequests = (myRequests ?? []).filter((item: any) => {
     const searchLower = searchTerm.toLowerCase();
+
+    // Filtro por estado
+    if (statusFilter !== "ALL" && item.status !== statusFilter) {
+      return false;
+    }
+
+    // Filtro por búsqueda
     return (
       (item.equipment?.name ?? "").toLowerCase().includes(searchLower) ||
       item.status.toLowerCase().includes(searchLower) ||
@@ -170,8 +180,14 @@ export function Maintenance() {
     );
   });
 
+  // Filtros — Todas las Solicitudes
   const filteredAllRequests = (allRequests ?? []).filter((item: any) => {
     const searchLower = searchTerm.toLowerCase();
+
+    if (statusFilter !== "ALL" && item.status !== statusFilter) {
+      return false;
+    }
+
     return (
       (item.equipment?.name ?? "").toLowerCase().includes(searchLower) ||
       (item.user?.name ?? "").toLowerCase().includes(searchLower) ||
@@ -194,6 +210,11 @@ export function Maintenance() {
 
   const handleSearchChange = (value: string) => {
     setSearchTerm(value);
+    setCurrentPage(1);
+  };
+
+  const handleStatusFilterChange = (value: string) => {
+    setStatusFilter(value as MaintenanceStatus | "ALL");
     setCurrentPage(1);
   };
 
@@ -414,14 +435,45 @@ export function Maintenance() {
               <CardDescription>
                 Historial de tus solicitudes de mantenimiento
               </CardDescription>
-              <div className="relative mt-4">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar por equipo, motivo o estado..."
-                  value={searchTerm}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                  className="pl-10"
-                />
+              <div className="mt-4 flex flex-col sm:flex-row gap-3">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar por equipo o motivo..."
+                    value={searchTerm}
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <Select
+                  value={statusFilter}
+                  onValueChange={handleStatusFilterChange}
+                >
+                  <SelectTrigger className="w-full sm:w-[200px]">
+                    <SelectValue placeholder="Todos los estados" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">Todos los estados</SelectItem>
+                    <SelectItem value={MaintenanceStatus.PENDING}>
+                      Pendiente
+                    </SelectItem>
+                    <SelectItem value={MaintenanceStatus.IN_REVIEW}>
+                      En revisión
+                    </SelectItem>
+                    <SelectItem value={MaintenanceStatus.IN_PROGRESS}>
+                      En proceso
+                    </SelectItem>
+                    <SelectItem value={MaintenanceStatus.RESOLVED}>
+                      Resuelto
+                    </SelectItem>
+                    <SelectItem value={MaintenanceStatus.REJECTED}>
+                      Rechazado
+                    </SelectItem>
+                    <SelectItem value={MaintenanceStatus.CANCELLED}>
+                      Cancelado
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </CardHeader>
             <CardContent>
@@ -537,14 +589,45 @@ export function Maintenance() {
                 <CardDescription>
                   Gestiona las solicitudes de mantenimiento de los colaboradores
                 </CardDescription>
-                <div className="relative mt-4">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar por equipo, usuario, motivo o estado..."
-                    value={searchTerm}
-                    onChange={(e) => handleSearchChange(e.target.value)}
-                    className="pl-10"
-                  />
+                <div className="mt-4 flex flex-col sm:flex-row gap-3">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      placeholder="Buscar por equipo, usuario o motivo..."
+                      value={searchTerm}
+                      onChange={(e) => handleSearchChange(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  <Select
+                    value={statusFilter}
+                    onValueChange={handleStatusFilterChange}
+                  >
+                    <SelectTrigger className="w-full sm:w-[200px]">
+                      <SelectValue placeholder="Todos los estados" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ALL">Todos los estados</SelectItem>
+                      <SelectItem value={MaintenanceStatus.PENDING}>
+                        Pendiente
+                      </SelectItem>
+                      <SelectItem value={MaintenanceStatus.IN_REVIEW}>
+                        En revisión
+                      </SelectItem>
+                      <SelectItem value={MaintenanceStatus.IN_PROGRESS}>
+                        En proceso
+                      </SelectItem>
+                      <SelectItem value={MaintenanceStatus.RESOLVED}>
+                        Resuelto
+                      </SelectItem>
+                      <SelectItem value={MaintenanceStatus.REJECTED}>
+                        Rechazado
+                      </SelectItem>
+                      <SelectItem value={MaintenanceStatus.CANCELLED}>
+                        Cancelado
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </CardHeader>
               <CardContent>
@@ -618,20 +701,18 @@ export function Maintenance() {
 
                               <div className="flex gap-2 flex-wrap">
                                 {item.status === MaintenanceStatus.PENDING && (
-                                  <>
-                                    <Button
-                                      size="sm"
-                                      onClick={() =>
-                                        handleOpenStatusDialog(
-                                          item.maintenanceRequestId,
-                                        )
-                                      }
-                                      disabled={updateStatus.isPending}
-                                    >
-                                      <AlertCircle className="mr-1 h-4 w-4" />
-                                      Gestionar
-                                    </Button>
-                                  </>
+                                  <Button
+                                    size="sm"
+                                    onClick={() =>
+                                      handleOpenStatusDialog(
+                                        item.maintenanceRequestId,
+                                      )
+                                    }
+                                    disabled={updateStatus.isPending}
+                                  >
+                                    <AlertCircle className="mr-1 h-4 w-4" />
+                                    Gestionar
+                                  </Button>
                                 )}
                                 {item.status ===
                                   MaintenanceStatus.IN_REVIEW && (
@@ -695,78 +776,84 @@ export function Maintenance() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-  <Label>Equipo *</Label>
-  <Popover open={equipmentPopoverOpen} onOpenChange={setEquipmentPopoverOpen}>
-    <PopoverTrigger asChild>
-      <Button
-        variant="outline"
-        role="combobox"
-        aria-expanded={equipmentPopoverOpen}
-        className="w-full justify-between font-normal"
-      >
-        {selectedEquipmentId
-          ? (() => {
-              const eq = availableEquipment.find(
-                (e: any) => e.equipmentId === selectedEquipmentId,
-              );
-              return eq
-                ? `${eq.name}${eq.serialNumber ? ` (${eq.serialNumber})` : ""}`
-                : "Selecciona un equipo";
-            })()
-          : "Selecciona un equipo"}
-        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-      </Button>
-    </PopoverTrigger>
-    <PopoverContent
-      className="w-full min-w-[var(--radix-popover-trigger-width)] p-0"
-      align="start"
-    >
-      <Command
-        filter={(value, search) => {
-          const searchLower = search.toLowerCase();
-          return value.toLowerCase().includes(searchLower) ? 1 : 0;
-        }}
-      >
-        <CommandInput placeholder="Buscar por nombre, serial o ubicación..." />
-        <CommandList className="max-h-[400px] overflow-y-auto">
-          <CommandEmpty>No se encontraron equipos.</CommandEmpty>
-          <CommandGroup>
-            {availableEquipment.map((item: any) => {
-              const label = `${item.name}${item.serialNumber ? ` (${item.serialNumber})` : ""}${item.location?.name ? ` - ${item.location.name}` : ""}`;
-              return (
-                <CommandItem
-                  key={item.equipmentId}
-                  value={label}
-                  onSelect={() => {
-                    setSelectedEquipmentId(item.equipmentId);
-                    setEquipmentPopoverOpen(false);
-                  }}
+              <Label>Equipo *</Label>
+              <Popover
+                open={equipmentPopoverOpen}
+                onOpenChange={setEquipmentPopoverOpen}
+              >
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={equipmentPopoverOpen}
+                    className="w-full justify-between font-normal"
+                  >
+                    {selectedEquipmentId
+                      ? (() => {
+                          const eq = availableEquipment.find(
+                            (e: any) => e.equipmentId === selectedEquipmentId,
+                          );
+                          return eq
+                            ? `${eq.name}${eq.serialNumber ? ` (${eq.serialNumber})` : ""}`
+                            : "Selecciona un equipo";
+                        })()
+                      : "Selecciona un equipo"}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="w-full min-w-[var(--radix-popover-trigger-width)] p-0"
+                  align="start"
                 >
-                  <Check
-                    className={cn(
-                      "mr-2 h-4 w-4",
-                      selectedEquipmentId === item.equipmentId
-                        ? "opacity-100"
-                        : "opacity-0",
-                    )}
-                  />
-                  <div className="flex flex-col">
-                    <span className="font-medium">{item.name}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {item.serialNumber && `Serial: ${item.serialNumber}`}
-                      {item.serialNumber && item.location?.name && " · "}
-                      {item.location?.name}
-                    </span>
-                  </div>
-                </CommandItem>
-              );
-            })}
-          </CommandGroup>
-        </CommandList>
-      </Command>
-    </PopoverContent>
-  </Popover>
-</div>
+                  <Command
+                    filter={(value, search) => {
+                      const searchLower = search.toLowerCase();
+                      return value.toLowerCase().includes(searchLower) ? 1 : 0;
+                    }}
+                  >
+                    <CommandInput placeholder="Buscar por nombre, serial o ubicación..." />
+                    <CommandList className="max-h-[400px] overflow-y-auto">
+                      <CommandEmpty>No se encontraron equipos.</CommandEmpty>
+                      <CommandGroup>
+                        {availableEquipment.map((item: any) => {
+                          const label = `${item.name}${item.serialNumber ? ` (${item.serialNumber})` : ""}${item.location?.name ? ` - ${item.location.name}` : ""}`;
+                          return (
+                            <CommandItem
+                              key={item.equipmentId}
+                              value={label}
+                              onSelect={() => {
+                                setSelectedEquipmentId(item.equipmentId);
+                                setEquipmentPopoverOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  selectedEquipmentId === item.equipmentId
+                                    ? "opacity-100"
+                                    : "opacity-0",
+                                )}
+                              />
+                              <div className="flex flex-col">
+                                <span className="font-medium">{item.name}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {item.serialNumber &&
+                                    `Serial: ${item.serialNumber}`}
+                                  {item.serialNumber &&
+                                    item.location?.name &&
+                                    " · "}
+                                  {item.location?.name}
+                                </span>
+                              </div>
+                            </CommandItem>
+                          );
+                        })}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
 
             <div className="space-y-2">
               <Label htmlFor="reason">Motivo *</Label>

@@ -140,7 +140,6 @@ export function EquipmentLoans() {
   const [selectedEquipmentId, setSelectedEquipmentId] = useState("");
   const [loanReason, setLoanReason] = useState("");
   const [loanObservation, setLoanObservation] = useState("");
-  const [loanReturnDate, setLoanReturnDate] = useState("");
 
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -289,14 +288,13 @@ export function EquipmentLoans() {
   };
 
   const handleCreateLoan = () => {
-    if (!selectedEquipmentId || !loanReturnDate) return;
+    if (!selectedEquipmentId) return;
 
     createLoan.mutate(
       {
         equipmentId: selectedEquipmentId,
         reason: loanReason,
         observation: loanObservation,
-        expectedReturnDate: loanReturnDate,
       },
       {
         onSuccess: () => {
@@ -304,7 +302,6 @@ export function EquipmentLoans() {
           setSelectedEquipmentId("");
           setLoanReason("");
           setLoanObservation("");
-          setLoanReturnDate("");
           refetchMyLoans();
           refetchEquipment();
           if (isLeader) refetchAllLoans();
@@ -513,7 +510,7 @@ export function EquipmentLoans() {
                 Inventario de Equipos
               </CardTitle>
               <CardDescription>
-                Lista de todos los equipos disponibles en la organización
+                Lista de todos los equipos disponibles
               </CardDescription>
               <div className="relative mt-4">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -697,11 +694,13 @@ export function EquipmentLoans() {
                                   Motivo: {loan.reason}
                                 </p>
                               )}
-                              <p className="text-sm text-muted-foreground">
-                                <Calendar className="inline h-3 w-3 mr-1" />
-                                Devolución esperada:{" "}
-                                {formatDate(loan.expectedReturnDate)}
-                              </p>
+                              {loan.expectedReturnDate && (
+                                <p className="text-sm text-muted-foreground">
+                                  <Calendar className="inline h-3 w-3 mr-1" />
+                                  Devolución esperada:{" "}
+                                  {formatDate(loan.expectedReturnDate)}
+                                </p>
+                              )}
                               {loan.actualReturnDate && (
                                 <p className="text-sm text-muted-foreground">
                                   <RotateCcw className="inline h-3 w-3 mr-1" />
@@ -808,11 +807,13 @@ export function EquipmentLoans() {
                                       Observación: {loan.observation}
                                     </p>
                                   )}
-                                  <p className="text-sm text-muted-foreground">
-                                    <Calendar className="inline h-3 w-3 mr-1" />
-                                    Devolución esperada:{" "}
-                                    {formatDateLong(loan.expectedReturnDate)}
-                                  </p>
+                                  {loan.expectedReturnDate && (
+                                    <p className="text-sm text-muted-foreground">
+                                      <Calendar className="inline h-3 w-3 mr-1" />
+                                      Devolución esperada:{" "}
+                                      {formatDateLong(loan.expectedReturnDate)}
+                                    </p>
+                                  )}
                                   {loan.approvedBy && (
                                     <p className="text-sm text-muted-foreground">
                                       <CheckCircle className="inline h-3 w-3 mr-1 text-green-500" />
@@ -940,17 +941,6 @@ export function EquipmentLoans() {
                 onChange={(e) => setLoanObservation(e.target.value)}
               />
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="returnDate">Fecha esperada de devolución</Label>
-              <Input
-                id="returnDate"
-                type="date"
-                value={loanReturnDate}
-                onChange={(e) => setLoanReturnDate(e.target.value)}
-                required
-              />
-            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowLoanDialog(false)}>
@@ -958,9 +948,7 @@ export function EquipmentLoans() {
             </Button>
             <Button
               onClick={handleCreateLoan}
-              disabled={
-                createLoan.isPending || !selectedEquipmentId || !loanReturnDate
-              }
+              disabled={createLoan.isPending || !selectedEquipmentId}
             >
               {createLoan.isPending ? "Enviando..." : "Solicitar"}
             </Button>

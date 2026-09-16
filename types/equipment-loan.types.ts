@@ -44,7 +44,7 @@ export interface EquipmentLoan {
   userId: string;
   reason?: string | null;
   observation?: string | null;
-  expectedReturnDate: string;
+  expectedReturnDate?: string;
   actualReturnDate?: string | null;
   status: LoanStatus;
   approvedById?: string | null;
