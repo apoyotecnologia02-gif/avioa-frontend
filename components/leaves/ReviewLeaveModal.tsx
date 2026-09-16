@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Check, X, Loader2, Paperclip } from "lucide-react";
+import { Check, X, Loader2, Paperclip, Info } from "lucide-react";
 import {
   LEAVE_TYPE_META,
   type LeaveRequest,
@@ -69,7 +69,17 @@ export function ReviewLeaveModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Revisar solicitud</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            Revisar solicitud
+            {leave.esCompensada && (
+              <span
+                className="rounded-full border border-dashed border-sky-500/60 bg-sky-50 px-2 py-0.5 text-[10px] font-medium text-sky-700 dark:bg-sky-900/20 dark:text-sky-300"
+                title="Días compensados: no genera ausencia"
+              >
+                Compensada
+              </span>
+            )}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
@@ -85,6 +95,22 @@ export function ReviewLeaveModal({
               </p>
             </div>
           </div>
+
+          {leave.esCompensada && (
+            <div className="flex items-start gap-2 rounded-xl border border-dashed border-sky-500/60 bg-sky-50/60 p-3 dark:bg-sky-900/10">
+              <Info className="mt-0.5 h-4 w-4 shrink-0 text-sky-600 dark:text-sky-400" />
+              <div className="space-y-0.5">
+                <p className="text-sm font-medium text-sky-800 dark:text-sky-300">
+                  Vacaciones compensadas
+                </p>
+                <p className="text-xs text-sky-700/80 dark:text-sky-300/80">
+                  El colaborador optó por compensar estos días.{" "}
+                  <strong>No generará ausencia</strong> en el calendario del
+                  equipo y no bloquea traslapes con otras solicitudes.
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Detalle */}
           <div className={`rounded-xl border p-3 ${meta.accent}`}>

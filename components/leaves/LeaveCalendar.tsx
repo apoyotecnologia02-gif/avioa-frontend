@@ -48,7 +48,12 @@ export function LeaveCalendar({ leaves }: LeaveCalendarProps) {
         start.getDate(),
       );
       while (cur <= end) {
-        map.set(toKey(cur), leave);
+        const k = toKey(cur);
+        const existing = map.get(k);
+
+        if (!existing || (existing.esCompensada && !leave.esCompensada)) {
+          map.set(k, leave);
+        }
         cur.setDate(cur.getDate() + 1);
       }
     }
@@ -120,19 +125,26 @@ export function LeaveCalendar({ leaves }: LeaveCalendarProps) {
           const holiday = isHoliday(cell.date);
           const isToday = k === todayKey;
 
+          const isCompensated = leave?.esCompensada === true;
+          const isAbsence = !!meta && !isCompensated;
+
           return (
             <div
               key={i}
               className={`relative aspect-square rounded-lg border text-center text-sm ${
-                meta
-                  ? `${meta.accent} font-medium`
-                  : weekend || holiday
-                    ? "border-transparent bg-muted/30 text-muted-foreground"
-                    : "border-transparent"
+                isAbsence
+                  ? `${meta!.accent} font-medium`
+                  : isCompensated
+                    ? "border-dashed border-sky-500/60 bg-sky-50/40 text-sky-800 dark:bg-sky-900/10 dark:text-sky-300"
+                    : weekend || holiday
+                      ? "border-transparent bg-muted/30 text-muted-foreground"
+                      : "border-transparent"
               }`}
               title={
                 leave
-                  ? `${meta?.label} · ${leave.status === "PENDING" ? "Pendiente" : "Aprobada"}`
+                  ? isCompensated
+                    ? `${meta?.label} · Compensada (no genera ausencia)`
+                    : `${meta?.label} · ${leave.status === "PENDING" ? "Pendiente" : "Aprobada"}`
                   : holiday
                     ? "Festivo"
                     : undefined
@@ -161,6 +173,10 @@ export function LeaveCalendar({ leaves }: LeaveCalendarProps) {
         <span className="flex items-center gap-1.5">
           <span className="h-2.5 w-2.5 rounded bg-primary/20 border border-primary/30" />
           Ausencia
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded border border-dashed border-sky-500/60 bg-sky-50/40 dark:bg-sky-900/10" />
+          Compensada (no ausente)
         </span>
         <span className="flex items-center gap-1.5">
           <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />

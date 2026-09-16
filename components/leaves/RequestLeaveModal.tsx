@@ -28,6 +28,7 @@ import {
   type LeaveType,
   type VacationBalance,
 } from "@/types/leaves.types";
+import { Checkbox } from "../ui/checkbox";
 
 interface RequestLeaveModalProps {
   open: boolean;
@@ -66,6 +67,7 @@ export function RequestLeaveModal({
   const [endDate, setEndDate] = useState("");
   const [reason, setReason] = useState("");
   const [attachmentUrl, setAttachmentUrl] = useState("");
+  const [esCompensada, setEsCompensada] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const meta = LEAVE_TYPE_META[type];
@@ -124,6 +126,7 @@ export function RequestLeaveModal({
         type,
         startDate,
         endDate,
+        esCompensada,
         reason: reason.trim(),
         attachmentUrl: attachmentUrl.trim() || undefined,
       });
@@ -166,6 +169,31 @@ export function RequestLeaveModal({
               </SelectContent>
             </Select>
           </div>
+
+          {/* compensacion en dinero (solo si el tipo es VACACIONES) */}
+          {type === "VACACIONES" && (
+            <div className="flex items-start gap-2.5 rounded-lg border px-3 py-2.5">
+              <Checkbox
+                id="es-compensada"
+                checked={esCompensada}
+                onCheckedChange={(checked) => setEsCompensada(!!checked)}
+                className="mt-0.5"
+              />
+              <div className="space-y-0.5">
+                <Label
+                  htmlFor="es-compensada"
+                  className="text-sm font-medium leading-none"
+                >
+                  Prefiero que me las paguen en dinero
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Si la marcas, seguirás trabajando estos días y recibirás el
+                  pago correspondiente en tu nómina. Si no lo marcas, se
+                  registran como días de descanso.
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Fechas */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
