@@ -30,6 +30,7 @@ export interface LeaveRequest {
   comment?: string | null;
   createdAt: string;
   reviewedAt?: string | null;
+  esCompensada?: boolean;
   user?: {
     name: string;
     avatarUrl?: string | null;
@@ -60,6 +61,7 @@ export interface CreateLeaveDto {
   reason: string;
   attachmentUrl?: string;
   leaderId?: string;
+  esCompensada?: boolean;
 }
 
 export interface ReviewLeaveDto {

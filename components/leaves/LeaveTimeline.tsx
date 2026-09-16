@@ -70,6 +70,16 @@ export function LeaveTimeline({
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium">{meta.label}</span>
+
+                      {leave.esCompensada && (
+                        <span
+                          className="rounded-full border border-dashed border-sky-500/60 bg-sky-50 px-1.5 text-[10px] font-medium text-sky-700 dark:bg-sky-900/20 dark:text-sky-300"
+                          title="Días compensados: no genera ausencia"
+                        >
+                          Compensada
+                        </span>
+                      )}
+
                       {leave.attachmentUrl && (
                         <a
                           href={leave.attachmentUrl}
