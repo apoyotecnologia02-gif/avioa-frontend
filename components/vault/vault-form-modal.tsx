@@ -6,14 +6,6 @@ import { useUpdateVault } from "@/hooks/useUpdateVault";
 import { VaultTag } from "@/hooks/useVaultTags";
 import { VaultItem } from "@/types/password-vault.types";
 import { useEffect, useState } from "react";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "../ui/sheet";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import { CalendarIcon, Eye, EyeOff, X } from "lucide-react";
@@ -42,6 +34,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../ui/dialog";
+import { toast } from "sonner";
 
 interface VaultFormModalProps {
   open: boolean;
@@ -158,6 +151,16 @@ export function VaultFormModal({
     };
 
     if (mode === "create") {
+      if (!dto.title) {
+        toast.error("El nombre es obligatorio");
+        return;
+      }
+
+      if (!dto.password) {
+        toast.error("La contraseña es obligatoria");
+        return;
+      }
+
       await createVault(dto as any);
     } else if (item) {
       await updateVault(item.passwordVaultId, dto as any);

@@ -109,6 +109,15 @@ export function TeamLeavesView({
                         <span className="truncate text-xs text-muted-foreground">
                           {meta.short}
                         </span>
+
+                        {leave.esCompensada && (
+                          <span
+                            className="rounded-full border border-dashed border-sky-500/60 bg-sky-50 px-1.5 text-[10px] font-medium text-sky-700 dark:bg-sky-900/20 dark:text-sky-300"
+                            title="Días compensados: no genera ausencia"
+                          >
+                            Compensada
+                          </span>
+                        )}
                       </div>
                       <p className="text-sm text-muted-foreground">
                         {fmt(leave.startDate)} – {fmt(leave.endDate)} ·{" "}
@@ -218,6 +227,10 @@ function TeamCalendar({ leaves }: { leaves: LeaveRequest[] }) {
         {cells.map((date, i) => {
           if (!date) return <div key={i} />;
           const people = dayMap.get(toKey(date)) ?? [];
+
+          const absent = people.filter((p) => !p.esCompensada);
+          const compensated = people.filter((p) => p.esCompensada);
+
           const weekend = date.getDay() === 0 || date.getDay() === 6;
           const holiday = isHoliday(date);
           return (
@@ -231,7 +244,40 @@ function TeamCalendar({ leaves }: { leaves: LeaveRequest[] }) {
             >
               <span className="text-muted-foreground">{date.getDate()}</span>
               <div className="mt-0.5 flex flex-wrap gap-0.5">
-                {people.slice(0, 3).map((p, j) => {
+                {absent.slice(0, 3).map((p, j) => {
+                  const meta = LEAVE_TYPE_META[p.type];
+                  return (
+                    <span
+                      key={`a-${j}`}
+                      className={`flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-medium ${meta.accent}`}
+                      title={`${p.user?.name} · ${meta.short} (ausente)`}
+                    >
+                      {p.user?.name.charAt(0) ?? "?"}
+                    </span>
+                  );
+                })}
+                {absent.length > 3 && (
+                  <span className="text-[9px] text-muted-foreground">
+                    +{absent.length - 3}
+                  </span>
+                )}
+
+                {compensated.slice(0, 2).map((p, j) => (
+                  <span
+                    key={`c-${j}`}
+                    className="flex h-4 w-4 items-center justify-center rounded-full border border-dashed border-sky-500/70 text-[9px] font-medium text-sky-700 dark:text-sky-300"
+                    title={`${p.user?.name} · Día compensado (no ausente)`}
+                  >
+                    {p.user?.name?.charAt(0) ?? "?"}
+                  </span>
+                ))}
+                {compensated.length > 2 && (
+                  <span className="text-[9px] text-muted-foreground">
+                    +{compensated.length - 2}
+                  </span>
+                )}
+
+                {/* {people.slice(0, 3).map((p, j) => {
                   const meta = LEAVE_TYPE_META[p.type];
                   return (
                     <span
@@ -247,17 +293,36 @@ function TeamCalendar({ leaves }: { leaves: LeaveRequest[] }) {
                   <span className="text-[9px] text-muted-foreground">
                     +{people.length - 3}
                   </span>
-                )}
+                )} */}
               </div>
             </div>
           );
         })}
       </div>
 
-      <p className="mt-3 border-t pt-3 text-xs text-muted-foreground">
+      <div className="mt-3 flex flex-wrap items-center gap-4 border-t pt-3 text-xs text-muted-foreground">
+        <div className="flex items-center gap-1.5">
+          <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary/20 text-[9px] font-medium text-primary">
+            A
+          </span>
+          <span>Ausente</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="flex h-4 w-4 items-center justify-center rounded-full border border-dashed border-sky-500/70 text-[9px] font-medium text-sky-700 dark:text-sky-300">
+            C
+          </span>
+          <span>Día compensado (no ausente)</span>
+        </div>
+      </div>
+      <p className="mt-2 text-xs text-muted-foreground">
+        Los días compensados no representan ausencia del colaborador; solo
+        indican que decidió disfrutar esos días en dinero.
+      </p>
+
+      {/* <p className="mt-3 border-t pt-3 text-xs text-muted-foreground">
         Cada círculo es una persona ausente ese día. Úsalo para ver traslapes
         antes de aprobar.
-      </p>
+      </p> */}
     </div>
   );
 }

@@ -127,6 +127,11 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     socket.on("overtime_request_approved", handleOvertimeRequestApproved);
     socket.on("overtime_request_rejected", handleOvertimeRequestRejected);
 
+    // Equipment Loans
+    // socket.on("loan:newRequest", handleLoanNewRequest);
+    // socket.on("loan:statusChange", handleLoanStatusChange);
+    // socket.on("loan:pendingApproval", handleLoanPendingApproval);
+
     return () => {
       // La limpieza solo ocurre si el componente se desmonta por completo (ej: saliendo de la app)
       socket.disconnect();
