@@ -106,15 +106,19 @@ export function ListaPorColaborador({
                     </div>
                     <div className="flex items-center gap-3 text-muted-foreground">
                       <span>
-                        {new Date(n.fechaInicioEnPeriodo).toLocaleDateString(
-                          "es-CO",
-                          { day: "numeric", month: "short" },
-                        )}
+                        {new Date(
+                          `${n.fechaInicioEnPeriodo}T00:00:00`,
+                        ).toLocaleDateString("es-CO", {
+                          day: "numeric",
+                          month: "short",
+                        })}
                         {" – "}
-                        {new Date(n.fechaFinEnPeriodo).toLocaleDateString(
-                          "es-CO",
-                          { day: "numeric", month: "short" },
-                        )}
+                        {new Date(
+                          `${n.fechaFinEnPeriodo}T00:00:00`,
+                        ).toLocaleDateString("es-CO", {
+                          day: "numeric",
+                          month: "short",
+                        })}
                       </span>
                       <span className="font-semibold text-foreground">
                         {n.cantidadEnPeriodo} {n.unidad === "HORAS" ? "h" : "d"}
