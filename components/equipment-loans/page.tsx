@@ -140,7 +140,6 @@ export function EquipmentLoans() {
   const [selectedEquipmentId, setSelectedEquipmentId] = useState("");
   const [loanReason, setLoanReason] = useState("");
   const [loanObservation, setLoanObservation] = useState("");
-  const [loanReturnDate, setLoanReturnDate] = useState("");
 
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -289,14 +288,13 @@ export function EquipmentLoans() {
   };
 
   const handleCreateLoan = () => {
-    if (!selectedEquipmentId || !loanReturnDate) return;
+    if (!selectedEquipmentId) return;
 
     createLoan.mutate(
       {
         equipmentId: selectedEquipmentId,
         reason: loanReason,
         observation: loanObservation,
-        expectedReturnDate: loanReturnDate,
       },
       {
         onSuccess: () => {
@@ -304,7 +302,6 @@ export function EquipmentLoans() {
           setSelectedEquipmentId("");
           setLoanReason("");
           setLoanObservation("");
-          setLoanReturnDate("");
           refetchMyLoans();
           refetchEquipment();
           if (isLeader) refetchAllLoans();
@@ -334,6 +331,11 @@ export function EquipmentLoans() {
         },
       },
     );
+  };
+
+  const handleRequestLoanFor = (equipmentId: string) => {
+    setSelectedEquipmentId(equipmentId);
+    setShowLoanDialog(true);
   };
 
   const handleReturnLoan = (id: string) => {
@@ -513,7 +515,7 @@ export function EquipmentLoans() {
                 Inventario de Equipos
               </CardTitle>
               <CardDescription>
-                Lista de todos los equipos disponibles en la organización
+                Lista de todos los equipos disponibles
               </CardDescription>
               <div className="relative mt-4">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -577,7 +579,22 @@ export function EquipmentLoans() {
                               })()}
                             </TableCell>
                             <TableCell className="text-right">
-                              {getEquipmentStatusBadge(item.status)}
+                              <div className="flex items-center justify-end gap-2">
+                                {item.status === EquipmentStatus.AVAILABLE && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 rounded-full hover:bg-primary/10"
+                                    title="Solicitar este equipo"
+                                    onClick={() =>
+                                      handleRequestLoanFor(item.equipmentId)
+                                    }
+                                  >
+                                    <Plus className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                {getEquipmentStatusBadge(item.status)}
+                              </div>
                             </TableCell>
                           </TableRow>
                         ))}
@@ -619,7 +636,53 @@ export function EquipmentLoans() {
                                 ) : null;
                               })()}
                             </div>
-                            {getEquipmentStatusBadge(item.status)}
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1">
+                                <p className="font-medium">{item.name}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {
+                                    categoryLabels[
+                                      item.category as EquipmentCategory
+                                    ]
+                                  }
+                                </p>
+                                {item.serialNumber && (
+                                  <p className="text-sm text-muted-foreground">
+                                    Serial: {item.serialNumber}
+                                  </p>
+                                )}
+                                <p className="text-sm text-muted-foreground">
+                                  {item.location?.name || "Sin ubicación"}
+                                </p>
+                                {(() => {
+                                  const activeLoan = item.loans?.find(
+                                    (l: any) => l.status === "APPROVED",
+                                  );
+                                  return activeLoan?.user?.name ? (
+                                    <p className="text-sm text-muted-foreground">
+                                      <User className="inline h-3 w-3 mr-1" />
+                                      En posesión de: {activeLoan.user.name}
+                                    </p>
+                                  ) : null;
+                                })()}
+                              </div>
+                              <div className="flex items-center gap-2 shrink-0">
+                                {item.status === EquipmentStatus.AVAILABLE && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 rounded-full hover:bg-primary/10"
+                                    title="Solicitar este equipo"
+                                    onClick={() =>
+                                      handleRequestLoanFor(item.equipmentId)
+                                    }
+                                  >
+                                    <Plus className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                {getEquipmentStatusBadge(item.status)}
+                              </div>
+                            </div>
                           </div>
                         </CardContent>
                       </Card>
@@ -697,11 +760,13 @@ export function EquipmentLoans() {
                                   Motivo: {loan.reason}
                                 </p>
                               )}
-                              <p className="text-sm text-muted-foreground">
-                                <Calendar className="inline h-3 w-3 mr-1" />
-                                Devolución esperada:{" "}
-                                {formatDate(loan.expectedReturnDate)}
-                              </p>
+                              {loan.expectedReturnDate && (
+                                <p className="text-sm text-muted-foreground">
+                                  <Calendar className="inline h-3 w-3 mr-1" />
+                                  Devolución esperada:{" "}
+                                  {formatDate(loan.expectedReturnDate)}
+                                </p>
+                              )}
                               {loan.actualReturnDate && (
                                 <p className="text-sm text-muted-foreground">
                                   <RotateCcw className="inline h-3 w-3 mr-1" />
@@ -808,11 +873,13 @@ export function EquipmentLoans() {
                                       Observación: {loan.observation}
                                     </p>
                                   )}
-                                  <p className="text-sm text-muted-foreground">
-                                    <Calendar className="inline h-3 w-3 mr-1" />
-                                    Devolución esperada:{" "}
-                                    {formatDateLong(loan.expectedReturnDate)}
-                                  </p>
+                                  {loan.expectedReturnDate && (
+                                    <p className="text-sm text-muted-foreground">
+                                      <Calendar className="inline h-3 w-3 mr-1" />
+                                      Devolución esperada:{" "}
+                                      {formatDateLong(loan.expectedReturnDate)}
+                                    </p>
+                                  )}
                                   {loan.approvedBy && (
                                     <p className="text-sm text-muted-foreground">
                                       <CheckCircle className="inline h-3 w-3 mr-1 text-green-500" />
@@ -901,7 +968,11 @@ export function EquipmentLoans() {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="equipment">Equipo</Label>
-              <Select onValueChange={setSelectedEquipmentId} required>
+              <Select 
+              value={selectedEquipmentId}
+              onValueChange={setSelectedEquipmentId} 
+              required
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecciona un equipo" />
                 </SelectTrigger>
@@ -940,17 +1011,6 @@ export function EquipmentLoans() {
                 onChange={(e) => setLoanObservation(e.target.value)}
               />
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="returnDate">Fecha esperada de devolución</Label>
-              <Input
-                id="returnDate"
-                type="date"
-                value={loanReturnDate}
-                onChange={(e) => setLoanReturnDate(e.target.value)}
-                required
-              />
-            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowLoanDialog(false)}>
@@ -958,9 +1018,7 @@ export function EquipmentLoans() {
             </Button>
             <Button
               onClick={handleCreateLoan}
-              disabled={
-                createLoan.isPending || !selectedEquipmentId || !loanReturnDate
-              }
+              disabled={createLoan.isPending || !selectedEquipmentId}
             >
               {createLoan.isPending ? "Enviando..." : "Solicitar"}
             </Button>
