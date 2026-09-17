@@ -18,6 +18,8 @@ interface TablaConsolidadaProps {
   isLoading: boolean;
 }
 
+const parseDateOnly = (s: string) => new Date(`${s}T00:00:00`);
+
 export function TablaConsolidada({
   novedades,
   isLoading,
@@ -76,15 +78,20 @@ export function TablaConsolidada({
                 </div>
               </TableCell>
               <TableCell className="text-sm text-muted-foreground">
-                {new Date(n.fechaInicioEnPeriodo).toLocaleDateString("es-CO", {
+                {new Date(
+                  `${n.fechaInicioEnPeriodo}T00:00:00`,
+                ).toLocaleDateString("es-CO", {
                   day: "numeric",
                   month: "short",
                 })}
                 {" – "}
-                {new Date(n.fechaFinEnPeriodo).toLocaleDateString("es-CO", {
-                  day: "numeric",
-                  month: "short",
-                })}
+                {new Date(`${n.fechaFinEnPeriodo}T00:00:00`).toLocaleDateString(
+                  "es-CO",
+                  {
+                    day: "numeric",
+                    month: "short",
+                  },
+                )}
               </TableCell>
               <TableCell className="text-right font-semibold">
                 {n.cantidadEnPeriodo} {n.unidad === "HORAS" ? "h" : "d"}
