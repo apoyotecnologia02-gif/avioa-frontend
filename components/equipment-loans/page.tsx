@@ -333,6 +333,11 @@ export function EquipmentLoans() {
     );
   };
 
+  const handleRequestLoanFor = (equipmentId: string) => {
+    setSelectedEquipmentId(equipmentId);
+    setShowLoanDialog(true);
+  };
+
   const handleReturnLoan = (id: string) => {
     setSelectedLoanId(id);
     setShowReturnDialog(true);
@@ -574,7 +579,22 @@ export function EquipmentLoans() {
                               })()}
                             </TableCell>
                             <TableCell className="text-right">
-                              {getEquipmentStatusBadge(item.status)}
+                              <div className="flex items-center justify-end gap-2">
+                                {item.status === EquipmentStatus.AVAILABLE && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 rounded-full hover:bg-primary/10"
+                                    title="Solicitar este equipo"
+                                    onClick={() =>
+                                      handleRequestLoanFor(item.equipmentId)
+                                    }
+                                  >
+                                    <Plus className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                {getEquipmentStatusBadge(item.status)}
+                              </div>
                             </TableCell>
                           </TableRow>
                         ))}
@@ -616,7 +636,53 @@ export function EquipmentLoans() {
                                 ) : null;
                               })()}
                             </div>
-                            {getEquipmentStatusBadge(item.status)}
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1">
+                                <p className="font-medium">{item.name}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {
+                                    categoryLabels[
+                                      item.category as EquipmentCategory
+                                    ]
+                                  }
+                                </p>
+                                {item.serialNumber && (
+                                  <p className="text-sm text-muted-foreground">
+                                    Serial: {item.serialNumber}
+                                  </p>
+                                )}
+                                <p className="text-sm text-muted-foreground">
+                                  {item.location?.name || "Sin ubicación"}
+                                </p>
+                                {(() => {
+                                  const activeLoan = item.loans?.find(
+                                    (l: any) => l.status === "APPROVED",
+                                  );
+                                  return activeLoan?.user?.name ? (
+                                    <p className="text-sm text-muted-foreground">
+                                      <User className="inline h-3 w-3 mr-1" />
+                                      En posesión de: {activeLoan.user.name}
+                                    </p>
+                                  ) : null;
+                                })()}
+                              </div>
+                              <div className="flex items-center gap-2 shrink-0">
+                                {item.status === EquipmentStatus.AVAILABLE && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 rounded-full hover:bg-primary/10"
+                                    title="Solicitar este equipo"
+                                    onClick={() =>
+                                      handleRequestLoanFor(item.equipmentId)
+                                    }
+                                  >
+                                    <Plus className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                {getEquipmentStatusBadge(item.status)}
+                              </div>
+                            </div>
                           </div>
                         </CardContent>
                       </Card>
@@ -902,7 +968,11 @@ export function EquipmentLoans() {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="equipment">Equipo</Label>
-              <Select onValueChange={setSelectedEquipmentId} required>
+              <Select 
+              value={selectedEquipmentId}
+              onValueChange={setSelectedEquipmentId} 
+              required
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecciona un equipo" />
                 </SelectTrigger>
