@@ -76,7 +76,6 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
 
     // ===== HANDLER GENÉRICO =====
     const handleNotification = (data: NotificationPayload) => {
-      console.log("handleNotification", data);
       useNotificationStore.getState().addNotification(data);
       toast(data.title || "Nueva notificación", {
         description: data.message,
@@ -212,11 +211,6 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     socket.on("loan:newRequest", handleLoanNewRequest);
     socket.on("loan:statusChange", handleLoanStatusChange);
     socket.on("loan:pendingApproval", handleLoanPendingApproval);
-
-    // Debug (opcional, puedes quitarlo después)
-    // socket.onAny((eventName, ...args) => {
-    //   console.log("📨 Evento recibido:", eventName, args);
-    // });
 
     return () => {
       socket.disconnect();

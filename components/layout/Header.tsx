@@ -18,7 +18,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useEffect } from "react";
-
+import { useNotificationNavigation } from "@/hooks/useNotificationNavigation";
+import { Notification } from "@/types/notification.types";
 interface Breadcrumb {
   label: string;
   href?: string;
@@ -50,6 +51,7 @@ function getBreadcrumbs(pathname: string): Breadcrumb[] {
     knowledge: "Biblioteca de Conocimiento",
     loans: "Equipos y prestamos",
     "equipment-maintenance": "Equipos y mantenimiento",
+    nomina: "Contabilidad",
   };
 
   let currentPath = "";
@@ -74,6 +76,7 @@ export function Header() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const { triggerModal } = useOvertimeStore();
+  const navigate = useNotificationNavigation();
   const {
     unreadCount,
     notifications,
@@ -95,6 +98,11 @@ export function Header() {
   useEffect(() => {
     fetchNotifications();
   }, [fetchNotifications]);
+
+  const handleClick = (n: Notification) => {
+    if (!n.isRead) markAsRead(n.notificationId);
+    navigate(n);
+  };
 
   return (
     <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-border bg-card px-3 sm:h-16 sm:px-4 lg:px-6">
@@ -179,94 +187,24 @@ export function Header() {
                   No tienes notificaciones
                 </div>
               ) : (
-                notifications.map((notification) => {
-                  const targetId =
-                    notification.notificationId ||
-                    (notification as any).id ||
-                    (notification as any)._id;
-
+                notifications.map((n) => {
                   return (
                     <DropdownMenuItem
-                      key={targetId}
-                      className={`flex flex-col items-start gap-1 p-4 cursor-pointer border-b last:border-0 ${!notification.isRead ? "bg-primary/5" : ""}`}
+                      key={n.notificationId}
+                      className={`flex flex-col items-start gap-1 p-4 cursor-pointer border-b last:border-0 ${!n.isRead ? "bg-primary/5" : ""}`}
                       onClick={(e) => {
                         e.preventDefault();
-
-                        if (targetId && !notification.isRead) {
-                          markAsRead(targetId);
-                        }
-
-                        switch (notification.type) {
-                          case "POINT_REQUEST":
-                            if (pathname !== "/points-request") {
-                              router.push("/points-request");
-                            }
-                            break;
-
-                          case "POINT_REQUEST_APPROVED":
-                          case "POINT_REQUEST_REJECTED":
-                            if (pathname !== "/points/my-requests") {
-                              router.push("/points/my-requests");
-                            }
-                            break;
-
-                          case "OVERTIME_REQUEST":
-                          case "OVERTIME_REQUEST_APPROVED":
-                          case "OVERTIME_REQUEST_REJECTED":
-                            const overtimeTarget = "/overtime";
-                            if (pathname !== overtimeTarget) {
-                              router.push(overtimeTarget);
-                              setTimeout(() => {
-                                triggerModal();
-                              }, 300);
-                            } else {
-                              triggerModal();
-                            }
-                            break;
-
-                          case "LEAVE_REQUEST_RECEIVED":
-                          case "LEAVE_REQUEST_APPROVED":
-                          case "LEAVE_REQUEST_REJECTED":
-                            if (pathname !== "/leaves") {
-                              router.push("/leaves");
-                            }
-                            break;
-
-                          // components/layout/Header.tsx
-
-                          // En el switch dentro del onClick:
-                          case "EQUIPMENT_LOAN_REQUEST":
-                          case "EQUIPMENT_LOAN_APPROVED":
-                          case "EQUIPMENT_LOAN_REJECTED":
-                          case "EQUIPMENT_LOAN_RETURNED":
-                            if (pathname !== "/loans") {
-                              router.push("/loans");
-                            }
-                            break;
-                            // Si es una aprobación pendiente, abrir el tab de "Todos los Préstamos"
-                            if (
-                              notification.type ===
-                              "EQUIPMENT_LOAN_PENDING_APPROVAL"
-                            ) {
-                              // Opcional: disparar evento para cambiar el tab
-                              window.dispatchEvent(
-                                new CustomEvent("equipment-loans:open-pending"),
-                              );
-                            }
-                            break;
-                        }
+                        handleClick(n);
                       }}
                     >
                       <div className="flex items-center justify-between w-full">
-                        <span className="font-medium text-sm">
-                          {notification.title}
-                        </span>
-                        {!notification.isRead && (
+                        <span className="font-medium text-sm">{n.title}</span>
+                        {!n.isRead && (
                           <span className="h-2 w-2 rounded-full bg-primary" />
                         )}
                       </div>
                       <span className="text-xs text-muted-foreground line-clamp-2">
-                        {notification.message}
+                        {n.message}
                       </span>
                     </DropdownMenuItem>
                   );
