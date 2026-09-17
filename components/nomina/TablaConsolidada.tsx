@@ -18,8 +18,6 @@ interface TablaConsolidadaProps {
   isLoading: boolean;
 }
 
-const parseDateOnly = (s: string) => new Date(`${s}T00:00:00`);
-
 export function TablaConsolidada({
   novedades,
   isLoading,
