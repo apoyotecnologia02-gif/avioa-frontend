@@ -29,6 +29,8 @@ import {
   type VacationBalance,
 } from "@/types/leaves.types";
 import { Checkbox } from "../ui/checkbox";
+import { useGetLeaders } from "@/hooks/useGetLeaders";
+import { User } from "@/types/auth.types";
 
 interface RequestLeaveModalProps {
   open: boolean;
@@ -36,6 +38,7 @@ interface RequestLeaveModalProps {
   onSubmit: (dto: CreateLeaveDto) => Promise<void>;
   isSubmitting: boolean;
   balance: VacationBalance | null;
+  user: User | null;
 }
 
 const TYPE_ORDER: LeaveType[] = [
@@ -61,6 +64,7 @@ export function RequestLeaveModal({
   onSubmit,
   isSubmitting,
   balance,
+  user,
 }: RequestLeaveModalProps) {
   const [type, setType] = useState<LeaveType>("VACACIONES");
   const [startDate, setStartDate] = useState("");
@@ -69,6 +73,9 @@ export function RequestLeaveModal({
   const [attachmentUrl, setAttachmentUrl] = useState("");
   const [esCompensada, setEsCompensada] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [leaderId, setLeaderId] = useState("");
+
+  const { requests: leaders } = useGetLeaders();
 
   const meta = LEAVE_TYPE_META[type];
 
@@ -116,10 +123,11 @@ export function RequestLeaveModal({
       setError("Este tipo de ausencia requiere adjuntar el soporte");
       return;
     }
-    // if (exceedsBalance) {
-    //   setError("No tienes saldo suficiente para estas fechas");
-    //   return;
-    // }
+
+    if (!user?.leaderId && !leaderId) {
+      setError("Selecciona un líder");
+      return;
+    }
 
     try {
       await onSubmit({
@@ -129,12 +137,17 @@ export function RequestLeaveModal({
         esCompensada,
         reason: reason.trim(),
         attachmentUrl: attachmentUrl.trim() || undefined,
+        leaderId: leaderId.trim() || undefined,
       });
       reset();
     } catch {
       /* el hook ya mostró el toast */
     }
   };
+
+  const defaultLeaderId = user?.leaderId;
+  const isLeaderRequired = !defaultLeaderId && !leaderId;
+  const hasLeaders = leaders.length > 0;
 
   return (
     <Dialog
@@ -171,7 +184,7 @@ export function RequestLeaveModal({
           </div>
 
           {/* compensacion en dinero (solo si el tipo es VACACIONES) */}
-          {type === "VACACIONES" && (
+          {/* {type === "VACACIONES" && (
             <div className="flex items-start gap-2.5 rounded-lg border px-3 py-2.5">
               <Checkbox
                 id="es-compensada"
@@ -193,7 +206,7 @@ export function RequestLeaveModal({
                 </p>
               </div>
             </div>
-          )}
+          )} */}
 
           {/* Fechas */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -279,6 +292,42 @@ export function RequestLeaveModal({
             <div className="flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:bg-rose-900/20">
               <AlertCircle className="h-4 w-4 shrink-0" />
               {error}
+            </div>
+          )}
+
+          {hasLeaders && (
+            <div className="space-y-1.5">
+              <Label htmlFor="leader">
+                Lider (Si necesitas enviarle la solicitud a otro lider)
+              </Label>
+              <Select
+                value={leaderId}
+                onValueChange={(leaderId) => setLeaderId(leaderId)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona un lider" />
+                </SelectTrigger>
+                <SelectContent>
+                  {leaders.map(({ userId, name }) => (
+                    <SelectItem key={userId} value={userId}>
+                      {name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {user?.leaderName && !leaderId && defaultLeaderId && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Usando tu líder asignado:{" "}
+                  <span className="font-medium text-foreground">
+                    {user.leaderName}
+                  </span>
+                </p>
+              )}
+              {isLeaderRequired && !leaderId && (
+                <p className="text-xs text-destructive mt-1">
+                  No tienes un líder asignado. Selecciona uno para continuar.
+                </p>
+              )}
             </div>
           )}
         </div>
