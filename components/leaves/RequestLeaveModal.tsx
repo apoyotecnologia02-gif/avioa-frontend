@@ -31,6 +31,7 @@ import {
 import { Checkbox } from "../ui/checkbox";
 import { useGetLeaders } from "@/hooks/useGetLeaders";
 import { User } from "@/types/auth.types";
+import { CampaignDateNotice } from "./CampaignDatesNotice";
 
 interface RequestLeaveModalProps {
   open: boolean;
@@ -230,6 +231,8 @@ export function RequestLeaveModal({
               />
             </div>
           </div>
+
+          <CampaignDateNotice startDate={startDate} endDate={endDate} />
 
           {/* Preview de días hábiles */}
           {businessDays !== null && businessDays > 0 && (
