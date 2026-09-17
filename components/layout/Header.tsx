@@ -49,6 +49,8 @@ function getBreadcrumbs(pathname: string): Breadcrumb[] {
     vacations: "Saldo de vacaciones",
     knowledge: "Biblioteca de Conocimiento",
     nomina: "Contabilidad",
+    loans: "Equipos y prestamos",
+    "equipment-maintenance": "Equipos y mantenimiento",
   };
 
   let currentPath = "";
@@ -228,6 +230,29 @@ export function Header() {
                           case "LEAVE_REQUEST_REJECTED":
                             if (pathname !== "/leaves") {
                               router.push("/leaves");
+                            }
+                            break;
+
+                          // components/layout/Header.tsx
+
+                          // En el switch dentro del onClick:
+                          case "EQUIPMENT_LOAN_REQUEST":
+                          case "EQUIPMENT_LOAN_APPROVED":
+                          case "EQUIPMENT_LOAN_REJECTED":
+                          case "EQUIPMENT_LOAN_RETURNED":
+                            if (pathname !== "/loans") {
+                              router.push("/loans");
+                            }
+                            break;
+                            // Si es una aprobación pendiente, abrir el tab de "Todos los Préstamos"
+                            if (
+                              notification.type ===
+                              "EQUIPMENT_LOAN_PENDING_APPROVAL"
+                            ) {
+                              // Opcional: disparar evento para cambiar el tab
+                              window.dispatchEvent(
+                                new CustomEvent("equipment-loans:open-pending"),
+                              );
                             }
                             break;
                         }
