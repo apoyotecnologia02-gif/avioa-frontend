@@ -111,6 +111,10 @@ export function ShareVaultDialog({
 
   const selectedUser = users.find((u: any) => u.userId === selectedUserId);
 
+  console.log("alreadySharedUserIds", alreadySharedUserIds);
+  console.log("selectedUser", selectedUser);
+  console.log("selectedUserId", selectedUserId);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
@@ -158,7 +162,7 @@ export function ShareVaultDialog({
                         .map((u: any) => (
                           <CommandItem
                             key={u.userId}
-                            value={`${u.name} ${u.eamil}`}
+                            value={`${u.name} ${u.email}`}
                             onSelect={() => {
                               setSelectedUserId(u.userId);
                               setUserPopoverOpen(false);
