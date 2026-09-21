@@ -4,7 +4,7 @@ import { canPublish, canPublishType } from "@/lib/feed-permissions";
 import { useAuthStore } from "@/store/authStore";
 import { useFeedStore } from "@/store/feedStore";
 import { FeedPostType } from "@/types/feed.types";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Card } from "../ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
@@ -19,6 +19,7 @@ import {
 import { Button } from "../ui/button";
 import { RecognitionUserPicker } from "./RecognitionUserPicket";
 import { Send } from "lucide-react";
+import { hasModuleAccess } from "@/lib/permissions";
 
 const TYPE_LABELS: Record<FeedPostType, string> = {
   PUBLICATION: "Publicación",
@@ -43,11 +44,23 @@ export function CreatePostBox() {
   const [recognizedUser, setRecognizedUser] = useState<UserOption | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  if (!canPublish(user)) return null;
+  const canPublishFeed = hasModuleAccess(user, "FEED");
 
-  const availableTypes = (
-    ["PUBLICATION", "RECOGNITION", "ANNOUNCEMENT"] as FeedPostType[]
-  ).filter((t) => canPublishType(user, t));
+  console.log("canPublishFeed", canPublishFeed);
+
+  // if (!canPublish(user)) return null;
+
+  if (!canPublishFeed) return null;
+
+  // const availableTypes = (
+  //   ["PUBLICATION", "RECOGNITION", "ANNOUNCEMENT"] as FeedPostType[]
+  // ).filter((t) => canPublishType(user, t));
+
+  const availableTypes = [
+    "PUBLICATION",
+    "RECOGNITION",
+    "ANNOUNCEMENT",
+  ] as FeedPostType[];
 
   const isRecognition = type === FeedPostType.RECOGNITION;
   const canSubmit =
@@ -82,6 +95,11 @@ export function CreatePostBox() {
       setIsSubmitting(false);
     }
   };
+
+  useEffect(() => {
+    console.log("CreatePostBox MONTAO");
+    return () => console.log("CreatePostBox DESMONTAO");
+  }, []);
 
   return (
     <Card className="overflow-hidden border-0 bg-gradient-to-br from-card to-muted/30 p-0 shadow-sm transition-shadow hover:shadow-md">

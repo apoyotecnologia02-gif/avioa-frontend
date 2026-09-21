@@ -420,16 +420,11 @@ export const DocumentManagement: React.FC = () => {
   const itemsPerPage = 9;
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Debug: Log del usuario y roles
-  console.log("Usuario actual:", user);
-  console.log("Roles permitidos para subir: ADMIN, LEADER");
-  console.log("Tiene permiso para subir:", hasRole(["ADMIN", "LEADER"]));
-
   // Verificar permisos - Usamos el rol directamente del usuario para más control
   // En tu DocumentManagement, haz la comparación insensible a mayúsculas:
-   const canUpload = isAdminOrLeader();
+  const canUpload = isAdminOrLeader();
   const canDelete = isAdminOrLeader();
-  const canShare = hasRole(['ADMIN', 'LEADER', 'MANAGER']);
+  const canShare = hasRole(["ADMIN", "LEADER", "MANAGER"]);
 
   // Mostrar loading mientras se verifica autenticación
   if (isLoading) {

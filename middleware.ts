@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { isAdminRole } from "@/lib/roles";
+import { ModulePermission } from "./lib/permissions";
 
 const PUBLIC_PATHS = [
   "/login",
@@ -11,6 +12,14 @@ const PUBLIC_PATHS = [
   "/two-factor",
   "/change-password",
 ];
+
+const MODULE_GATES: Record<string, string[]> = {
+  "/admin/users": ["USERS_ADMIN"],
+  "/admin/rewards": ["USERS_ADMIN_REWARDS"],
+  "/admin/vacations": ["USERS_ADMIN_VACATIONS"],
+  "/nomina": ["NOMINA"],
+};
+
 const TOKEN_KEY = "portal_access_token";
 const ADMIN_PATH_PREFIX = "/admin";
 
@@ -29,6 +38,28 @@ function getRoleFromToken(token: string | undefined): string {
     return decoded.role ?? "";
   } catch {
     return "";
+  }
+}
+
+function getModulePermissionsFromToken(
+  token: string | undefined,
+): ModulePermission[] {
+  if (!token) return [];
+
+  try {
+    const payloadSegment = token.split(".")[1];
+    if (!payloadSegment) return [];
+    const base64 = payloadSegment.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = base64.padEnd(
+      base64.length + ((4 - (base64.length % 4)) % 4),
+      "=",
+    );
+    const decoded = JSON.parse(atob(padded)) as {
+      modulePermissions?: ModulePermission[];
+    };
+    return decoded.modulePermissions ?? [];
+  } catch {
+    return [];
   }
 }
 
@@ -80,13 +111,35 @@ export function middleware(request: NextRequest) {
     return response;
   }
 
+  // const matched = Object.entries(MODULE_GATES).find(([prefix]) =>
+  //   pathname.startsWith(prefix),
+  // );
+
+  // if (matched) {
+  //   const [, requiredModules] = matched;
+  //   const role = getRoleFromToken(token);
+  //   const userModules = getModulePermissionsFromToken(token);
+
+  //   console.log({ role, userModules, requiredModules });
+
+  //   const isAdmin = isAdminRole(role);
+  //   // const hasModule = requiredModules.some((m) => userModules?.includes());
+  //   const hasModule = userModules.some((m) =>
+  //     requiredModules.includes(m.module),
+  //   );
+
+  //   if (!isAdmin && !hasModule) {
+  //     return NextResponse.redirect(new URL("/dashboard", request.url));
+  //   }
+  // }
+
   // Restrict admin module to ADMIN role only
-  if (pathname.startsWith(ADMIN_PATH_PREFIX)) {
-    const role = getRoleFromToken(token);
-    if (!isAdminRole(role)) {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
-    }
-  }
+  // if (pathname.startsWith(ADMIN_PATH_PREFIX)) {
+  //   const role = getRoleFromToken(token);
+  //   if (!isAdminRole(role)) {
+  //     return NextResponse.redirect(new URL("/dashboard", request.url));
+  //   }
+  // }
 
   return NextResponse.next();
 }

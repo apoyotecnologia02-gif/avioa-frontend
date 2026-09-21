@@ -162,8 +162,6 @@ export function ProfileForm() {
     try {
       setError(null);
 
-      console.log("data", data);
-
       const formData = new FormData();
       if (data.name) formData.append("name", data.name);
       if (data.email) formData.append("email", data.email);

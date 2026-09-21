@@ -13,8 +13,6 @@ interface EmbeddedFormProps {
 export function EmbeddedForm({ url, title }: EmbeddedFormProps) {
   const [isLoading, setIsLoading] = useState(true);
 
-  console.log("EmbeddedForm - url:", url);
-
   return (
     <div className="space-y-4">
       <div className="flex justify-end">

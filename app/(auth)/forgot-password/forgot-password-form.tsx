@@ -50,8 +50,6 @@ function ForgotPasswordContent() {
     resolver: zodResolver(forgotPasswordFormSchema),
   });
 
-  console.log("searchParamas", searchParams);
-
   const onSubmit = async (data: ForgotPasswordFormValues) => {
     setError(null);
     try {

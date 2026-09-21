@@ -5,18 +5,17 @@ import {
   Clock,
   Gift,
   FileText,
-  ClipboardCheck,
   Shield,
-  Coins,
-  History,
-  ClipboardList,
   UserPlus,
   Users,
   Key,
   Calculator,
   CalendarDays,
   Book,
+  DollarSign,
 } from "lucide-react";
+import { AppModuleKey } from "./modules";
+import { hasModuleAccess, UserWithModules } from "./permissions";
 
 /**
  * Quien puede ver un item o grupo:
@@ -34,6 +33,7 @@ export interface NavLeaf {
   visibility?: NavVisibility;
 
   /** true = coincide solo con la ruta exacta */
+  module?: AppModuleKey;
   exact?: boolean;
 }
 
@@ -45,6 +45,7 @@ export interface NavGroup {
   visibility?: NavVisibility;
 
   /** si tiene items, se renderiza como desplegable. Si solo tiene href, es link directo */
+  module?: AppModuleKey;
   href?: string;
   items?: NavLeaf[];
 }
@@ -54,6 +55,58 @@ export interface NavSection {
   label: string | null;
   visibility?: NavVisibility;
   groups: NavGroup[];
+}
+
+function matchesVisibility(
+  user: UserWithModules | null | undefined,
+  visibility: NavVisibility,
+): boolean {
+  if (!visibility || visibility === "all") return true;
+  const role = user?.role?.toUpperCase();
+
+  if (role === "ADMIN") return true;
+  if (visibility === "admin") return false;
+  if (visibility === "leader") {
+    return role === "LEADER" || role === "MANAGER" || role === "RRHH";
+  }
+  return true;
+}
+
+function filterLeaf(user: UserWithModules | null | undefined, leaf: NavLeaf) {
+  if (leaf.module && !hasModuleAccess(user, leaf.module)) return null;
+  if (!matchesVisibility(user, leaf.visibility as NavVisibility)) return null;
+  return leaf;
+}
+
+export function getVisibleNavSections(
+  user: UserWithModules | null | undefined,
+): NavSection[] {
+  return NAV_SECTIONS.map((section) => {
+    if (!matchesVisibility(user, section.visibility as NavVisibility))
+      return null;
+
+    const groups = section.groups
+      .map((group) => {
+        if (group.module && !hasModuleAccess(user, group.module)) return null;
+        if (!matchesVisibility(user, group.visibility as NavVisibility))
+          return null;
+
+        if (group.items) {
+          const items = group.items
+            .map((leaf) => filterLeaf(user, leaf))
+            .filter((l): l is NavLeaf => l !== null);
+
+          if (items.length === 0) return null;
+          return { ...group, items };
+        }
+
+        return group;
+      })
+      .filter((g): g is NavGroup => g !== null);
+
+    if (groups.length === 0) return null;
+    return { ...section, groups };
+  }).filter((s): s is NavSection => s !== null);
 }
 
 /**
@@ -178,12 +231,29 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: Shield,
         visibility: "admin",
         items: [
-          { href: "/admin/users", label: "Usuarios", icon: UserPlus },
-          { href: "/admin/rewards", label: "Recompensas", icon: Gift },
+          {
+            href: "/admin/users",
+            label: "Usuarios",
+            icon: UserPlus,
+            module: "USERS_ADMIN",
+          },
+          {
+            href: "/admin/rewards",
+            label: "Recompensas",
+            icon: Gift,
+            module: "USERS_ADMIN",
+          },
           {
             href: "/admin/vacations",
             label: "Saldos de Vacaciones",
             icon: CalendarDays,
+            module: "USERS_ADMIN",
+          },
+          {
+            href: "/nomina",
+            label: "Nomina",
+            icon: DollarSign,
+            module: "NOMINA",
           },
         ],
       },
