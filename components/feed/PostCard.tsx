@@ -1,6 +1,6 @@
 "use client";
 
-import { canManagePost } from "@/lib/feed-permissions";
+import { useModulePermission } from "@/hooks/useModulePermission";
 import { REACTIONS } from "@/lib/feed-reactions";
 import { useAuthStore } from "@/store/authStore";
 import { useFeedStore } from "@/store/feedStore";
@@ -48,7 +48,10 @@ export function PostCard({ post }: { post: FeedPost }) {
   const [isReacting, setIsReacting] = useState(false);
 
   const badge = TYPE_BADGE[post.type];
-  const canManage = canManagePost(user, post.author.userId);
+  const { canUpdate, canDelete } = useModulePermission("FEED");
+  const currentUserId = user?.userId ?? user?.id;
+  const isAuthor = !!currentUserId && currentUserId === post.author.userId;
+  const canManage = canUpdate || canDelete || isAuthor;
 
   const handleReact = async (type: ReactionType) => {
     if (isReacting) return;
@@ -116,19 +119,21 @@ export function PostCard({ post }: { post: FeedPost }) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              {user?.role === "admin" && (
+              {canUpdate && (
                 <DropdownMenuItem onClick={() => togglePin(post.feedPostId)}>
                   <Pin className="mr-2 h-4 w-4" />
                   {post.pinned ? "Desfijar" : "Fijar"}
                 </DropdownMenuItem>
               )}
-              <DropdownMenuItem
-                className="text-destructive"
-                onClick={() => removePost(post.feedPostId)}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Eliminar
-              </DropdownMenuItem>
+              {(canDelete || isAuthor) && (
+                <DropdownMenuItem
+                  className="text-destructive"
+                  onClick={() => removePost(post.feedPostId)}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Eliminar
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         )}

@@ -1,191 +1,96 @@
-export enum Permission {
-  // Users Management
-  USERS_MANAGE = 'users:manage',
-  USERS_VIEW = 'users:view',
+import {
+  APP_MODULES,
+  type AppModuleAction,
+  type AppModuleKey,
+} from "./modules";
 
-  // Equipment Loans
-  EQUIPMENT_MANAGE = 'equipment:manage',
-  EQUIPMENT_USE = 'equipment:use',
-
-  // Leaves & Ausencias
-  LEAVES_MANAGE = 'leaves:manage',
-  LEAVES_APPROVE = 'leaves:approve',
-  LEAVES_CREATE = 'leaves:create',
-
-  // Cesantías
-  CESANTIAS_MANAGE = 'cesantias:manage',
-  CESANTIAS_CREATE = 'cesantias:create',
-
-  // Overtime / Horas Extra
-  OVERTIME_MANAGE = 'overtime:manage',
-  OVERTIME_APPROVE = 'overtime:approve',
-  OVERTIME_CREATE = 'overtime:create',
-
-  // Dynamic Forms
-  FORMS_MANAGE = 'forms:manage',
-  FORMS_FILL = 'forms:fill',
-
-  // Feed & Novedades
-  FEED_PUBLISH = 'feed:publish',
-  FEED_MANAGE = 'feed:manage',
-
-  // Knowledge Base
-  KNOWLEDGE_MANAGE = 'knowledge:manage',
-  KNOWLEDGE_VIEW = 'knowledge:view',
-
-  // Password Vault
-  PASSWORD_VAULT_MANAGE = 'password_vault:manage',
-  PASSWORD_VAULT_USE = 'password_vault:use',
-
-  // Points & Rewards
-  POINTS_MANAGE = 'points:manage',
-  POINTS_APPROVE = 'points:approve',
-
-  // Special modules / Integrations
-  COTIZADOR_ACCESS = 'cotizador:access',
-  ALERTA_RESERVAS_ACCESS = 'alerta_reservas:access',
-  PAGO_TOTAL_ACCESS = 'pago_total:access',
-}
-
-export const ALL_PERMISSIONS: Permission[] = Object.values(Permission);
-
-export const ROLE_DEFAULT_PERMISSIONS: Record<string, Permission[]> = {
-  ADMIN: Object.values(Permission),
-  MANAGER: [
-    Permission.USERS_VIEW,
-    Permission.LEAVES_APPROVE,
-    Permission.OVERTIME_APPROVE,
-    Permission.POINTS_APPROVE,
-    Permission.KNOWLEDGE_MANAGE,
-    Permission.FORMS_MANAGE,
-    Permission.FEED_PUBLISH,
-    Permission.EQUIPMENT_USE,
-    Permission.LEAVES_CREATE,
-    Permission.OVERTIME_CREATE,
-    Permission.CESANTIAS_CREATE,
-    Permission.FORMS_FILL,
-    Permission.KNOWLEDGE_VIEW,
-    Permission.PASSWORD_VAULT_USE,
-  ],
-  RRHH: [
-    Permission.USERS_VIEW,
-    Permission.USERS_MANAGE,
-    Permission.LEAVES_MANAGE,
-    Permission.LEAVES_APPROVE,
-    Permission.CESANTIAS_MANAGE,
-    Permission.FORMS_MANAGE,
-    Permission.FEED_PUBLISH,
-    Permission.KNOWLEDGE_MANAGE,
-    Permission.EQUIPMENT_USE,
-    Permission.LEAVES_CREATE,
-    Permission.OVERTIME_CREATE,
-    Permission.CESANTIAS_CREATE,
-    Permission.FORMS_FILL,
-    Permission.KNOWLEDGE_VIEW,
-  ],
-  LEADER: [
-    Permission.USERS_VIEW,
-    Permission.LEAVES_APPROVE,
-    Permission.OVERTIME_APPROVE,
-    Permission.POINTS_APPROVE,
-    Permission.FEED_PUBLISH,
-    Permission.KNOWLEDGE_VIEW,
-    Permission.EQUIPMENT_USE,
-    Permission.LEAVES_CREATE,
-    Permission.OVERTIME_CREATE,
-    Permission.CESANTIAS_CREATE,
-    Permission.FORMS_FILL,
-    Permission.PASSWORD_VAULT_USE,
-  ],
-  EMPLOYEE: [
-    Permission.EQUIPMENT_USE,
-    Permission.LEAVES_CREATE,
-    Permission.OVERTIME_CREATE,
-    Permission.CESANTIAS_CREATE,
-    Permission.FORMS_FILL,
-    Permission.KNOWLEDGE_VIEW,
-    Permission.PASSWORD_VAULT_USE,
-  ],
-  ACCOUNTING: [
-    Permission.USERS_VIEW,
-    Permission.POINTS_APPROVE,
-    Permission.FEED_PUBLISH,
-    Permission.KNOWLEDGE_VIEW,
-    Permission.EQUIPMENT_USE,
-    Permission.LEAVES_CREATE,
-    Permission.OVERTIME_CREATE,
-    Permission.CESANTIAS_CREATE,
-    Permission.FORMS_FILL,
-    Permission.PASSWORD_VAULT_USE,
-  ],
+export type ModulePermission = {
+  module: string;
+  actions?: AppModuleAction[] | string[];
 };
 
-export interface UserLike {
+export interface UserWithModules {
+  id?: string;
+  userId?: string;
   role?: string;
   isLeader?: boolean;
-  permissions?: string[];
-  customPermissions?: string[];
+  modulePermissions?: ModulePermission[];
 }
 
-export function getEffectivePermissions(user: UserLike | null | undefined): string[] {
-  if (!user || !user.role) return [];
+const ADMIN_ROLES = new Set(["ADMIN"]);
+const MODULE_ACTIONS: AppModuleAction[] = ["create", "update", "delete"];
 
-  const roleUpper = String(user.role).trim().toUpperCase();
+function isAdmin(user: UserWithModules) {
+  return !!user.role && ADMIN_ROLES.has(user.role.trim().toUpperCase());
+}
 
-  if (roleUpper === 'ADMIN') {
-    return Object.values(Permission);
+function normalizeAction(action: string): AppModuleAction | null {
+  const value = action.trim().toLowerCase();
+  if (value === "create" || value === "update" || value === "delete") {
+    return value;
   }
-
-  // If backend already provided consolidated permissions list
-  if (Array.isArray(user.permissions) && user.permissions.length > 0) {
-    const combined = new Set<string>([...user.permissions, ...(user.customPermissions || [])]);
-    return Array.from(combined);
-  }
-
-  const defaultPerms = ROLE_DEFAULT_PERMISSIONS[roleUpper] || [];
-  const customPerms = (user.customPermissions || []) as Permission[];
-
-  const combined = new Set<string>([...defaultPerms, ...customPerms]);
-  return Array.from(combined);
+  return null;
 }
 
-export function hasPermission(
-  user: UserLike | null | undefined,
-  requiredPermission: Permission | string
-): boolean {
-  if (!user || !user.role) return false;
-
-  const roleUpper = String(user.role).trim().toUpperCase();
-  if (roleUpper === 'ADMIN') return true;
-
-  const userPerms = getEffectivePermissions(user);
-  return userPerms.includes(requiredPermission);
+function getPermissionEntry(
+  user: UserWithModules,
+  module: AppModuleKey,
+): ModulePermission | undefined {
+  return user.modulePermissions?.find((p) => p.module === module);
 }
 
-export function hasAnyPermission(
-  user: UserLike | null | undefined,
-  permissions: (Permission | string)[]
+export function hasModuleAccess(
+  user: UserWithModules | null | undefined,
+  module: AppModuleKey,
 ): boolean {
   if (!user) return false;
-  return permissions.some((perm) => hasPermission(user, perm));
+  if (isAdmin(user)) return true;
+
+  return user.modulePermissions?.some((p) => p.module === module) ?? false;
 }
 
-export function canApproveRequests(user: UserLike | null | undefined): boolean {
+export function hasAnyModuleAccess(
+  user: UserWithModules | null | undefined,
+  modules: AppModuleKey[],
+): boolean {
   if (!user) return false;
+  if (isAdmin(user)) return true;
+  return modules.some((m) => hasModuleAccess(user, m));
+}
 
-  const roleUpper = String(user.role || '').trim().toUpperCase();
+// Alias for backwards compatibility
+export const hasAnyModuleAcces = hasAnyModuleAccess;
 
-  if (roleUpper === 'ADMIN' || roleUpper === 'MANAGER' || roleUpper === 'LEADER') {
-    return true;
+export function getAccessibleModules(
+  user: UserWithModules | null | undefined,
+): AppModuleKey[] {
+  if (!user) return [];
+  if (isAdmin(user)) return APP_MODULES.map((m) => m.key);
+
+  return user.modulePermissions?.map((p) => p.module as AppModuleKey) ?? [];
+}
+
+export function getUserModuleActions(
+  user: UserWithModules | null | undefined,
+  module: AppModuleKey,
+): AppModuleAction[] {
+  if (!user) return [];
+  if (isAdmin(user)) return [...MODULE_ACTIONS];
+  if (!hasModuleAccess(user, module)) return [];
+
+  const entry = getPermissionEntry(user, module);
+  const unique = new Set<AppModuleAction>();
+  for (const raw of entry?.actions ?? []) {
+    const action = normalizeAction(raw);
+    if (action) unique.add(action);
   }
+  return MODULE_ACTIONS.filter((action) => unique.has(action));
+}
 
-  if (user.isLeader === true) {
-    return true;
-  }
-
-  return (
-    hasPermission(user, Permission.LEAVES_APPROVE) ||
-    hasPermission(user, Permission.OVERTIME_APPROVE) ||
-    hasPermission(user, Permission.POINTS_APPROVE)
-  );
+export function hasModuleAction(
+  user: UserWithModules | null | undefined,
+  module: AppModuleKey,
+  action: AppModuleAction,
+): boolean {
+  return getUserModuleActions(user, module).includes(action);
 }

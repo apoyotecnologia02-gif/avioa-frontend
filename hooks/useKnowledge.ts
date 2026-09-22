@@ -12,7 +12,6 @@ export function useKnowledgeContents(folderId?: string) {
         params: folderId ? { folderId } : undefined,
         skip401Redirect: true,
       });
-      console.log("content", data);
       return data;
     },
   });
