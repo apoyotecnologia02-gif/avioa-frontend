@@ -5,18 +5,19 @@ import {
   Clock,
   Gift,
   FileText,
-  ClipboardCheck,
   Shield,
-  Coins,
-  History,
-  ClipboardList,
   UserPlus,
   Users,
   Key,
   Calculator,
   CalendarDays,
   Book,
+  DollarSign,
+  CircleDollarSign,
 } from "lucide-react";
+import { isAdminRole, isLeaderOrManagerOrAdminRole } from "@/lib/roles";
+import { AppModuleKey } from "./modules";
+import { hasModuleAccess, UserWithModules } from "./permissions";
 
 /**
  * Quien puede ver un item o grupo:
@@ -33,6 +34,8 @@ export interface NavLeaf {
   icon?: ElementType;
   visibility?: NavVisibility;
 
+  /** Si no se define, el item es público para cualquier usuario autenticado. */
+  module?: AppModuleKey;
   /** true = coincide solo con la ruta exacta */
   exact?: boolean;
 }
@@ -44,7 +47,8 @@ export interface NavGroup {
   icon: ElementType;
   visibility?: NavVisibility;
 
-  /** si tiene items, se renderiza como desplegable. Si solo tiene href, es link directo */
+  /** Si no se define, el grupo es público. Solo se oculta si tiene `module` y el usuario no tiene acceso. */
+  module?: AppModuleKey;
   href?: string;
   items?: NavLeaf[];
 }
@@ -54,6 +58,56 @@ export interface NavSection {
   label: string | null;
   visibility?: NavVisibility;
   groups: NavGroup[];
+}
+
+function matchesVisibility(
+  user: UserWithModules | null | undefined,
+  visibility: NavVisibility,
+): boolean {
+  if (!visibility || visibility === "all") return true;
+  if (isAdminRole(user?.role)) return true;
+  if (visibility === "admin") return false;
+  if (visibility === "leader") {
+    return isLeaderOrManagerOrAdminRole(user);
+  }
+  return true;
+}
+
+function filterLeaf(user: UserWithModules | null | undefined, leaf: NavLeaf) {
+  if (leaf.module && !hasModuleAccess(user, leaf.module)) return null;
+  if (!matchesVisibility(user, leaf.visibility as NavVisibility)) return null;
+  return leaf;
+}
+
+export function getVisibleNavSections(
+  user: UserWithModules | null | undefined,
+): NavSection[] {
+  return NAV_SECTIONS.map((section) => {
+    if (!matchesVisibility(user, section.visibility as NavVisibility))
+      return null;
+
+    const groups = section.groups
+      .map((group) => {
+        if (group.module && !hasModuleAccess(user, group.module)) return null;
+        if (!matchesVisibility(user, group.visibility as NavVisibility))
+          return null;
+
+        if (group.items) {
+          const items = group.items
+            .map((leaf) => filterLeaf(user, leaf))
+            .filter((l): l is NavLeaf => l !== null);
+
+          if (items.length === 0) return null;
+          return { ...group, items };
+        }
+
+        return group;
+      })
+      .filter((g): g is NavGroup => g !== null);
+
+    if (groups.length === 0) return null;
+    return { ...section, groups };
+  }).filter((s): s is NavSection => s !== null);
 }
 
 /**
@@ -98,9 +152,17 @@ export const NAV_SECTIONS: NavSection[] = [
         label: "Tiempo",
         icon: Clock,
         items: [
-          { href: "/overtime", label: "Horas extra" },
+          {
+            href: "/overtime",
+            label: "Horas extra",
+            // module: "OVERTIME"
+          },
           // PROXIMAMENTE
-          { href: "/leaves", label: "Vacaciones y ausencias" },
+          {
+            href: "/leaves",
+            label: "Vacaciones y ausencias",
+            // module: "LEAVES",
+          },
         ],
       },
       // {
@@ -120,18 +182,39 @@ export const NAV_SECTIONS: NavSection[] = [
       //     // { href: "/celebrations", label: "Celebraciones", icon: CalendarDays }
       //   ],
       // },
-      { key: "forms", label: "Formularios", icon: FileText, href: "/forms" },
+      {
+        key: "forms",
+        label: "Formularios",
+        icon: FileText,
+        href: "/forms",
+        // module: "FORMS",
+      },
       {
         key: "cotizador",
         label: "Cotizador",
         icon: Calculator,
         href: "/cotizador",
+        // module: "COTIZADOR",
       },
       {
         key: "biblioteca",
         label: "Biblioteca",
         icon: Book,
         href: "/knowledge",
+        // module: "KNOWLEDGE",
+      },
+      {
+        key: "contabilidad",
+        label: "Contabilidad",
+        icon: CircleDollarSign,
+        items: [
+          {
+            href: "/nomina",
+            label: "Nomina",
+            icon: DollarSign,
+            module: "NOMINA",
+          },
+        ],
       },
       // PROXIMAMENTE
       //   {
@@ -170,20 +253,30 @@ export const NAV_SECTIONS: NavSection[] = [
   },
   {
     label: "Administración",
-    visibility: "admin",
     groups: [
       {
         key: "admin",
         label: "Administración",
         icon: Shield,
-        visibility: "admin",
+        // visibility: "admin",
         items: [
-          { href: "/admin/users", label: "Usuarios", icon: UserPlus },
-          { href: "/admin/rewards", label: "Recompensas", icon: Gift },
+          {
+            href: "/admin/users",
+            label: "Usuarios",
+            icon: UserPlus,
+            module: "USERS_ADMIN",
+          },
+          {
+            href: "/admin/rewards",
+            label: "Recompensas",
+            icon: Gift,
+            module: "USERS_ADMIN_REWARDS",
+          },
           {
             href: "/admin/vacations",
             label: "Saldos de Vacaciones",
             icon: CalendarDays,
+            module: "USERS_ADMIN_VACATIONS",
           },
         ],
       },

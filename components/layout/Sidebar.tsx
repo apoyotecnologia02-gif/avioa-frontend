@@ -4,16 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import {
-  Home,
-  FileText,
-  ChevronLeft,
-  ChevronRight,
-  LogOut,
-  Coins,
-  ClipboardPen,
-  Clock,
-} from "lucide-react";
+import { ChevronRight, LogOut } from "lucide-react";
 import {
   Sidebar as SidebarPrimitive,
   SidebarContent,
@@ -35,8 +26,6 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { isAdminRole, isLeaderOrManagerOrAdminRole } from "@/lib/roles";
 import {
@@ -45,24 +34,28 @@ import {
   type NavLeaf,
   type NavVisibility,
 } from "@/lib/navigation";
-import { ADMIN_ENTRY } from "@/lib/admin/modules";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { hasModuleAccess, type UserWithModules } from "@/lib/permissions";
+import type { AppModuleKey } from "@/lib/modules";
 
 const OPEN_GROUPS_KEY = "portal_sidebar_open_groups";
 
 function canSee(
   visibility: NavVisibility | undefined,
-  user: { role?: unknown; isLeader?: boolean } | null | undefined,
+  user: UserWithModules | null | undefined,
 ): boolean {
   if (!visibility || visibility === "all") return true;
   if (visibility === "leader") return isLeaderOrManagerOrAdminRole(user);
   if (visibility === "admin") return isAdminRole(user?.role);
   return false;
+}
+
+function canSeeItem(
+  item: { visibility?: NavVisibility; module?: AppModuleKey },
+  user: UserWithModules | null | undefined,
+): boolean {
+  if (!item.module) return canSee(item.visibility, user);
+  if (!hasModuleAccess(user, item.module)) return false;
+  return canSee(item.visibility, user);
 }
 
 function isLeafActive(leaf: NavLeaf, pathname: string): boolean {
@@ -76,25 +69,6 @@ function isGroupActive(group: NavGroup, pathname: string): boolean {
   }
   return (group.items ?? []).some((item) => isLeafActive(item, pathname));
 }
-
-interface NavItem {
-  href: string;
-  label: string;
-  icon: React.ElementType;
-}
-
-const navItems: NavItem[] = [
-  { href: "/dashboard", label: "Inicio", icon: Home },
-  { href: "/forms", label: "Formularios", icon: FileText },
-  { href: "/points", label: "Puntos", icon: Coins },
-  { href: "/overtime", label: "Control de Horas", icon: Clock },
-];
-
-const PointRequestNavItems: NavItem = {
-  href: "/points-request",
-  label: "Solicitudes de puntos",
-  icon: ClipboardPen,
-};
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -143,7 +117,6 @@ export function Sidebar() {
 
   return (
     <SidebarPrimitive collapsible="icon">
-      {/* Logo */}
       <SidebarHeader className="h-16 justify-center border-b border-sidebar-border">
         <Link
           href="/dashboard"
@@ -162,11 +135,34 @@ export function Sidebar() {
 
       <SidebarContent>
         {NAV_SECTIONS.map((section, sectionIndex) => {
-          if (!canSee(section.visibility, user)) return null;
+          // if (!canSeeItem(section, user)) return null;
 
-          const visibleGroups = section.groups.filter((g) =>
-            canSee(g.visibility, user),
-          );
+          // // Filtra grupos por visibility + module
+          // const visibleGroups = section.groups.filter((g) =>
+          //   canSeeItem(g, user),
+          // );
+
+          // if (visibleGroups.length === 0) return null;
+
+          const visibleGroups = section.groups
+            .map((group) => {
+              if (!group.items || group.items.length === 0) {
+                if (!group.href) return null;
+                return canSeeItem(group, user)
+                  ? { group, items: [] as NavLeaf[] }
+                  : null;
+              }
+
+              const visibleItems = group.items.filter((item) =>
+                canSeeItem(item, user),
+              );
+
+              if (visibleItems.length === 0) return null;
+              return { group, items: visibleItems };
+            })
+            .filter(
+              (g): g is { group: NavGroup; items: NavLeaf[] } => g !== null,
+            );
 
           if (visibleGroups.length === 0) return null;
 
@@ -176,7 +172,7 @@ export function Sidebar() {
                 <SidebarGroupLabel>{section.label}</SidebarGroupLabel>
               )}
               <SidebarMenu>
-                {visibleGroups.map((group) => {
+                {visibleGroups.map(({ group, items: visibleItems }) => {
                   const active = isGroupActive(group, pathname);
                   const Icon = group.icon;
 
@@ -201,10 +197,7 @@ export function Sidebar() {
 
                   // caso sidebar colapsado a iconos
                   if (collapsed) {
-                    const firstItem = group.items.find((i) =>
-                      canSee(i.visibility, user),
-                    );
-                    if (!firstItem) return null;
+                    const firstItem = visibleItems[0];
                     return (
                       <SidebarMenuItem key={group.key}>
                         <SidebarMenuButton
@@ -244,22 +237,18 @@ export function Sidebar() {
                         </CollapsibleTrigger>
                         <CollapsibleContent>
                           <SidebarMenuSub>
-                            {group.items
-                              .filter((item) =>
-                                canSee(item.visibility, user),
-                              )
-                              .map((item) => (
-                                <SidebarMenuSubItem key={item.href}>
-                                  <SidebarMenuSubButton
-                                    asChild
-                                    isActive={isLeafActive(item, pathname)}
-                                  >
-                                    <Link href={item.href}>
-                                      <span>{item.label}</span>
-                                    </Link>
-                                  </SidebarMenuSubButton>
-                                </SidebarMenuSubItem>
-                              ))}
+                            {visibleItems.map((item) => (
+                              <SidebarMenuSubItem key={item.href}>
+                                <SidebarMenuSubButton
+                                  asChild
+                                  isActive={isLeafActive(item, pathname)}
+                                >
+                                  <Link href={item.href}>
+                                    <span>{item.label}</span>
+                                  </Link>
+                                </SidebarMenuSubButton>
+                              </SidebarMenuSubItem>
+                            ))}
                           </SidebarMenuSub>
                         </CollapsibleContent>
                       </SidebarMenuItem>
@@ -272,7 +261,6 @@ export function Sidebar() {
         })}
       </SidebarContent>
 
-      {/* usuario + cerrar sesion */}
       <SidebarFooter className="border-t border-sidebar-border">
         {user && !collapsed && (
           <div className="px-2 py-1.5">
@@ -298,7 +286,6 @@ export function Sidebar() {
         </SidebarMenu>
       </SidebarFooter>
 
-      {/* barra lateral clickeable para colapsar/expandir */}
       <SidebarRail />
     </SidebarPrimitive>
   );

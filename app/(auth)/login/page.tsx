@@ -43,10 +43,10 @@ function LoginPageContent() {
     resolver: zodResolver(loginSchema),
   });
 
-  useEffect(() => {
-    if (!authLoading && isAuthenticated)
-      router.push(searchParams.get("from") || "/dashboard");
-  }, [authLoading, isAuthenticated, router, searchParams]);
+  // useEffect(() => {
+  //   if (!authLoading && isAuthenticated)
+  //     router.push(searchParams.get("from") || "/dashboard");
+  // }, [authLoading, isAuthenticated, router, searchParams]);
 
   useEffect(() => {
     setSuccessMessage(searchParams.get("message"));

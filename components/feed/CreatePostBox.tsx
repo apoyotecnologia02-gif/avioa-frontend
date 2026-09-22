@@ -1,6 +1,6 @@
 "use client";
 
-import { canPublish, canPublishType } from "@/lib/feed-permissions";
+import { useModulePermission } from "@/hooks/useModulePermission";
 import { useAuthStore } from "@/store/authStore";
 import { useFeedStore } from "@/store/feedStore";
 import { FeedPostType } from "@/types/feed.types";
@@ -43,11 +43,19 @@ export function CreatePostBox() {
   const [recognizedUser, setRecognizedUser] = useState<UserOption | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  if (!canPublish(user)) return null;
+  const { canCreate: canPublishFeed } = useModulePermission("FEED");
 
-  const availableTypes = (
-    ["PUBLICATION", "RECOGNITION", "ANNOUNCEMENT"] as FeedPostType[]
-  ).filter((t) => canPublishType(user, t));
+  if (!canPublishFeed) return null;
+
+  // const availableTypes = (
+  //   ["PUBLICATION", "RECOGNITION", "ANNOUNCEMENT"] as FeedPostType[]
+  // ).filter((t) => canPublishType(user, t));
+
+  const availableTypes = [
+    "PUBLICATION",
+    "RECOGNITION",
+    "ANNOUNCEMENT",
+  ] as FeedPostType[];
 
   const isRecognition = type === FeedPostType.RECOGNITION;
   const canSubmit =

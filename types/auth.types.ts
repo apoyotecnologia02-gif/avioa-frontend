@@ -1,9 +1,19 @@
 import { Area } from "./user.types";
+import { ModulePermission } from "@/lib/permissions";
 
-export type UserRole = "employee" | "manager" | "admin";
+export type UserRole =
+  | "employee"
+  | "manager"
+  | "admin"
+  | "EMPLOYEE"
+  | "LEADER"
+  | "MANAGER"
+  | "ADMIN"
+  | string;
 
 export interface User {
   id: string;
+  userId?: string;
   name: string;
   email: string;
   role: UserRole;
@@ -13,6 +23,7 @@ export interface User {
   avatarUrl?: string;
   twoFactorEnabled: boolean;
   isLeader?: boolean;
+  modulePermissions?: ModulePermission[];
 }
 
 export interface AuthTokens {

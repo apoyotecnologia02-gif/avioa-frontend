@@ -5,7 +5,7 @@ export function useGetUsers() {
   return useQuery({
     queryKey: ["users"],
     queryFn: async () => {
-      const { data } = await api.get("/admin/users");
+      const { data } = await api.get("/admin/users/directory");
       return data;
     },
   });
