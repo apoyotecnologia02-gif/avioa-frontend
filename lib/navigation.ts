@@ -13,7 +13,9 @@ import {
   CalendarDays,
   Book,
   DollarSign,
+  CircleDollarSign,
 } from "lucide-react";
+import { isAdminRole, isLeaderOrManagerOrAdminRole } from "@/lib/roles";
 import { AppModuleKey } from "./modules";
 import { hasModuleAccess, UserWithModules } from "./permissions";
 
@@ -32,8 +34,9 @@ export interface NavLeaf {
   icon?: ElementType;
   visibility?: NavVisibility;
 
-  /** true = coincide solo con la ruta exacta */
+  /** Si no se define, el item es público para cualquier usuario autenticado. */
   module?: AppModuleKey;
+  /** true = coincide solo con la ruta exacta */
   exact?: boolean;
 }
 
@@ -44,7 +47,7 @@ export interface NavGroup {
   icon: ElementType;
   visibility?: NavVisibility;
 
-  /** si tiene items, se renderiza como desplegable. Si solo tiene href, es link directo */
+  /** Si no se define, el grupo es público. Solo se oculta si tiene `module` y el usuario no tiene acceso. */
   module?: AppModuleKey;
   href?: string;
   items?: NavLeaf[];
@@ -62,12 +65,10 @@ function matchesVisibility(
   visibility: NavVisibility,
 ): boolean {
   if (!visibility || visibility === "all") return true;
-  const role = user?.role?.toUpperCase();
-
-  if (role === "ADMIN") return true;
+  if (isAdminRole(user?.role)) return true;
   if (visibility === "admin") return false;
   if (visibility === "leader") {
-    return role === "LEADER" || role === "MANAGER" || role === "RRHH";
+    return isLeaderOrManagerOrAdminRole(user);
   }
   return true;
 }
@@ -151,9 +152,17 @@ export const NAV_SECTIONS: NavSection[] = [
         label: "Tiempo",
         icon: Clock,
         items: [
-          { href: "/overtime", label: "Horas extra" },
+          {
+            href: "/overtime",
+            label: "Horas extra",
+            // module: "OVERTIME"
+          },
           // PROXIMAMENTE
-          { href: "/leaves", label: "Vacaciones y ausencias" },
+          {
+            href: "/leaves",
+            label: "Vacaciones y ausencias",
+            // module: "LEAVES",
+          },
         ],
       },
       // {
@@ -173,18 +182,39 @@ export const NAV_SECTIONS: NavSection[] = [
       //     // { href: "/celebrations", label: "Celebraciones", icon: CalendarDays }
       //   ],
       // },
-      { key: "forms", label: "Formularios", icon: FileText, href: "/forms" },
+      {
+        key: "forms",
+        label: "Formularios",
+        icon: FileText,
+        href: "/forms",
+        // module: "FORMS",
+      },
       {
         key: "cotizador",
         label: "Cotizador",
         icon: Calculator,
         href: "/cotizador",
+        // module: "COTIZADOR",
       },
       {
         key: "biblioteca",
         label: "Biblioteca",
         icon: Book,
         href: "/knowledge",
+        // module: "KNOWLEDGE",
+      },
+      {
+        key: "contabilidad",
+        label: "Contabilidad",
+        icon: CircleDollarSign,
+        items: [
+          {
+            href: "/nomina",
+            label: "Nomina",
+            icon: DollarSign,
+            module: "NOMINA",
+          },
+        ],
       },
       // PROXIMAMENTE
       //   {
@@ -223,13 +253,12 @@ export const NAV_SECTIONS: NavSection[] = [
   },
   {
     label: "Administración",
-    visibility: "admin",
     groups: [
       {
         key: "admin",
         label: "Administración",
         icon: Shield,
-        visibility: "admin",
+        // visibility: "admin",
         items: [
           {
             href: "/admin/users",
@@ -241,19 +270,13 @@ export const NAV_SECTIONS: NavSection[] = [
             href: "/admin/rewards",
             label: "Recompensas",
             icon: Gift,
-            module: "USERS_ADMIN",
+            module: "USERS_ADMIN_REWARDS",
           },
           {
             href: "/admin/vacations",
             label: "Saldos de Vacaciones",
             icon: CalendarDays,
-            module: "USERS_ADMIN",
-          },
-          {
-            href: "/nomina",
-            label: "Nomina",
-            icon: DollarSign,
-            module: "NOMINA",
+            module: "USERS_ADMIN_VACATIONS",
           },
         ],
       },

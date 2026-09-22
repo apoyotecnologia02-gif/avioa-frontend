@@ -1,4 +1,5 @@
 import { CalendarDays, Gift, KeyRound, Shield, UserPlus } from "lucide-react";
+import { AppModuleKey } from "../modules";
 
 export interface AdminModule {
   key: string;
@@ -6,6 +7,7 @@ export interface AdminModule {
   title: string;
   description: string;
   icon: React.ElementType;
+  module?: AppModuleKey;
 }
 
 export const ADMIN_MODULES: AdminModule[] = [
@@ -15,6 +17,7 @@ export const ADMIN_MODULES: AdminModule[] = [
     title: "Usuarios",
     description: "Registro y gestión de usuarios del portal.",
     icon: UserPlus,
+    module: "USERS_ADMIN",
   },
   {
     key: "rewards",
@@ -22,6 +25,7 @@ export const ADMIN_MODULES: AdminModule[] = [
     title: "Recompensas",
     description: "Crear o actualizar recompensas",
     icon: Gift,
+    module: "USERS_ADMIN_REWARDS",
   },
   {
     key: "vacations",
@@ -29,6 +33,7 @@ export const ADMIN_MODULES: AdminModule[] = [
     title: "Saldos de Vacaciones",
     description: "Gestión y ajuste de vacaciones acumuladas de colaboradores.",
     icon: CalendarDays,
+    module: "USERS_ADMIN_VACATIONS",
   },
   {
     key: "permissions",
@@ -36,6 +41,7 @@ export const ADMIN_MODULES: AdminModule[] = [
     title: "Permisos",
     description: "Asignar acceso a módulos por usuario.",
     icon: KeyRound,
+    module: "USERS_ADMIN",
   },
 ];
 

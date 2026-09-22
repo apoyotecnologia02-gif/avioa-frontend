@@ -256,6 +256,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             user.isLeader = Boolean(payload.isLeader);
             userUpdated = true;
           }
+          if (payload.role && user.role !== payload.role) {
+            user.role = payload.role;
+            userUpdated = true;
+          }
+          if (payload.modulePermissions) {
+            user.modulePermissions = payload.modulePermissions;
+            userUpdated = true;
+          }
         }
         if (userUpdated) {
           localStorage.setItem(USER_KEY, JSON.stringify(user));

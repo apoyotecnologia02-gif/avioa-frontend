@@ -34,22 +34,14 @@ import {
   type NavLeaf,
   type NavVisibility,
 } from "@/lib/navigation";
-import { hasModuleAccess } from "@/lib/permissions";
+import { hasModuleAccess, type UserWithModules } from "@/lib/permissions";
 import type { AppModuleKey } from "@/lib/modules";
 
 const OPEN_GROUPS_KEY = "portal_sidebar_open_groups";
 
-// ⬇️ Ahora recibe también el user completo para chequear modulePermissions
 function canSee(
   visibility: NavVisibility | undefined,
-  user:
-    | {
-        role?: unknown;
-        isLeader?: boolean;
-        modulePermissions?: { module: string; canAccess: boolean }[];
-      }
-    | null
-    | undefined,
+  user: UserWithModules | null | undefined,
 ): boolean {
   if (!visibility || visibility === "all") return true;
   if (visibility === "leader") return isLeaderOrManagerOrAdminRole(user);
@@ -57,23 +49,12 @@ function canSee(
   return false;
 }
 
-// ⬇️ Nueva función: combina visibility + module
 function canSeeItem(
   item: { visibility?: NavVisibility; module?: AppModuleKey },
-  user:
-    | {
-        role: string;
-        isLeader: boolean;
-        modulePermissions?: {
-          modulePermissionId: string;
-          module: string;
-          canAccess: boolean;
-        }[];
-      }
-    | null
-    | undefined,
+  user: UserWithModules | null | undefined,
 ): boolean {
-  if (item.module && !hasModuleAccess(user, item.module)) return false;
+  if (!item.module) return canSee(item.visibility, user);
+  if (!hasModuleAccess(user, item.module)) return false;
   return canSee(item.visibility, user);
 }
 

@@ -5,13 +5,12 @@ import { CreateFolderModal } from "@/components/knowledge/CreateFolderModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAuth } from "@/hooks/useAuth";
+import { useModulePermission } from "@/hooks/useModulePermission";
 import {
   useDeleteFile,
   useDeleteFolder,
   useKnowledgeContents,
 } from "@/hooks/useKnowledge";
-import { isLeaderOrManagerOrAdminRole } from "@/lib/roles";
 import {
   ChevronRight,
   ExternalLink,
@@ -25,8 +24,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense, useState } from "react";
 
 function KnowledgeLibraryContent() {
-  const { user } = useAuth();
-  const canManage = isLeaderOrManagerOrAdminRole(user?.role);
+  const { canCreate, canDelete } = useModulePermission("KNOWLEDGE");
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -59,7 +57,7 @@ function KnowledgeLibraryContent() {
           </p>
         </div>
 
-        {canManage && (
+        {canCreate && (
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => setCreateFolderOpen(true)}>
               <Folder className="mr-2 h-4 w-4" />
@@ -117,7 +115,7 @@ function KnowledgeLibraryContent() {
                   Esta carpeta está vacía
                 </h3>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  {canManage
+                  {canCreate
                     ? "Crea una subcarpeta o agrega un archivo para empezar."
                     : "Aún no hay documentos en esta sección."}
                 </p>
@@ -144,7 +142,7 @@ function KnowledgeLibraryContent() {
                         {folder._count?.files ?? 0} archivos
                       </p>
                     </div>
-                    {canManage && (
+                    {canDelete && (
                       <Button
                         variant="ghost"
                         size="icon"
@@ -192,7 +190,7 @@ function KnowledgeLibraryContent() {
                           <ExternalLink className="h-3.5 w-3.5" />
                         </a>
                       </Button>
-                      {canManage && (
+                      {canDelete && (
                         <Button
                           variant="ghost"
                           size="icon"

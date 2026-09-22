@@ -17,7 +17,9 @@ const MODULE_GATES: Record<string, string[]> = {
   "/admin/users": ["USERS_ADMIN"],
   "/admin/rewards": ["USERS_ADMIN_REWARDS"],
   "/admin/vacations": ["USERS_ADMIN_VACATIONS"],
+  "/admin/permissions": ["USERS_ADMIN"],
   "/nomina": ["NOMINA"],
+  // "/forms": ["FORMS"],
 };
 
 const TOKEN_KEY = "portal_access_token";
@@ -43,7 +45,7 @@ function getRoleFromToken(token: string | undefined): string {
 
 function getModulePermissionsFromToken(
   token: string | undefined,
-): ModulePermission[] {
+): (ModulePermission | string)[] {
   if (!token) return [];
 
   try {
@@ -55,12 +57,33 @@ function getModulePermissionsFromToken(
       "=",
     );
     const decoded = JSON.parse(atob(padded)) as {
-      modulePermissions?: ModulePermission[];
+      modulePermissions?: (ModulePermission | string)[];
     };
     return decoded.modulePermissions ?? [];
   } catch {
     return [];
   }
+}
+
+function hasModuleAccessFromToken(
+  token: string | undefined,
+  requiredModules: string[],
+): boolean {
+  if (!token) return false;
+  const role = getRoleFromToken(token);
+  if (isAdminRole(role)) return true;
+
+  const userModules = getModulePermissionsFromToken(token);
+  if (!Array.isArray(userModules)) return false;
+
+  return userModules.some((m: unknown) => {
+    if (typeof m === "string") return requiredModules.includes(m);
+    if (m && typeof m === "object" && "module" in m) {
+      const item = m as { module: string; canAccess?: boolean };
+      return requiredModules.includes(item.module);
+    }
+    return false;
+  });
 }
 
 function isTokenExpired(token: string | undefined): boolean {
@@ -111,35 +134,25 @@ export function middleware(request: NextRequest) {
     return response;
   }
 
-  // const matched = Object.entries(MODULE_GATES).find(([prefix]) =>
-  //   pathname.startsWith(prefix),
-  // );
+  const matched = Object.entries(MODULE_GATES).find(([prefix]) =>
+    pathname.startsWith(prefix),
+  );
 
-  // if (matched) {
-  //   const [, requiredModules] = matched;
-  //   const role = getRoleFromToken(token);
-  //   const userModules = getModulePermissionsFromToken(token);
-
-  //   console.log({ role, userModules, requiredModules });
-
-  //   const isAdmin = isAdminRole(role);
-  //   // const hasModule = requiredModules.some((m) => userModules?.includes());
-  //   const hasModule = userModules.some((m) =>
-  //     requiredModules.includes(m.module),
-  //   );
-
-  //   if (!isAdmin && !hasModule) {
-  //     return NextResponse.redirect(new URL("/dashboard", request.url));
-  //   }
-  // }
-
-  // Restrict admin module to ADMIN role only
-  // if (pathname.startsWith(ADMIN_PATH_PREFIX)) {
-  //   const role = getRoleFromToken(token);
-  //   if (!isAdminRole(role)) {
-  //     return NextResponse.redirect(new URL("/dashboard", request.url));
-  //   }
-  // }
+  if (matched) {
+    const [, requiredModules] = matched;
+    if (!hasModuleAccessFromToken(token, requiredModules)) {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
+  } else if (pathname.startsWith(ADMIN_PATH_PREFIX)) {
+    const adminModules = [
+      "USERS_ADMIN",
+      "USERS_ADMIN_REWARDS",
+      "USERS_ADMIN_VACATIONS",
+    ];
+    if (!hasModuleAccessFromToken(token, adminModules)) {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
+  }
 
   return NextResponse.next();
 }

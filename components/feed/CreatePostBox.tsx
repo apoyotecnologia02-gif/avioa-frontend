@@ -1,10 +1,10 @@
 "use client";
 
-import { canPublish, canPublishType } from "@/lib/feed-permissions";
+import { useModulePermission } from "@/hooks/useModulePermission";
 import { useAuthStore } from "@/store/authStore";
 import { useFeedStore } from "@/store/feedStore";
 import { FeedPostType } from "@/types/feed.types";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Card } from "../ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
@@ -19,7 +19,6 @@ import {
 import { Button } from "../ui/button";
 import { RecognitionUserPicker } from "./RecognitionUserPicket";
 import { Send } from "lucide-react";
-import { hasModuleAccess } from "@/lib/permissions";
 
 const TYPE_LABELS: Record<FeedPostType, string> = {
   PUBLICATION: "Publicación",
@@ -44,11 +43,7 @@ export function CreatePostBox() {
   const [recognizedUser, setRecognizedUser] = useState<UserOption | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const canPublishFeed = hasModuleAccess(user, "FEED");
-
-  console.log("canPublishFeed", canPublishFeed);
-
-  // if (!canPublish(user)) return null;
+  const { canCreate: canPublishFeed } = useModulePermission("FEED");
 
   if (!canPublishFeed) return null;
 
@@ -95,11 +90,6 @@ export function CreatePostBox() {
       setIsSubmitting(false);
     }
   };
-
-  useEffect(() => {
-    console.log("CreatePostBox MONTAO");
-    return () => console.log("CreatePostBox DESMONTAO");
-  }, []);
 
   return (
     <Card className="overflow-hidden border-0 bg-gradient-to-br from-card to-muted/30 p-0 shadow-sm transition-shadow hover:shadow-md">

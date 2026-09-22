@@ -29,7 +29,6 @@ export async function PATCH(
 
     return new NextResponse(JSON.stringify(data), { status: response.status });
   } catch (error) {
-    console.log(error);
     return NextResponse.json(
       { error: "No fue posible conectar con el backend" },
       { status: 500 },
