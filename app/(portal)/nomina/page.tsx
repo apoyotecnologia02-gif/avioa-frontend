@@ -52,7 +52,10 @@ function primerYUltimoDiaDelMes() {
 export default function NominaPage() {
   const [rango, setRango] = useState(primerYUltimoDiaDelMes());
   const [userId, setUserId] = useState<string | undefined>();
-  const [tipos, setTipos] = useState<TipoNovedad[]>([]);
+  // const [tipos, setTipos] = useState<TipoNovedad[]>([]);
+  const [tipos, setTipos] = useState<TipoNovedad[]>(() =>
+    CATALOGO_TIPO_NOVEDAD.map((t) => t.value),
+  );
   const [vista, setVista] = useState<"consolidado" | "por-colaborador">(
     "consolidado",
   );
@@ -151,9 +154,11 @@ export default function NominaPage() {
                     variant="outline"
                     className="w-full justify-start font-normal"
                   >
-                    {tipos.length === 0
+                    {tipos.length === CATALOGO_TIPO_NOVEDAD.length
                       ? "Todos los tipos"
-                      : `${tipos.length} tipo(s) seleccionados`}
+                      : tipos.length === 0
+                        ? "Ningún tipo"
+                        : `${tipos.length} tipo(s) seleccionados`}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-64 p-2" align="start">
