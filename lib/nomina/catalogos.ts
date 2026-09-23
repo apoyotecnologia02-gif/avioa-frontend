@@ -7,7 +7,7 @@ export const CATALOGO_TIPO_NOVEDAD: { value: TipoNovedad; label: string }[] = [
   { value: "LICENCIA_MATERNIDAD", label: "Licencia de maternidad" },
   { value: "LICENCIA_PATERNIDAD", label: "Licencia de paternidad" },
   { value: "LICENCIA_LUTO", label: "Licencia de luto" },
-  { value: "LICENCIA_MATRIMONIO", label: "Licencia de matrimonio" },
+  // { value: "LICENCIA_MATRIMONIO", label: "Licencia de matrimonio" },
   { value: "PERMISO_REMUNERADO", label: "Licencia remunerada" },
   { value: "PERMISO_NO_REMUNERADO", label: "Licencia no remunerada" },
   { value: "CALAMIDAD_DOMESTICA", label: "Calamidad doméstica" },
