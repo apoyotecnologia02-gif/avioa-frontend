@@ -20,7 +20,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CalendarDays, Loader2, Paperclip, AlertCircle } from "lucide-react";
+import {
+  CalendarDays,
+  Loader2,
+  Paperclip,
+  AlertCircle,
+  Coins,
+} from "lucide-react";
 import { countBusinessDays } from "@/lib/business-days";
 import {
   LEAVE_TYPE_META,
@@ -51,7 +57,8 @@ const TYPE_ORDER: LeaveType[] = [
   "LICENCIA_MATERNIDAD",
   "LICENCIA_PATERNIDAD",
   "LICENCIA_LUTO",
-  "LICENCIA_MATRIMONIO",
+  // "LICENCIA_MATRIMONIO",
+  "CITA_MEDICA_CON_ESPECIALISTA_EPS",
   "CALAMIDAD_DOMESTICA",
   "DILIGENCIA_PERSONAL",
   "OBLIGACION_COMO_ACUDIENTE",
@@ -185,7 +192,7 @@ export function RequestLeaveModal({
           </div>
 
           {/* compensacion en dinero (solo si el tipo es VACACIONES) */}
-          {/* {type === "VACACIONES" && (
+          {type === "VACACIONES" && (
             <div className="flex items-start gap-2.5 rounded-lg border px-3 py-2.5">
               <Checkbox
                 id="es-compensada"
@@ -207,7 +214,18 @@ export function RequestLeaveModal({
                 </p>
               </div>
             </div>
-          )} */}
+          )}
+
+          {esCompensada && (
+            <div className="flex items-start gap-2 rounded-lg border border-purple-200 bg-purple-50 px-3 py-2.5 text-xs text-purple-800">
+              <Coins className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+              <span>
+                Las vacaciones compensadas pasan primero por validación de
+                Gestión Humana antes de llegar a tu líder. Puede tomar un poco
+                más de tiempo.
+              </span>
+            </div>
+          )}
 
           {/* Fechas */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

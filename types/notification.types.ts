@@ -56,6 +56,7 @@ export type NotificationTypeNav =
   | "LEAVE_REQUEST_RECEIVED"
   | "LEAVE_REQUEST_APPROVED"
   | "LEAVE_REQUEST_REJECTED"
+  | "COMPENSATED_LEAVE_PENDING_HR"
   | "APPROVAL"
   | "REJECTION";
 
@@ -101,4 +102,6 @@ export const NOTIFICATION_ROUTES: Record<
   LEAVE_REQUEST_REJECTED: () => ({ path: "/leaves" }),
   APPROVAL: () => ({ path: "/leaves" }),
   REJECTION: () => ({ path: "/leaves" }),
+
+  COMPENSATED_LEAVE_PENDING_HR: () => ({ path: "/leaves/hr-validation" }),
 };

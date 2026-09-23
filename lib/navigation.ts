@@ -14,6 +14,7 @@ import {
   Book,
   DollarSign,
   CircleDollarSign,
+  Coins,
 } from "lucide-react";
 import { isAdminRole, isLeaderOrManagerOrAdminRole } from "@/lib/roles";
 import { AppModuleKey } from "./modules";
@@ -162,6 +163,12 @@ export const NAV_SECTIONS: NavSection[] = [
             href: "/leaves",
             label: "Vacaciones y ausencias",
             // module: "LEAVES",
+          },
+          {
+            href: "/leaves/hr-validation",
+            label: "Validar compensadas",
+            icon: Coins,
+            module: "LEAVES_HR_VALIDATION",
           },
         ],
       },

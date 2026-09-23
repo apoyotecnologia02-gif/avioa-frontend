@@ -1,4 +1,9 @@
-export type LeaveStatus = "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED";
+export type LeaveStatus =
+  | "PENDING_HR_VALIDATION"
+  | "PENDING"
+  | "APPROVED"
+  | "REJECTED"
+  | "CANCELLED";
 
 export type LeaveType =
   | "VACACIONES"
@@ -14,6 +19,7 @@ export type LeaveType =
   | "DILIGENCIA_PERSONAL"
   | "OBLIGACION_COMO_ACUDIENTE"
   | "CITA_MEDICA_PARTICULAR"
+  | "CITA_MEDICA_CON_ESPECIALISTA_EPS"
   | "OTRO";
 
 export interface LeaveRequest {
@@ -31,6 +37,9 @@ export interface LeaveRequest {
   createdAt: string;
   reviewedAt?: string | null;
   esCompensada?: boolean;
+  hrValidatedById: string | null;
+  hrValidatedAt: string | null;
+  hrComment: string | null;
   user?: {
     name: string;
     avatarUrl?: string | null;
@@ -81,6 +90,11 @@ export interface LeaveTypeMeta {
   /** Clase de color para acentos (Tailwind) */
   accent: string;
   dot: string;
+}
+
+export interface ValidateCompensatedLeaveDto {
+  action: "APPROVE" | "REJECT";
+  comment?: string;
 }
 
 export const LEAVE_TYPE_META: Record<LeaveType, LeaveTypeMeta> = {
@@ -209,6 +223,15 @@ export const LEAVE_TYPE_META: Record<LeaveType, LeaveTypeMeta> = {
       "text-gray-600 bg-gray-50 border-gray-200 dark:bg-gray-800/40 dark:border-gray-700",
     dot: "bg-gray-400",
   },
+  CITA_MEDICA_CON_ESPECIALISTA_EPS: {
+    label: "Cita médica con especialista EPS",
+    short: "Cita EPS",
+    consumesBalance: false,
+    needsAttachment: true,
+    accent:
+      "text-sky-600 bg-sky-50 border-sky-200 dark:bg-sky-900/20 dark:border-sky-800",
+    dot: "bg-sky-500",
+  },
 };
 
 export const LEAVE_STATUS_META: Record<
@@ -234,5 +257,10 @@ export const LEAVE_STATUS_META: Record<
     label: "Cancelada",
     className:
       "text-slate-600 bg-slate-50 border-slate-200 dark:bg-slate-800/40 dark:border-slate-700",
+  },
+  PENDING_HR_VALIDATION: {
+    label: "Pendiente validación GH",
+    className:
+      "text-purple-700 bg-purple-50 border-purple-200 dark:bg-purple-900/20 dark:border-purple-800 dark:text-purple-400",
   },
 };

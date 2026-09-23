@@ -12,6 +12,7 @@ export type LeaveType =
   | "DILIGENCIA_PERSONAL"
   | "OBLIGACION_COMO_ACUDIENTE"
   | "CITA_MEDICA_PARTICULAR"
+  | "CITA_MEDICA_CON_ESPECIALISTA_EPS"
   | "OTRO";
 
 export type TipoNovedad = LeaveType | "HORAS_EXTRA";

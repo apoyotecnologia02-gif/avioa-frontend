@@ -41,6 +41,13 @@ export const APP_MODULES = [
     label: "Horas extra",
     description: "Registro y aprobación de horas extra",
   },
+  {
+    key: "LEAVES_HR_VALIDATION",
+    kind: "module",
+    category: "RRHH",
+    label: "Validación de vacaciones compensadas",
+    description: "Validación de vacaciones compensadas",
+  },
 
   // ── Herramientas ──────────────────────────────────────
   {
