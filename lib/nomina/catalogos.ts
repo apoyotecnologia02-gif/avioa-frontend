@@ -7,13 +7,17 @@ export const CATALOGO_TIPO_NOVEDAD: { value: TipoNovedad; label: string }[] = [
   { value: "LICENCIA_MATERNIDAD", label: "Licencia de maternidad" },
   { value: "LICENCIA_PATERNIDAD", label: "Licencia de paternidad" },
   { value: "LICENCIA_LUTO", label: "Licencia de luto" },
-  { value: "LICENCIA_MATRIMONIO", label: "Licencia de matrimonio" },
+  // { value: "LICENCIA_MATRIMONIO", label: "Licencia de matrimonio" },
   { value: "PERMISO_REMUNERADO", label: "Licencia remunerada" },
   { value: "PERMISO_NO_REMUNERADO", label: "Licencia no remunerada" },
   { value: "CALAMIDAD_DOMESTICA", label: "Calamidad doméstica" },
   { value: "DILIGENCIA_PERSONAL", label: "Diligencia personal" },
   { value: "OBLIGACION_COMO_ACUDIENTE", label: "Obligación como acudiente" },
   { value: "CITA_MEDICA_PARTICULAR", label: "Cita médica particular" },
+  {
+    value: "CITA_MEDICA_CON_ESPECIALISTA_EPS",
+    label: "Cita médica con especialista EPS",
+  },
   { value: "OTRO", label: "Otro" },
   { value: "HORAS_EXTRA", label: "Horas extra" },
 ];
