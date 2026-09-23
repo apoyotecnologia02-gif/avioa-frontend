@@ -120,6 +120,10 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     socket.on("leave_request_received", handleNotification);
     socket.on("leave_request_approved", handleNotification);
     socket.on("leave_request_rejected", handleNotification);
+    socket.on("compensated_leave_rejected_by_hr", handleNotification);
+    socket.on("compensated_leave_pending_leader", handleNotification);
+    socket.on("compensated_leave_pending_hr", handleNotification);
+    socket.on("compensated_leave_validated_by_hr", handleNotification);
 
     // overtime
     socket.on("overtime_request_received", handleAddOvertimeRequest);

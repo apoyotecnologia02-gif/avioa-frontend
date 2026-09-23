@@ -14,6 +14,10 @@ export const CATALOGO_TIPO_NOVEDAD: { value: TipoNovedad; label: string }[] = [
   { value: "DILIGENCIA_PERSONAL", label: "Diligencia personal" },
   { value: "OBLIGACION_COMO_ACUDIENTE", label: "Obligación como acudiente" },
   { value: "CITA_MEDICA_PARTICULAR", label: "Cita médica particular" },
+  {
+    value: "CITA_MEDICA_CON_ESPECIALISTA_EPS",
+    label: "Cita médica con especialista EPS",
+  },
   { value: "OTRO", label: "Otro" },
   { value: "HORAS_EXTRA", label: "Horas extra" },
 ];
