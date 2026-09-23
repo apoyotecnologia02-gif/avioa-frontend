@@ -8,6 +8,8 @@ import {
   TotalesNomina,
 } from "@/types/nomina.types";
 import { useQuery } from "@tanstack/react-query";
+import { useToast } from "./use-toast";
+import { useState } from "react";
 
 function buildParams(filtros: FiltrosNomina) {
   return {
@@ -69,4 +71,68 @@ export function useTotalesNomina(filtros: FiltrosNomina, enabled = true) {
     },
     enabled: enabled && !!filtros.desde && !!filtros.hasta,
   });
+}
+
+export function useExportarNominaExcel() {
+  const { toast } = useToast();
+  const [isExporting, setIsExporting] = useState(false);
+
+  const exportar = async (filtros: FiltrosNomina) => {
+    setIsExporting(true);
+
+    try {
+      const params = {
+        desde: filtros.desde,
+        hasta: filtros.hasta,
+        ...(filtros.userId && { userId: filtros.userId }),
+        ...(filtros.area && { area: filtros.area }),
+        ...(filtros.legalEntity && { legalEntity: filtros.legalEntity }),
+        ...(filtros.tipos?.length && { tipos: filtros.tipos.join(",") }),
+      };
+
+      const response = await api.get("/nomina/novedades/export", {
+        params,
+        responseType: "blob",
+      });
+
+      const disposition = response.headers["content-disposition"] as
+        | string
+        | undefined;
+      const match = disposition?.match(
+        /filename\*?=(?:UTF-8'')?["']?([^"';]+)/,
+      );
+      const filename = match
+        ? decodeURIComponent(match[1])
+        : "novedades_nomina_${filtros.desde}_${filtros.hasta}.xlsx";
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      let mensaje = "Ocurrió un error al generar el archivo.";
+
+      if (err?.response?.data instanceof Blob) {
+        try {
+          const texto = await err.response.data.text();
+          const parsed = JSON.parse(texto);
+          mensaje = parsed.message || parsed.error || mensaje;
+        } catch {}
+      }
+
+      toast({
+        title: "Error al exportar",
+        description: mensaje,
+        variant: "destructive",
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  return { exportar, isExporting };
 }
