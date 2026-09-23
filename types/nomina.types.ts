@@ -44,6 +44,9 @@ export interface NovedadConsolidada {
   cruzaPeriodoAnterior: boolean;
   cruzaPeriodoSiguiente: boolean;
 
+  horaInicio: string | null;
+  horaFin: string | null;
+
   motivo: string;
   attachmentUrl: string | null;
   comentarioAprobador: string | null;
@@ -51,6 +54,8 @@ export interface NovedadConsolidada {
   nombreAprobador: string;
   fechaRegistro: string;
   fechaAprobacion: string | null;
+
+  createdAt: string | null;
 }
 
 export interface ResumenColaborador {

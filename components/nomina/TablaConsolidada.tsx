@@ -12,6 +12,7 @@ import {
 import { CruceBadge } from "./CruceBadge";
 import { Badge } from "../ui/badge";
 import { colorPorAfectacion } from "@/lib/nomina/catalogos";
+import { format, parseISO } from "date-fns";
 
 interface TablaConsolidadaProps {
   novedades?: NovedadConsolidada[];
@@ -50,6 +51,8 @@ export function TablaConsolidada({
             <TableHead>Tipo</TableHead>
             <TableHead>Fechas en periodo</TableHead>
             <TableHead className="text-right">Cantidad</TableHead>
+            <TableHead>Horario</TableHead>
+            <TableHead>Solicitada el</TableHead>
             <TableHead>Efecto</TableHead>
             <TableHead>Área / Razón Social</TableHead>
             <TableHead>Soporte</TableHead>
@@ -93,6 +96,23 @@ export function TablaConsolidada({
               </TableCell>
               <TableCell className="text-right font-semibold">
                 {n.cantidadEnPeriodo} {n.unidad === "HORAS" ? "h" : "d"}
+              </TableCell>
+              <TableCell className="text-sm">
+                {n.origen === "OVERTIME" && n.horaInicio && n.horaFin ? (
+                  <span className="font-medium">
+                    {n.horaInicio} – {n.horaFin}
+                  </span>
+                ) : (
+                  <span className="text-muted-foreground">—</span>
+                )}
+              </TableCell>
+              <TableCell className="text-sm text-muted-foreground">
+                {n.origen === "OVERTIME"
+                  ? format(
+                      parseISO(n.createdAt as string),
+                      "d 'de' MMMM, h:mm a",
+                    )
+                  : "—"}
               </TableCell>
               <TableCell>
                 <Badge

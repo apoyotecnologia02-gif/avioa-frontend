@@ -23,6 +23,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useGetUsers } from "@/hooks/useGetUsers";
 import {
+  useExportarNominaExcel,
   useNovedadesConsolidadas,
   useResumenPorColaborador,
   useTotalesNomina,
@@ -33,8 +34,10 @@ import {
   AlertTriangle,
   CalendarRange,
   Clock,
+  FileSpreadsheet,
   FileWarning,
   LayoutList,
+  Loader2,
   Umbrella,
   Users,
   UserSquare2,
@@ -78,6 +81,8 @@ export default function NominaPage() {
   const { data: porColaborador, isLoading: loadingPorColaborador } =
     useResumenPorColaborador(filtros, vista === "por-colaborador");
 
+  const { exportar, isExporting } = useExportarNominaExcel();
+
   const { data: colaboradores } = useGetUsers();
 
   const toggleTipo = (tipo: TipoNovedad) => {
@@ -88,13 +93,28 @@ export default function NominaPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-foreground">
-          Contabilidad · Novedades de nómina
-        </h1>
-        <p className="text-muted-foreground">
-          Vacaciones, ausencias y horas extra aprobadas.
-        </p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground">
+            Contabilidad · Novedades de nómina
+          </h1>
+          <p className="text-muted-foreground">
+            Vacaciones, ausencias y horas extra aprobadas.
+          </p>
+        </div>
+
+        <Button
+          onClick={() => exportar(filtros)}
+          disabled={isExporting}
+          className="gap-2"
+        >
+          {isExporting ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <FileSpreadsheet className="h-4 w-4" />
+          )}
+          {isExporting ? "Generando..." : "Exportar a Excel"}
+        </Button>
       </div>
 
       <Card>
