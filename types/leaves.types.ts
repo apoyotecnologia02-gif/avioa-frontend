@@ -22,6 +22,12 @@ export type LeaveType =
   | "CITA_MEDICA_CON_ESPECIALISTA_EPS"
   | "OTRO";
 
+interface HrValidationLeave {
+  validatedAt: string;
+  validatedBy: string;
+  comment: string;
+}
+
 export interface LeaveRequest {
   leaveRequestId: string;
   userId: string;
@@ -44,6 +50,7 @@ export interface LeaveRequest {
   hrValidatedById: string | null;
   hrValidatedAt: string | null;
   hrComment: string | null;
+  hrValidation?: HrValidationLeave | null;
   user?: {
     name: string;
     avatarUrl?: string | null;
