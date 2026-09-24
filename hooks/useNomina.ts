@@ -22,6 +22,9 @@ function buildParams(filtros: FiltrosNomina) {
       soloRemuneradas: filtros.soloRemuneradas,
     }),
     ...(filtros.tipos?.length && { tipos: filtros.tipos.join(",") }),
+    ...(filtros.esCompensada !== undefined && {
+      esCompensada: filtros.esCompensada,
+    }),
   };
 }
 

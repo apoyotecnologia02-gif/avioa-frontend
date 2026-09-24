@@ -17,6 +17,7 @@ import {
   type LeaveRequest,
   type ReviewLeaveDto,
 } from "@/types/leaves.types";
+import { formatHours } from "@/lib/leave-hours";
 
 interface ReviewLeaveModalProps {
   leave: LeaveRequest | null;
@@ -116,12 +117,32 @@ export function ReviewLeaveModal({
           <div className={`rounded-xl border p-3 ${meta.accent}`}>
             <p className="text-sm font-medium">{meta.label}</p>
             <p className="mt-1 text-sm">
-              {fmt(leave.startDate)} – {fmt(leave.endDate)}
+              {leave.isPartialDay
+                ? `${fmt(leave.startDate)} · ${leave.startTime} – ${leave.endTime}`
+                : `${fmt(leave.startDate)} – ${fmt(leave.endDate)}`}
             </p>
             <p className="mt-0.5 text-xs opacity-80">
-              {leave.businessDays} día(s) hábiles
+              {leave.isPartialDay
+                ? `${formatHours(leave.totalHours ?? 0)} ausente`
+                : `${leave.businessDays} día(s) hábiles`}
             </p>
           </div>
+
+          {leave.isPartialDay && (
+            <div className="flex items-start gap-2 rounded-xl border border-purple-500/40 bg-purple-50/60 p-3 dark:bg-purple-900/10">
+              <Info className="mt-0.5 h-4 w-4 shrink-0 text-purple-600 dark:text-purple-400" />
+              <div className="space-y-0.5">
+                <p className="text-sm font-medium text-purple-800 dark:text-purple-300">
+                  Ausencia parcial
+                </p>
+                <p className="text-xs text-purple-700/80 dark:text-purple-300/80">
+                  El colaborador estará ausente el {fmt(leave.startDate)} de{" "}
+                  {leave.startTime} a {leave.endTime} (
+                  {formatHours(leave.totalHours ?? 0)}).
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Motivo del empleado */}
           <div>

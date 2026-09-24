@@ -29,6 +29,10 @@ export interface LeaveRequest {
   type: LeaveType;
   startDate: string; // ISO
   endDate: string; // ISO
+  startTime?: string | null;
+  endTime?: string | null;
+  isPartialDay?: boolean;
+  totalHours?: number | null;
   businessDays: number;
   reason: string;
   attachmentUrl?: string | null;
@@ -65,9 +69,12 @@ export interface VacationBalance {
 
 export interface CreateLeaveDto {
   type: LeaveType;
-  startDate: string; // YYYY-MM-DD
-  endDate: string; // YYYY-MM-DD
+  startDate: string | undefined; // YYYY-MM-DD
+  endDate: string | undefined; // YYYY-MM-DD
+  startTime: string | undefined;
+  endTime: string | undefined;
   reason: string;
+  compensatedDays?: number;
   attachmentUrl?: string;
   leaderId?: string;
   esCompensada?: boolean;
