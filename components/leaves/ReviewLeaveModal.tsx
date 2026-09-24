@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Check, X, Loader2, Paperclip, Info } from "lucide-react";
+import { Check, X, Loader2, Paperclip, Info, CheckCircle } from "lucide-react";
 import {
   LEAVE_TYPE_META,
   type LeaveRequest,
@@ -109,6 +109,43 @@ export function ReviewLeaveModal({
                   <strong>No generará ausencia</strong> en el calendario del
                   equipo y no bloquea traslapes con otras solicitudes.
                 </p>
+              </div>
+            </div>
+          )}
+
+          {leave.esCompensada && leave.hrValidation && (
+            <div className="rounded-xl border border-emerald-500/40 bg-emerald-50/60 p-3 dark:bg-emerald-900/10">
+              <div className="flex items-start gap-2">
+                <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                <div className="flex-1 space-y-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-medium text-emerald-800 dark:text-emerald-300">
+                      Validada por Gestión Humana
+                    </p>
+                    {leave.hrValidation.validatedAt && (
+                      <span className="text-[10px] text-emerald-700/70 dark:text-emerald-300/70">
+                        {fmt(leave.hrValidation.validatedAt)}
+                      </span>
+                    )}
+                  </div>
+
+                  {leave.hrValidation.validatedBy && (
+                    <p className="text-xs text-emerald-700/80 dark:text-emerald-300/80">
+                      Por {leave.hrValidation.validatedBy}
+                    </p>
+                  )}
+
+                  {leave.hrValidation.comment && (
+                    <div className="mt-1.5 rounded-lg border border-emerald-500/20 bg-white/60 p-2 dark:bg-emerald-950/30">
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
+                        Comentario de GH
+                      </p>
+                      <p className="mt-0.5 whitespace-pre-line text-xs text-emerald-800/90 dark:text-emerald-200/90">
+                        {leave.hrValidation.comment}
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
