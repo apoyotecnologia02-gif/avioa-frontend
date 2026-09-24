@@ -70,6 +70,24 @@ export function TablaConsolidada({
               <TableCell>
                 <div className="flex flex-wrap items-center gap-1.5">
                   <span className="text-sm">{n.tipoLabel}</span>
+                  {n.esCompensada && (
+                    <Badge
+                      variant="outline"
+                      className="border-dashed border-sky-500/60 bg-sky-50 text-[10px] text-sky-700 dark:bg-sky-900/20 dark:text-sky-300"
+                      title="Días compensados: no genera ausencia"
+                    >
+                      Compensada
+                    </Badge>
+                  )}
+                  {n.esParcial && (
+                    <Badge
+                      variant="outline"
+                      className="border-purple-500/60 bg-purple-50 text-[10px] text-purple-700 dark:bg-purple-900/20 dark:text-purple-300"
+                      title={`Ausencia parcial: ${n.horaInicio} - ${n.horaFin}`}
+                    >
+                      Parcial
+                    </Badge>
+                  )}
                   <CruceBadge
                     cruzaAnterior={n.cruzaPeriodoAnterior}
                     cruzaSiguiente={n.cruzaPeriodoSiguiente}
@@ -95,15 +113,38 @@ export function TablaConsolidada({
                 )}
               </TableCell>
               <TableCell className="text-right font-semibold">
-                {n.cantidadEnPeriodo} {n.unidad === "HORAS" ? "h" : "d"}
+                <div className="flex flex-col items-end">
+                  <span>
+                    {n.cantidadEnPeriodo} {n.unidad === "HORAS" ? "h" : "d"}
+                  </span>
+                  {n.esParcial && n.totalHoras !== null && (
+                    <span className="text-xs font-normal text-muted-foreground">
+                      {n.totalHoras} h
+                    </span>
+                  )}
+                </div>
               </TableCell>
               <TableCell className="text-sm">
-                {n.origen === "OVERTIME" && n.horaInicio && n.horaFin ? (
+                {/* {n.origen === "OVERTIME" && n.horaInicio && n.horaFin ? (
                   <span className="font-medium">
                     {n.horaInicio} – {n.horaFin}
                   </span>
                 ) : (
                   <span className="text-muted-foreground">—</span>
+                )} */}
+                {n.horaInicio && n.horaFin ? (
+                  <div className="flex flex-col">
+                    <span className="font-medium">
+                      {n.horaInicio} - {n.horaFin}
+                    </span>
+                    {n.esParcial && n.totalHoras !== null && (
+                      <span className="text-xs text-muted-foreground">
+                        {n.totalHoras} h
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <span className="text-muted-foregroun">-</span>
                 )}
               </TableCell>
               <TableCell className="text-sm text-muted-foreground">

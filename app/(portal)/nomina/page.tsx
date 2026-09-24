@@ -63,14 +63,20 @@ export default function NominaPage() {
     "consolidado",
   );
 
+  const [filtroCompensada, setFiltroCompensada] = useState<
+    "todas" | "solo" | "excluir"
+  >("todas");
+
   const filtros: FiltrosNomina = useMemo(
     () => ({
       desde: rango.desde,
       hasta: rango.hasta,
       userId,
       tipos: tipos.length ? tipos : undefined,
+      esCompensada:
+        filtroCompensada === "todas" ? undefined : filtroCompensada === "solo",
     }),
-    [rango, userId, tipos],
+    [rango, userId, tipos, filtroCompensada],
   );
 
   const { data: totales, isLoading: loadingTotales } =
@@ -119,7 +125,7 @@ export default function NominaPage() {
 
       <Card>
         <CardContent className="flex flex-col gap-4 p-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
             <div className="space-y-1.5">
               <Label className="flex items-center gap-1.5 text-xs">
                 <CalendarRange className="h-3.5 w-3.5" /> Desde
@@ -198,6 +204,25 @@ export default function NominaPage() {
                   </div>
                 </PopoverContent>
               </Popover>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs">Vacaciones compensadas</Label>
+              <Select
+                value={filtroCompensada}
+                onValueChange={(v) =>
+                  setFiltroCompensada(v as typeof filtroCompensada)
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Todas</SelectItem>
+                  <SelectItem value="solo">Solo compensadas</SelectItem>
+                  <SelectItem value="excluir">Sin compensadas</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 

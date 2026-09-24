@@ -144,7 +144,9 @@ export function LeaveCalendar({ leaves }: LeaveCalendarProps) {
                 leave
                   ? isCompensated
                     ? `${meta?.label} · Compensada (no genera ausencia)`
-                    : `${meta?.label} · ${leave.status === "PENDING" ? "Pendiente" : "Aprobada"}`
+                    : leave.isPartialDay
+                      ? `${meta?.label} · ${leave.startTime} – ${leave.endTime} (${leave.status === "PENDING" ? "Pendiente" : "Aprobada"})`
+                      : `${meta?.label} · ${leave.status === "PENDING" ? "Pendiente" : "Aprobada"}`
                   : holiday
                     ? "Festivo"
                     : undefined

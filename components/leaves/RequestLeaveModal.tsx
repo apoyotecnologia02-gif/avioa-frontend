@@ -26,6 +26,7 @@ import {
   Paperclip,
   AlertCircle,
   Coins,
+  Info,
 } from "lucide-react";
 import { countBusinessDays } from "@/lib/business-days";
 import {
@@ -82,6 +83,10 @@ export function RequestLeaveModal({
   const [esCompensada, setEsCompensada] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [leaderId, setLeaderId] = useState("");
+  const [compensatedDays, setCompensatedDays] = useState("");
+  const [partialDay, setPartialDay] = useState(false);
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
 
   const { requests: leaders } = useGetLeaders();
 
@@ -89,6 +94,11 @@ export function RequestLeaveModal({
 
   // Preview de días hábiles en vivo
   const businessDays = useMemo(() => {
+    if (esCompensada) {
+      const n = Number(compensatedDays);
+      return Number.isFinite(n) && n > 0 ? n : null;
+    }
+
     if (!startDate || !endDate) return null;
     const [ys, ms, ds] = startDate.split("-").map(Number);
     const [ye, me, de] = endDate.split("-").map(Number);
@@ -96,7 +106,7 @@ export function RequestLeaveModal({
     const e = new Date(ye, me - 1, de);
     if (e < s) return 0;
     return countBusinessDays(s, e);
-  }, [startDate, endDate]);
+  }, [esCompensada, compensatedDays, startDate, endDate]);
 
   const exceedsBalance =
     meta.consumesBalance &&
@@ -108,21 +118,57 @@ export function RequestLeaveModal({
     setType("VACACIONES");
     setStartDate("");
     setEndDate("");
+    setPartialDay(false);
+    setStartTime("");
+    setEndTime("");
     setReason("");
     setAttachmentUrl("");
+    setEsCompensada(false);
     setError(null);
   };
 
   const handleSubmit = async () => {
     setError(null);
-    if (!startDate || !endDate) {
-      setError("Selecciona las fechas de inicio y fin");
-      return;
+
+    if (esCompensada) {
+      const n = Number(compensatedDays);
+      if (!Number.isInteger(n) || n < 1) {
+        setError("Indica cuántos días deseas compensar (mínimo 1)");
+        return;
+      }
+    } else {
+      if (!startDate || !endDate) {
+        setError("Selecciona las fechas de inicio y fin");
+        return;
+      }
+      if (endDate < startDate) {
+        setError("La fecha de fin no puede ser anterior a la de inicio");
+        return;
+      }
+
+      if (partialDay) {
+        if (type === "VACACIONES") {
+          setError("Las vacaciones no se registran por horas");
+          return;
+        }
+
+        if (startDate !== endDate) {
+          setError("Una ausencia por horas debe ser en un solo día");
+          return;
+        }
+
+        if (!startTime || !endTime) {
+          setError("Indica la hora de inicio y de fin");
+          return;
+        }
+
+        if (startTime >= endTime) {
+          setError("La hora de fin debe ser posterior a la hora de inicio");
+          return;
+        }
+      }
     }
-    if (endDate < startDate) {
-      setError("La fecha de fin no puede ser anterior a la de inicio");
-      return;
-    }
+
     if (!reason.trim()) {
       setError("Escribe el motivo de tu solicitud");
       return;
@@ -140,8 +186,11 @@ export function RequestLeaveModal({
     try {
       await onSubmit({
         type,
-        startDate,
-        endDate,
+        startDate: esCompensada ? undefined : startDate,
+        endDate: esCompensada ? undefined : endDate,
+        compensatedDays: esCompensada ? Number(compensatedDays) : undefined,
+        startTime: partialDay && !esCompensada ? startTime : undefined,
+        endTime: partialDay && !esCompensada ? endTime : undefined,
         esCompensada,
         reason: reason.trim(),
         attachmentUrl: attachmentUrl.trim() || undefined,
@@ -191,6 +240,29 @@ export function RequestLeaveModal({
             </Select>
           </div>
 
+          {type === "VACACIONES" && (
+            <div className="flex items-start gap-2.5 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2.5 text-xs text-sky-800 dark:bg-sky-900/20 dark:border-sky-800 dark:text-sky-300">
+              <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <p className="font-medium">
+                  Antes de solicitar tus vacaciones, ten en cuenta:
+                </p>
+                <ul className="list-disc space-y-0.5 pl-4">
+                  <li>
+                    Por cada período de vacaciones causado de 15 días, puedes
+                    solicitar un máximo de 7 días de vacaciones compensadas en
+                    dinero.
+                  </li>
+                  <li>
+                    Los días restantes deberán ser disfrutados efectivamente
+                    como vacaciones, de acuerdo con la programación y aprobación
+                    correspondiente.
+                  </li>
+                </ul>
+              </div>
+            </div>
+          )}
+
           {/* compensacion en dinero (solo si el tipo es VACACIONES) */}
           {type === "VACACIONES" && (
             <div className="flex items-start gap-2.5 rounded-lg border px-3 py-2.5">
@@ -220,37 +292,115 @@ export function RequestLeaveModal({
             <div className="flex items-start gap-2 rounded-lg border border-purple-200 bg-purple-50 px-3 py-2.5 text-xs text-purple-800">
               <Coins className="h-3.5 w-3.5 shrink-0 mt-0.5" />
               <span>
-                Las vacaciones compensadas pasan primero por validación de
-                Gestión Humana antes de llegar a tu líder. Puede tomar un poco
-                más de tiempo.
+                Toda solicitud de vacaciones compensadas está sujeta a la
+                validación y aprobación de Gestión Humana.
               </span>
             </div>
           )}
 
           {/* Fechas */}
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {esCompensada ? (
             <div className="space-y-1.5">
-              <Label htmlFor="start">Desde</Label>
+              <Label htmlFor="compensated-days">Días a compensar</Label>
               <Input
-                id="start"
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+                id="compensated-days"
+                type="number"
+                min={1}
+                step={1}
+                inputMode="numeric"
+                placeholder="Ej: 5"
+                value={compensatedDays}
+                onChange={(e) => setCompensatedDays(e.target.value)}
               />
+              <p className="text-xs text-muted-foreground">
+                Indica cuántos días de tu periodo de vacaciones quieres recibir
+                en dinero. No se regístran fechas de descanso.
+              </p>
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="end">Hasta</Label>
-              <Input
-                id="end"
-                type="date"
-                value={endDate}
-                min={startDate || undefined}
-                onChange={(e) => setEndDate(e.target.value)}
-              />
-            </div>
-          </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="start">Desde</Label>
+                  <Input
+                    id="start"
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="end">Hasta</Label>
+                  <Input
+                    id="end"
+                    type="date"
+                    value={endDate}
+                    min={startDate || undefined}
+                    onChange={(e) => setEndDate(e.target.value)}
+                  />
+                </div>
+              </div>
 
-          <CampaignDateNotice startDate={startDate} endDate={endDate} />
+              <CampaignDateNotice startDate={startDate} endDate={endDate} />
+
+              {type !== "VACACIONES" && (
+                <>
+                  <div className="flex items-start gap-2.5 rounded-lg border px-3 py-2.5">
+                    <Checkbox
+                      id="partial-day"
+                      checked={partialDay}
+                      onCheckedChange={(checked) => {
+                        const on = !!checked;
+                        setPartialDay(on);
+                        if (on) {
+                          setEndDate(startDate);
+                        } else {
+                          setStartTime("");
+                          setEndTime("");
+                        }
+                      }}
+                      className="mt-0.5"
+                    />
+                    <div className="space-y-0.5">
+                      <Label
+                        htmlFor="partial-day"
+                        className="text-xs font-medium leading-none"
+                      >
+                        Ausencia parcial (solo algunas horas)
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        Marca esta opción si no estarás ausente todo el día.
+                      </p>
+                    </div>
+                  </div>
+
+                  {partialDay && (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="start-time">Hora inicio</Label>
+                        <Input
+                          id="start-time"
+                          type="time"
+                          value={startTime}
+                          onChange={(e) => setStartTime(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="end-time">Hora fin</Label>
+                        <Input
+                          id="end-time"
+                          type="time"
+                          value={endTime}
+                          min={startTime || undefined}
+                          onChange={(e) => setEndTime(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </>
+          )}
 
           {/* Preview de días hábiles */}
           {businessDays !== null && businessDays > 0 && (
@@ -263,14 +413,31 @@ export function RequestLeaveModal({
             >
               <CalendarDays className="h-4 w-4 shrink-0 text-primary" />
               <span>
-                <strong>{businessDays}</strong> día(s) hábiles
-                {meta.consumesBalance && balance && (
+                {partialDay ? (
                   <>
-                    {" · "}
-                    <span className="text-muted-foreground">
-                      te quedarían {balance.available - businessDays} de{" "}
-                      {balance.available}
-                    </span>
+                    Ausencia parcial el{" "}
+                    <strong>
+                      {startDate
+                        ? new Date(startDate + "T00:00:00").toLocaleDateString(
+                            "es-CO",
+                          )
+                        : ""}
+                    </strong>{" "}
+                    de <strong>{startTime || "--:--"}</strong> a{" "}
+                    <strong>{endTime || "--:--"}</strong>
+                  </>
+                ) : (
+                  <>
+                    <strong>{businessDays}</strong> día(s) hábiles
+                    {meta.consumesBalance && balance && (
+                      <>
+                        {" · "}
+                        <span className="text-muted-foreground">
+                          te quedarían {balance.available - businessDays} de{" "}
+                          {balance.available}
+                        </span>
+                      </>
+                    )}
                   </>
                 )}
               </span>

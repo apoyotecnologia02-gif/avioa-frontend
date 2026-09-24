@@ -97,6 +97,22 @@ export function ListaPorColaborador({
                   >
                     <div className="flex items-center gap-2">
                       <span className="font-medium">{n.tipoLabel}</span>
+                      {n.esCompensada && (
+                        <Badge
+                          variant="outline"
+                          className="border-dashed border-sky-500/60 bg-sky-50 text-[10px] text-sky-700 dark:bg-sky-900/20 dark:text-sky-300"
+                        >
+                          Compensada
+                        </Badge>
+                      )}
+                      {n.esParcial && (
+                        <Badge
+                          variant="outline"
+                          className="border-purple-500/60 bg-purple-50 text-[10px] text-purple-700 dark:bg-purple-900/20 dark:text-purple-300"
+                        >
+                          Parcial
+                        </Badge>
+                      )}
                       <CruceBadge
                         cruzaAnterior={n.cruzaPeriodoAnterior}
                         cruzaSiguiente={n.cruzaPeriodoSiguiente}
@@ -120,9 +136,18 @@ export function ListaPorColaborador({
                           month: "short",
                         })}
                       </span>
-                      <span className="font-semibold text-foreground">
-                        {n.cantidadEnPeriodo} {n.unidad === "HORAS" ? "h" : "d"}
-                      </span>
+                      <div className="flex flex-col items-end">
+                        <span className="font-semibold text-foreground">
+                          {n.cantidadEnPeriodo}{" "}
+                          {n.unidad === "HORAS" ? "h" : "d"}
+                        </span>
+                        {n.esParcial && n.horaInicio && n.horaFin && (
+                          <span className="text-xs text-muted-foreground">
+                            {n.horaInicio} – {n.horaFin}
+                            {n.totalHoras !== null && ` · ${n.totalHoras} h`}
+                          </span>
+                        )}
+                      </div>
                       <Badge
                         variant="outline"
                         className={colorPorAfectacion(n.afectaNomina)}

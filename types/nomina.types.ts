@@ -56,6 +56,9 @@ export interface NovedadConsolidada {
   fechaRegistro: string;
   fechaAprobacion: string | null;
 
+  esParcial?: boolean;
+  totalHoras?: number | null;
+
   createdAt: string | null;
 }
 
@@ -92,4 +95,5 @@ export interface FiltrosNomina {
   area?: string;
   legalEntity?: string;
   soloRemuneradas?: boolean;
+  esCompensada?: boolean;
 }
