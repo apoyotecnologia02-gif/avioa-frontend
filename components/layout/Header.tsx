@@ -50,6 +50,7 @@ function getBreadcrumbs(pathname: string): Breadcrumb[] {
     vacations: "Saldo de vacaciones",
     knowledge: "Biblioteca de Conocimiento",
     nomina: "Contabilidad",
+    "hr-validation": "Vacaciones compensadas",
   };
 
   let currentPath = "";
