@@ -8,6 +8,7 @@ import { Inbox, CalendarRange, ChevronLeft, ChevronRight } from "lucide-react";
 import { LEAVE_TYPE_META, type LeaveRequest } from "@/types/leaves.types";
 import { LeaveStatusBadge } from "./LeaveStatusBadge";
 import { isHoliday } from "@/lib/business-days";
+import { formatHours } from "@/lib/leave-hours";
 
 interface TeamLeavesViewProps {
   leaves: LeaveRequest[];
@@ -118,10 +119,29 @@ export function TeamLeavesView({
                             Compensada
                           </span>
                         )}
+
+                        {leave.isPartialDay && (
+                          <span
+                            className="rounded-full border border-purple-500/60 bg-purple-50 px-1.5 text-[10px] font-medium text-purple-700 dark:bg-purple-900/20 dark:text-purple-300"
+                            title={`Ausencia parcial: ${leave.startTime} – ${leave.endTime}`}
+                          >
+                            Parcial
+                          </span>
+                        )}
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        {fmt(leave.startDate)} – {fmt(leave.endDate)} ·{" "}
-                        {leave.businessDays}d
+                        {leave.isPartialDay ? (
+                          <>
+                            {fmt(leave.startDate)} · {leave.startTime} –{" "}
+                            {leave.endTime} ·{" "}
+                            {formatHours(leave.totalHours ?? 0)}
+                          </>
+                        ) : (
+                          <>
+                            {fmt(leave.startDate)} – {fmt(leave.endDate)} ·{" "}
+                            {leave.businessDays}d
+                          </>
+                        )}
                       </p>
                     </div>
                     {leave.status === "PENDING" ? (
