@@ -52,7 +52,7 @@ export interface User {
 
 export interface CreateUserDto {
   name: string;
-  email: string;
+  email?: string;
   role: Role;
   department?: string;
   area?: string;
