@@ -68,7 +68,11 @@ import { NumericFormat } from "react-number-format";
 const createUserSchema = z
   .object({
     name: z.string().min(2, "El nombre es requerido"),
-    email: z.string().email("Ingresa un correo válido"),
+    email: z
+      .string()
+      .email("Ingresa un correo electrónico válido")
+      .optional()
+      .or(z.literal("")),
     role: z.nativeEnum(Role),
     department: z.string().optional().or(z.literal("")),
     area: z.string().optional().or(z.literal("")),
@@ -88,7 +92,7 @@ const createUserSchema = z
     emergencyContactRel: z.string().optional(),
     leaderId: z.string().optional(),
     managerId: z.string().optional(),
-    vacationDaysAdjustment: z.coerce.number().optional(),
+    // vacationDaysAdjustment: z.coerce.number().optional(),
   })
   .superRefine((data, ctx) => {
     if (data.documentType && !data.documentNumber) {
@@ -189,7 +193,8 @@ export default function AdminUsersPage() {
       emergencyContactName: undefined,
       emergencyContactPhone: undefined,
       emergencyContactRel: undefined,
-      vacationDaysAdjustment: undefined,
+      // vacationDaysAdjustment: undefined,
+      email: undefined,
     },
   });
 
@@ -253,7 +258,7 @@ export default function AdminUsersPage() {
     try {
       const payload: CreateUserDto = {
         name: data.name,
-        email: data.email,
+        email: data.email || undefined,
         role: data.role,
         department: data.department || undefined,
         area: data.area || undefined,
@@ -275,11 +280,11 @@ export default function AdminUsersPage() {
         emergencyContactName: data.emergencyContactName || undefined,
         emergencyContactPhone: data.emergencyContactPhone || undefined,
         emergencyContactRel: data.emergencyContactRel || undefined,
-        vacationDaysAdjustment:
-          data.vacationDaysAdjustment !== undefined &&
-          !Number.isNaN(data.vacationDaysAdjustment)
-            ? Number(data.vacationDaysAdjustment)
-            : undefined,
+        // vacationDaysAdjustment:
+        //   data.vacationDaysAdjustment !== undefined &&
+        //   !Number.isNaN(data.vacationDaysAdjustment)
+        //     ? Number(data.vacationDaysAdjustment)
+        //     : undefined,
       };
       await api.post("/admin/users", payload, { skip401Redirect: true });
       toast({
@@ -308,7 +313,7 @@ export default function AdminUsersPage() {
         emergencyContactName: undefined,
         emergencyContactPhone: undefined,
         emergencyContactRel: undefined,
-        vacationDaysAdjustment: undefined,
+        // vacationDaysAdjustment: undefined,
       });
       setIsSheetOpen(false);
       await loadUsers();
@@ -457,7 +462,7 @@ export default function AdminUsersPage() {
                   </SheetDescription>
                 </SheetHeader>
                 <form
-                  onSubmit={handleSubmit(onSubmit)}
+                  onSubmit={handleSubmit(onSubmit, onInvalid)}
                   className="space-y-4 px-4 pb-6"
                 >
                   <FieldGroup>
@@ -646,7 +651,7 @@ export default function AdminUsersPage() {
                       />
                     </Field>
 
-                    <Field>
+                    {/* <Field>
                       <FieldLabel htmlFor="vacationDaysAdjustment">
                         Ajuste de días de vacaciones
                       </FieldLabel>
@@ -657,9 +662,10 @@ export default function AdminUsersPage() {
                         placeholder="Ej: 3 (otorgados) o -2 (descontados)"
                       />
                       <p className="text-xs text-muted-foreground">
-                        Días adicionales a sumar o restar al acumulado por tiempo laborado.
+                        Días adicionales a sumar o restar al acumulado por
+                        tiempo laborado.
                       </p>
-                    </Field>
+                    </Field> */}
 
                     <Field>
                       <FieldLabel htmlFor="documentType">
@@ -716,8 +722,9 @@ export default function AdminUsersPage() {
                               thousandSeparator="."
                               decimalSeparator=","
                               allowNegative={false}
+                              value={field.value}
                               onValueChange={(values) =>
-                                field.onChange(values.floatValue)
+                                field.onChange(values.value)
                               }
                               placeholder="Número de documento"
                             />
@@ -825,7 +832,7 @@ export default function AdminUsersPage() {
                       <Input id="arl" type="text" {...register("arl")} />
                     </Field>
 
-                    <Field>
+                    {/* <Field>
                       <FieldLabel htmlFor="salary">Salario</FieldLabel>
                       <Controller
                         control={control}
@@ -843,7 +850,7 @@ export default function AdminUsersPage() {
                           />
                         )}
                       />
-                    </Field>
+                    </Field> */}
 
                     <Field>
                       <FieldLabel htmlFor="emergencyContactPhone">
@@ -891,7 +898,7 @@ export default function AdminUsersPage() {
                           Enviando...
                         </>
                       ) : (
-                        "Crear invitación"
+                        "Registrar usuario"
                       )}
                     </Button>
                   </SheetFooter>
