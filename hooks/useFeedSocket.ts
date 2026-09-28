@@ -8,15 +8,17 @@ import type {
 } from "@/types/feed.types";
 import { useAuthStore } from "@/store/authStore";
 import { useFeedStore } from "@/store/feedStore";
+import { useFeedSocketContext } from "@/components/providers/FeedSocketContext";
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL;
 
 export function useFeedSocket() {
-  const token = useAuthStore((s) => s.token);
+  const { socket } = useFeedSocketContext();
+  // const token = useAuthStore((s) => s.token);
   const currentUserId = useAuthStore(
     (s) => s.user?.userId ?? (s.user as { id?: string } | null)?.id,
   );
-  const socketRef = useRef<Socket | null>(null);
+  // const socketRef = useRef<Socket | null>(null);
 
   const {
     upsertPost,
@@ -28,20 +30,18 @@ export function useFeedSocket() {
   } = useFeedStore();
 
   useEffect(() => {
-    if (!token || !currentUserId) {
-      return;
-    }
+    if (!socket) return;
 
-    const socket = io(`${SOCKET_URL}/feed`, {
-      auth: { token },
-      transports: ["websocket"],
-      withCredentials: true,
-      reconnection: true,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 8000,
-    });
+    // const socket = io(`${SOCKET_URL}/feed`, {
+    //   auth: { token },
+    //   transports: ["websocket"],
+    //   withCredentials: true,
+    //   reconnection: true,
+    //   reconnectionDelay: 1000,
+    //   reconnectionDelayMax: 8000,
+    // });
 
-    socketRef.current = socket;
+    // socketRef.current = socket;
 
     socket.on("connect", () => {
       if (process.env.NODE_ENV !== "production") {
@@ -81,7 +81,7 @@ export function useFeedSocket() {
             recentReactors: payload.recentReactors ?? [],
             reactionsByUser: payload.reactionsByUser ?? {},
           },
-          currentUserId,
+          currentUserId as string,
         );
       },
     );
@@ -108,10 +108,11 @@ export function useFeedSocket() {
       socket.off("feed:comment:new");
       socket.off("feed:comment:deleted");
       socket.disconnect();
-      socketRef.current = null;
+      // socketRef.current = null;
     };
   }, [
-    token,
+    // token,
+    socket,
     currentUserId,
     upsertPost,
     receivePostDeleted,

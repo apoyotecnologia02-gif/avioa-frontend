@@ -7,6 +7,7 @@ import { AppShell } from "@/components/layout/AppShell";
 import { useAuth } from "@/hooks/useAuth";
 import { SocketProvider } from "@/components/providers/SocketProvider";
 import { cn } from "@/lib/utils";
+import { FeedSocketProvider } from "@/components/providers/FeedSocketContext";
 
 // ===== SCROLLBAR STYLES =====
 const scrollbarStyles = `
@@ -110,16 +111,18 @@ export default function PortalLayout({
 
   return (
     <SocketProvider>
-      <AppShell>
-        <div
-          className={cn(
-            "h-full min-h-0 w-full min-w-0 overflow-x-hidden overflow-y-auto",
-            scrollbarStyles,
-          )}
-        >
-          {children}
-        </div>
-      </AppShell>
+      <FeedSocketProvider>
+        <AppShell>
+          <div
+            className={cn(
+              "h-full min-h-0 w-full min-w-0 overflow-x-hidden overflow-y-auto",
+              scrollbarStyles,
+            )}
+          >
+            {children}
+          </div>
+        </AppShell>
+      </FeedSocketProvider>
     </SocketProvider>
   );
 }

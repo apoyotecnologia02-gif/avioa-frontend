@@ -7,10 +7,8 @@ import confetti from "canvas-confetti";
 import { Dialog, DialogContent, DialogTitle } from "../ui/dialog";
 import { Cake, PartyPopper, X } from "lucide-react";
 import { Button } from "../ui/button";
-import { io, Socket } from "socket.io-client";
 import { FeedPost } from "@/types/feed.types";
-
-const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL;
+import { useFeedSocketContext } from "../providers/FeedSocketContext";
 
 interface BirthdayStatus {
   isBirthday: boolean;
@@ -28,7 +26,8 @@ export function BirthdayCelebrationModal() {
   const [status, setStatus] = useState<BirthdayStatus | null>(null);
   const [open, setOpen] = useState(false);
   const firedRef = useRef(false);
-  const socketRef = useRef<Socket | null>(null);
+
+  const { socket } = useFeedSocketContext();
 
   // ============================================================
   // 1. Fetch inicial — deps primitivas, solo [currentUserId, token]
@@ -80,26 +79,14 @@ export function BirthdayCelebrationModal() {
     };
   }, [currentUserId, token]);
 
-  // ============================================================
-  // 2. Socket listener — si llega el post BIRTHDAY en vivo
-  // ============================================================
   useEffect(() => {
-    if (!currentUserId || !token || !SOCKET_URL) return;
-
-    const socket = io(`${SOCKET_URL}/feed`, {
-      auth: { token },
-      transports: ["websocket"],
-      withCredentials: true,
-    });
-
-    socketRef.current = socket;
+    if (!socket || !currentUserId) return;
 
     const handle = (post: FeedPost) => {
       if (post.type !== "BIRTHDAY") return;
       if (post.recognizedUser?.userId !== currentUserId) return;
       if (firedRef.current) return;
 
-      console.debug("[birthday-modal] recibí mi post por socket:", post);
       firedRef.current = true;
 
       setStatus({
@@ -116,10 +103,8 @@ export function BirthdayCelebrationModal() {
 
     return () => {
       socket.off("feed:post:new", handle);
-      socket.disconnect();
-      socketRef.current = null;
     };
-  }, [currentUserId, token]);
+  }, [socket, currentUserId, token]);
 
   // ============================================================
   // 3. Confeti
