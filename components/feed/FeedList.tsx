@@ -1,13 +1,13 @@
 "use client";
 
-import { useFeedStore } from "@/store/feedStore";
 import { useCallback, useEffect, useRef } from "react";
-import { Skeleton } from "../ui/skeleton";
-import { CreatePostBox } from "./CreatePostBox";
-import { BirthdaysWidget } from "./BirthdayWidget";
-import { PostCard } from "./PostCard";
-import { BirthdaysSidebar } from "./BirthdaysSidebar";
+import { Sparkles } from "lucide-react";
 import { useFeedSocket } from "@/hooks/useFeedSocket";
+import { useFeedStore } from "@/store/feedStore";
+import { CreatePostBox } from "./CreatePostBox";
+import { BirthdaysSidebar } from "./BirthdaysSidebar";
+import { FeedSkeleton } from "./FeedSkeleton";
+import { PostCard } from "./PostCard";
 
 export function FeedList() {
   useFeedSocket();
@@ -20,7 +20,6 @@ export function FeedList() {
     fetchMore,
     fetchFeed,
     fetchBirthdays,
-    birthdays,
   } = useFeedStore();
 
   const observerTarget = useRef<HTMLDivElement>(null);
@@ -43,7 +42,6 @@ export function FeedList() {
     const observer = new IntersectionObserver(handleObserver, {
       threshold: 0.5,
     });
-
     const target = observerTarget.current;
     if (target) observer.observe(target);
     return () => {
@@ -52,30 +50,32 @@ export function FeedList() {
   }, [handleObserver]);
 
   return (
-    <div className="mx-auto grid max-w-5xl grid-cols-1 items-start gap-6 pb-2 sm:pb-4 lg:pb-8 lg:grid-cols-[minmax(0,1fr)_280px] lg:gap-8">
-      <div className="order-1 flex min-w-0 flex-col gap-6 lg:col-start-1">
+    <div className="mx-auto grid max-w-5xl grid-cols-1 items-start gap-6 px-3 pb-8 sm:px-4 lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-8">
+      <div className="order-1 min-w-0 lg:order-none lg:col-start-1 lg:row-start-1">
         <CreatePostBox />
       </div>
 
-      <div className="order-2 min-w-0 lg:order-none lg:col-start-2 lg:row-start-1 lg:row-span-2">
+      <div className="order-2 min-w-0 lg:order-none lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:sticky lg:top-6 lg:self-start">
         <BirthdaysSidebar />
       </div>
 
-      <div className="order-3 flex min-w-0 flex-col gap-6 lg:order-none lg:col-start-1 lg:row-start-2">
+      <div className="order-3 flex min-w-0 flex-col gap-5 lg:order-none lg:col-start-1 lg:row-start-2">
         {isLoading ? (
           <FeedSkeleton />
         ) : posts.length === 0 ? (
-          <div className="rounded-2xl border-2 border-dashed border-muted-foreground/20 bg-muted/10 p-10 text-center">
-            <p className="text-sm text-muted-foreground">
-              ✨ Todavía no hay publicaciones. ¡Sé el primero en compartir algo!
-            </p>
-          </div>
+          <EmptyState />
         ) : (
           <>
             {posts.map((post) => (
               <PostCard key={post.feedPostId} post={post} />
             ))}
-            <div>{isLoadingMore && <FeedSkeleton count={1} />}</div>
+            <div ref={observerTarget} className="h-2" />
+            {isLoadingMore && <FeedSkeleton count={1} />}
+            {!hasMore && posts.length > 3 && (
+              <p className="py-4 text-center text-xs text-muted-foreground">
+                Has llegado al final del feed ✨
+              </p>
+            )}
           </>
         )}
       </div>
@@ -83,29 +83,16 @@ export function FeedList() {
   );
 }
 
-function FeedSkeleton({ count = 3 }: { count?: number }) {
+function EmptyState() {
   return (
-    <div className="space-y-5">
-      {Array.from({ length: count }).map((_, i) => (
-        <div
-          key={i}
-          className="space-y-4 rounded-2xl border border-border/50 bg-card/50 p-5"
-        >
-          <div className="flex items-center gap-4">
-            <Skeleton className="h-11 w-11 rounded-full" />
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-40" />
-              <Skeleton className="h-3 w-24" />
-            </div>
-          </div>
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-3/4" />
-          <div className="flex gap-6 pt-2">
-            <Skeleton className="h-6 w-12" />
-            <Skeleton className="h-6 w-12" />
-          </div>
-        </div>
-      ))}
+    <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border/60 bg-muted/10 p-12 text-center">
+      <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+        <Sparkles className="h-5 w-5" />
+      </div>
+      <h3 className="text-sm font-semibold">Todavía no hay publicaciones</h3>
+      <p className="mt-1 max-w-xs text-xs text-muted-foreground">
+        Sé la primera persona en compartir algo con el equipo.
+      </p>
     </div>
   );
 }

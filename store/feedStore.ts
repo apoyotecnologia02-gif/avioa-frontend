@@ -1,5 +1,13 @@
 import { api } from "@/lib/axios";
-import { Birthday, FeedPost, ReactionType } from "@/types/feed.types";
+import {
+  Birthday,
+  CommentDeletedSocketPayload,
+  CommentSocketPayload,
+  FeedComment,
+  FeedPost,
+  ReactionSocketPayload,
+  ReactionType,
+} from "@/types/feed.types";
 import { create } from "zustand";
 
 interface FeedState {
@@ -8,12 +16,12 @@ interface FeedState {
   isLoading: boolean;
   isLoadingMore: boolean;
   hasMore: boolean;
-  page: number;
   cursor: string | null;
 
-  fetchFeed: () => Promise<void>;
+  fetchFeed: (reset?: boolean) => Promise<void>;
   fetchMore: () => Promise<void>;
   fetchBirthdays: () => Promise<void>;
+
   createPost: (data: {
     content: string;
     type: string;
@@ -22,76 +30,137 @@ interface FeedState {
   }) => Promise<void>;
   react: (postId: string, type: ReactionType) => Promise<void>;
   unreact: (postId: string) => Promise<void>;
-  addComment: (postId: string, content: string) => Promise<void>;
-  removeComment: (postId: string, content: string) => Promise<void>;
+  addComment: (
+    postId: string,
+    content: string,
+    parentId?: string | null,
+  ) => Promise<void>;
+  removeComment: (postId: string, commentId: string) => Promise<void>;
   removePost: (postId: string) => Promise<void>;
   togglePin: (postId: string) => Promise<void>;
 
-  // socket
-  receiveNewPost: (post: FeedPost) => void;
+  upsertPost: (post: FeedPost) => void;
   receivePostDeleted: (postId: string) => void;
   receivePinToggled: (postId: string, pinned: boolean) => void;
-  receiveReaction: (postId: string, reactionsCount: number) => void;
-  receiveNewComment: (
+  applyReactionUpdate: (
     postId: string,
-    comment: FeedPost["comments"][number],
-    commentsCount: number,
+    payload: ReactionSocketPayload,
+    currentUserId: string,
   ) => void;
-  receiveCommentDeleted: (
-    postId: string,
-    commentId: string,
-    commentsCount: number,
-  ) => void;
+  receiveNewComment: (payload: CommentSocketPayload) => void;
+  receiveCommentDeleted: (payload: CommentDeletedSocketPayload) => void;
 }
 
-const insertPostIfNew = (posts: FeedPost[], post: FeedPost): FeedPost[] => {
-  if (posts.some((p) => p.feedPostId === post.feedPostId)) return posts;
-  return [post, ...posts];
-};
-
-const addCommentIfNew = (
-  comments: FeedPost["comments"],
-  comment: FeedPost["comments"][number],
-): FeedPost["comments"] => {
-  if (comments.some((c) => c.feedCommentId === comment.feedCommentId))
-    return comments;
-  return [...comments, comment];
-};
+// ============================================================
+// Helpers
+// ============================================================
+const insertPostIfNew = (posts: FeedPost[], post: FeedPost): FeedPost[] =>
+  posts.some((p) => p.feedPostId === post.feedPostId)
+    ? posts.map((p) => (p.feedPostId === post.feedPostId ? post : p))
+    : [post, ...posts];
 
 const mergeUniquePosts = (
   existing: FeedPost[],
   incoming: FeedPost[],
 ): FeedPost[] => {
   const seen = new Set(existing.map((p) => p.feedPostId));
-  const uniqueIncoming = incoming.filter((p) => !seen.has(p.feedPostId));
-  return [...existing, ...uniqueIncoming];
+  return [...existing, ...incoming.filter((p) => !seen.has(p.feedPostId))];
 };
 
+const findComment = (
+  comments: FeedComment[],
+  id: string,
+): FeedComment | undefined => {
+  for (const c of comments) {
+    if (c.feedCommentId === id) return c;
+    const found = findComment(c.replies, id);
+    if (found) return found;
+  }
+  return undefined;
+};
+
+const insertComment = (
+  comments: FeedComment[],
+  incoming: FeedComment,
+  parentId: string | null,
+): FeedComment[] => {
+  if (findComment(comments, incoming.feedCommentId)) return comments;
+
+  if (!parentId) {
+    return [...comments, { ...incoming, replies: incoming.replies ?? [] }];
+  }
+
+  return comments.map((c) =>
+    c.feedCommentId === parentId
+      ? { ...c, replies: [...c.replies, { ...incoming, replies: [] }] }
+      : { ...c, replies: insertComment(c.replies, incoming, parentId) },
+  );
+};
+
+const countReplies = (comment: FeedComment): number =>
+  comment.replies.reduce((sum, r) => sum + 1 + countReplies(r), 0);
+
+const removeCommentFromTree = (
+  comments: FeedComment[],
+  id: string,
+): { tree: FeedComment[]; removed: number } => {
+  let removed = 0;
+
+  const walk = (list: FeedComment[]): FeedComment[] =>
+    list.reduce<FeedComment[]>((acc, c) => {
+      if (c.feedCommentId === id) {
+        removed += 1 + countReplies(c);
+        return acc;
+      }
+      const nextReplies = walk(c.replies);
+      acc.push(nextReplies === c.replies ? c : { ...c, replies: nextReplies });
+      return acc;
+    }, []);
+
+  const tree = walk(comments);
+  return { tree, removed };
+};
+
+const bumpSummary = (
+  summary: Partial<Record<ReactionType, number>>,
+  type: ReactionType,
+  delta: number,
+): Partial<Record<ReactionType, number>> => {
+  const next = { ...summary };
+  const current = next[type] ?? 0;
+  const value = current + delta;
+  if (value <= 0) delete next[type];
+  else next[type] = value;
+  return next;
+};
+
+// ============================================================
+// Store
+// ============================================================
 export const useFeedStore = create<FeedState>((set, get) => ({
   posts: [],
   birthdays: [],
   isLoading: false,
   isLoadingMore: false,
   hasMore: true,
-  page: 1,
   cursor: null,
 
+  // ---------------- FETCH ----------------
   fetchFeed: async (reset = false) => {
-    set({ isLoading: true });
-    const page = reset ? 1 : get().page;
+    set({ isLoading: true, ...(reset ? { cursor: null, hasMore: true } : {}) });
     try {
-      const { data } = await api.get(`/feed?limit=10`, {
-        skip401Redirect: true,
-      });
+      const { cursor } = get();
+      const url = `/feed?limit=10${!reset && cursor ? `&cursor=${cursor}` : ""}`;
+      const { data } = await api.get(url, { skip401Redirect: true });
+
       set({
-        posts: data.posts,
+        posts: reset ? data.posts : mergeUniquePosts(get().posts, data.posts),
         hasMore: data.hasMore,
         cursor: data.nextCursor,
         isLoading: false,
       });
     } catch (error) {
       console.error("Error cargando el feed:", error);
-      // set({ isLoading: false });
       set({ posts: [], hasMore: false, cursor: null, isLoading: false });
     }
   },
@@ -102,15 +171,10 @@ export const useFeedStore = create<FeedState>((set, get) => ({
 
     set({ isLoadingMore: true });
     try {
-      // const { data } = await api.get(`/feed?page=${page}&limit=10`);
-      const { data } = await api.get(
-        `/feed?limit=10${cursor ? `&cursor=${cursor}` : ""}}`,
-        {
-          skip401Redirect: true,
-        },
-      );
+      const url = `/feed?limit=10${cursor ? `&cursor=${cursor}` : ""}`;
+      const { data } = await api.get(url, { skip401Redirect: true });
+
       set((state) => ({
-        // posts: [...state.posts, ...data.posts],
         posts: mergeUniquePosts(state.posts, data.posts),
         hasMore: data.hasMore,
         cursor: data.nextCursor,
@@ -133,17 +197,7 @@ export const useFeedStore = create<FeedState>((set, get) => ({
     }
   },
 
-  togglePin: async (postId) => {
-    const { data } = await api.patch(`/feed/${postId}/pin`, {
-      skip401Redirect: true,
-    });
-    set((state) => ({
-      posts: state.posts.map((p) =>
-        p.feedPostId === postId ? { ...p, pinned: data.pinned } : p,
-      ),
-    }));
-  },
-
+  // ---------------- POSTS ----------------
   createPost: async (payload) => {
     const { data } = await api.post("/feed", payload, {
       skip401Redirect: true,
@@ -151,23 +205,76 @@ export const useFeedStore = create<FeedState>((set, get) => ({
     set((state) => ({ posts: insertPostIfNew(state.posts, data) }));
   },
 
-  react: async (postId, type) => {
-    const previousPost = get().posts.find((p) => p.feedPostId === postId);
+  removePost: async (postId) => {
+    const previous = get().posts;
+    set((state) => ({
+      posts: state.posts.filter((p) => p.feedPostId !== postId),
+    }));
+    try {
+      await api.delete(`/feed/${postId}`, { skip401Redirect: true });
+    } catch (error) {
+      console.error("Error eliminando post:", error);
+      set({ posts: previous });
+    }
+  },
 
-    if (!previousPost) return;
+  togglePin: async (postId) => {
+    const previous = get().posts;
+    const current = previous.find((p) => p.feedPostId === postId);
+    if (!current) return;
 
     set((state) => ({
       posts: state.posts.map((p) =>
-        p.feedPostId === postId
-          ? {
-              ...p,
-              reactionsCount: p.myReaction
-                ? p.reactionsCount
-                : p.reactionsCount + 1,
-              myReaction: type,
-            }
-          : p,
+        p.feedPostId === postId ? { ...p, pinned: !p.pinned } : p,
       ),
+    }));
+
+    try {
+      const { data } = await api.patch(
+        `/feed/${postId}/pin`,
+        {},
+        { skip401Redirect: true },
+      );
+      set((state) => ({
+        posts: state.posts.map((p) =>
+          p.feedPostId === postId ? { ...p, pinned: data.pinned } : p,
+        ),
+      }));
+    } catch (error) {
+      console.error("Error al fijar:", error);
+      set({ posts: previous });
+    }
+  },
+
+  // ---------------- REACCIONES ----------------
+  react: async (postId, type) => {
+    const previous = get().posts.find((p) => p.feedPostId === postId);
+    if (!previous) return;
+
+    const oldReaction = previous.myReaction;
+
+    set((state) => ({
+      posts: state.posts.map((p) => {
+        if (p.feedPostId !== postId) return p;
+        if (p.myReaction === type) return p;
+
+        let summary = { ...p.reactionsSummary };
+        let count = p.reactionsCount;
+
+        if (oldReaction) {
+          summary = bumpSummary(summary, oldReaction, -1);
+        } else {
+          count += 1;
+        }
+        summary = bumpSummary(summary, type, 1);
+
+        return {
+          ...p,
+          myReaction: type,
+          reactionsSummary: summary,
+          reactionsCount: count,
+        };
+      }),
     }));
 
     try {
@@ -179,28 +286,27 @@ export const useFeedStore = create<FeedState>((set, get) => ({
     } catch (error) {
       console.error("Error al reaccionar:", error);
       set((state) => ({
-        posts: state.posts.map((p) =>
-          p.feedPostId === postId ? previousPost : p,
-        ),
+        posts: state.posts.map((p) => (p.feedPostId === postId ? previous : p)),
       }));
     }
   },
 
   unreact: async (postId) => {
-    const previousPost = get().posts.find((p) => p.feedPostId === postId);
+    const previous = get().posts.find((p) => p.feedPostId === postId);
+    if (!previous?.myReaction) return;
 
-    if (!previousPost?.myReaction) return;
+    const oldReaction = previous.myReaction;
 
     set((state) => ({
-      posts: state.posts.map((p) =>
-        p.feedPostId === postId
-          ? {
-              ...p,
-              reactionsCount: Math.max(0, p.reactionsCount - 1),
-              myReaction: null,
-            }
-          : p,
-      ),
+      posts: state.posts.map((p) => {
+        if (p.feedPostId !== postId) return p;
+        return {
+          ...p,
+          myReaction: null,
+          reactionsCount: Math.max(0, p.reactionsCount - 1),
+          reactionsSummary: bumpSummary(p.reactionsSummary, oldReaction, -1),
+        };
+      }),
     }));
 
     try {
@@ -208,30 +314,27 @@ export const useFeedStore = create<FeedState>((set, get) => ({
     } catch (error) {
       console.error("Error al desreaccionar:", error);
       set((state) => ({
-        posts: state.posts.map((p) =>
-          p.feedPostId === postId ? previousPost : p,
-        ),
+        posts: state.posts.map((p) => (p.feedPostId === postId ? previous : p)),
       }));
     }
   },
 
-  addComment: async (postId, content) => {
+  // ---------------- COMENTARIOS ----------------
+  addComment: async (postId, content, parentId = null) => {
     const { data } = await api.post(
       `/feed/${postId}/comments`,
-      { content },
+      { content, parentId: parentId ?? undefined },
       { skip401Redirect: true },
     );
+
+    const incoming: FeedComment = { ...data, replies: data.replies ?? [] };
+
     set((state) => ({
       posts: state.posts.map((p) => {
         if (p.feedPostId !== postId) return p;
-
-        if (p.comments.some((c) => c.feedCommentId === data.feedCommentId)) {
-          return p;
-        }
-
         return {
           ...p,
-          comments: [...p.comments, data],
+          comments: insertComment(p.comments, incoming, parentId),
           commentsCount: p.commentsCount + 1,
         };
       }),
@@ -239,29 +342,41 @@ export const useFeedStore = create<FeedState>((set, get) => ({
   },
 
   removeComment: async (postId, commentId) => {
-    await api.delete(`/feed/comments/${commentId}`, { skip401Redirect: true });
     set((state) => ({
-      posts: state.posts.map((p) =>
-        p.feedPostId === postId
-          ? {
-              ...p,
-              comments: p.comments.filter((c) => c.feedCommentId !== commentId),
-              commentsCount: Math.max(0, p.commentsCount - 1),
-            }
-          : p,
-      ),
+      posts: state.posts.map((p) => {
+        if (p.feedPostId !== postId) return p;
+        const { tree, removed } = removeCommentFromTree(p.comments, commentId);
+        return {
+          ...p,
+          comments: tree,
+          commentsCount: Math.max(0, p.commentsCount - removed),
+        };
+      }),
     }));
+
+    try {
+      await api.delete(`/feed/comments/${commentId}`, {
+        skip401Redirect: true,
+      });
+    } catch (error) {
+      console.error("Error eliminando comentario:", error);
+      get().fetchFeed(true);
+    }
   },
 
-  removePost: async (postId) => {
-    await api.delete(`/feed/${postId}`, { skip401Redirect: true });
-    set((state) => ({
-      posts: state.posts.filter((p) => p.feedPostId !== postId),
-    }));
-  },
-
-  receiveNewPost: (post) =>
-    set((state) => ({ posts: insertPostIfNew(state.posts, post) })),
+  // ---------------- SOCKETS ----------------
+  upsertPost: (post) =>
+    set((state) => {
+      const exists = state.posts.some((p) => p.feedPostId === post.feedPostId);
+      if (exists) {
+        return {
+          posts: state.posts.map((p) =>
+            p.feedPostId === post.feedPostId ? post : p,
+          ),
+        };
+      }
+      return { posts: [post, ...state.posts] };
+    }),
 
   receivePostDeleted: (postId) =>
     set((state) => ({
@@ -275,37 +390,42 @@ export const useFeedStore = create<FeedState>((set, get) => ({
       ),
     })),
 
-  receiveReaction: (postId, reactionsCount) =>
-    set((state) => ({
-      posts: state.posts.map((p) =>
-        p.feedPostId === postId ? { ...p, reactionsCount } : p,
-      ),
-    })),
-
-  receiveNewComment: (postId, comment, commentsCount) =>
+  applyReactionUpdate: (postId, payload, currentUserId) =>
     set((state) => ({
       posts: state.posts.map((p) => {
         if (p.feedPostId !== postId) return p;
-        if (p.comments.some((c) => c.feedCommentId === comment.feedCommentId))
-          return p;
         return {
           ...p,
-          comments: [...p.comments, comment],
+          reactionsCount: payload.reactionsCount,
+          reactionsSummary: payload.reactionsSummary,
+          recentReactors: payload.recentReactors,
+          myReaction: payload.reactionsByUser[currentUserId] ?? null,
+        };
+      }),
+    })),
+
+  receiveNewComment: ({ postId, comment, commentsCount, parentId }) =>
+    set((state) => ({
+      posts: state.posts.map((p) => {
+        if (p.feedPostId !== postId) return p;
+        const incoming: FeedComment = {
+          ...comment,
+          replies: comment.replies ?? [],
+        };
+        return {
+          ...p,
+          comments: insertComment(p.comments, incoming, parentId),
           commentsCount,
         };
       }),
     })),
 
-  receiveCommentDeleted: (postId, commentId, commentsCount) =>
+  receiveCommentDeleted: ({ postId, commentId, commentsCount }) =>
     set((state) => ({
-      posts: state.posts.map((p) =>
-        p.feedPostId === postId
-          ? {
-              ...p,
-              comments: p.comments.filter((c) => c.feedCommentId !== commentId),
-              commentsCount,
-            }
-          : p,
-      ),
+      posts: state.posts.map((p) => {
+        if (p.feedPostId !== postId) return p;
+        const { tree } = removeCommentFromTree(p.comments, commentId);
+        return { ...p, comments: tree, commentsCount };
+      }),
     })),
 }));
