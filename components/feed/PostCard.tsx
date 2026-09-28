@@ -46,7 +46,9 @@ export function PostCard({ post }: { post: FeedPost }) {
         "group relative rounded-2xl border bg-card shadow-sm transition-all hover:shadow-md",
         post.pinned
           ? "border-primary/40 ring-1 ring-primary/10"
-          : "border-border/60",
+          : post.type === "BIRTHDAY"
+            ? "border-pink-300/60 dark:border-pink-800/60"
+            : "border-border/60",
       )}
     >
       {post.pinned && (
@@ -142,6 +144,30 @@ export function PostCard({ post }: { post: FeedPost }) {
                   </AvatarFallback>
                 </Avatar>
                 <span className="truncate text-sm font-semibold">
+                  {post.recognizedUser.name}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {post.type === "BIRTHDAY" && post.recognizedUser && (
+          <div className="mt-4 flex items-center gap-3 rounded-xl border border-pink-200/60 bg-gradient-to-r from-pink-50 via-fuchsia-50 to-violet-50 p-4 dark:border-pink-900/40 dark:from-pink-950/20 dark:via-fuchsia-950/10 dark:to-violet-950/20">
+            <div className="text-3xl">🎂</div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-pink-700 dark:text-pink-400">
+                Hoy celebramos a
+              </p>
+              <div className="flex items-center gap-2">
+                <Avatar className="h-7 w-7 shrink-0">
+                  <AvatarImage
+                    src={post.recognizedUser.avatarUrl ?? undefined}
+                  />
+                  <AvatarFallback className="text-[10px]">
+                    {post.recognizedUser.name[0]}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="truncate text-base font-bold">
                   {post.recognizedUser.name}
                 </span>
               </div>

@@ -64,6 +64,7 @@ export function CreatePostBox() {
     "PUBLICATION",
     "RECOGNITION",
     "ANNOUNCEMENT",
+    "BIRTHDAY",
   ];
 
   return (

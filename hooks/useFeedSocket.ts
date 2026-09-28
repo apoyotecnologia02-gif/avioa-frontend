@@ -28,7 +28,9 @@ export function useFeedSocket() {
   } = useFeedStore();
 
   useEffect(() => {
-    if (!token || !currentUserId) return;
+    if (!token || !currentUserId) {
+      return;
+    }
 
     const socket = io(`${SOCKET_URL}/feed`, {
       auth: { token },
@@ -53,7 +55,10 @@ export function useFeedSocket() {
       console.error("[feed:socket] connect_error:", err.message);
     });
 
-    socket.on("feed:post:new", (post: FeedPost) => upsertPost(post));
+    socket.on("feed:post:new", (post: FeedPost) => {
+      console.log("[feed:socket] NUEVO POST RECIBIDOew", post);
+      upsertPost(post);
+    });
     socket.on("feed:post:updated", (post: FeedPost) => upsertPost(post));
     socket.on("feed:post:deleted", ({ postId }: { postId: string }) =>
       receivePostDeleted(postId),
