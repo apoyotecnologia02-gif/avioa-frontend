@@ -1,70 +1,117 @@
-"use client";
-
-import { useAuthStore } from "@/store/authStore";
-import { useFeedStore } from "@/store/feedStore";
 import { useEffect, useRef } from "react";
 import { io, Socket } from "socket.io-client";
+import type {
+  CommentDeletedSocketPayload,
+  CommentSocketPayload,
+  FeedPost,
+  ReactionSocketPayload,
+} from "@/types/feed.types";
+import { useAuthStore } from "@/store/authStore";
+import { useFeedStore } from "@/store/feedStore";
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL;
 
 export function useFeedSocket() {
   const token = useAuthStore((s) => s.token);
+  const currentUserId = useAuthStore(
+    (s) => s.user?.userId ?? (s.user as { id?: string } | null)?.id,
+  );
   const socketRef = useRef<Socket | null>(null);
 
   const {
-    receiveNewPost,
+    upsertPost,
     receivePostDeleted,
     receivePinToggled,
-    receiveReaction,
+    applyReactionUpdate,
     receiveNewComment,
     receiveCommentDeleted,
   } = useFeedStore();
 
   useEffect(() => {
-    if (!token) return;
+    if (!token || !currentUserId) return;
 
     const socket = io(`${SOCKET_URL}/feed`, {
       auth: { token },
       transports: ["websocket"],
+      withCredentials: true,
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 8000,
     });
 
     socketRef.current = socket;
 
-    socket.on("connect_error", (err) => {
-      console.error("Error de conexión al feed socket:", err.message);
+    socket.on("connect", () => {
+      if (process.env.NODE_ENV !== "production") {
+        // eslint-disable-next-line no-console
+        console.debug("[feed:socket] connected", socket.id);
+      }
     });
 
-    socket.on("feed:post:new", receiveNewPost);
-    socket.on("feed:post:deleted", ({ postId }) => receivePostDeleted(postId));
-    socket.on("feed:post:pinned", ({ postId, pinned }) =>
-      receivePinToggled(postId, pinned),
+    socket.on("connect_error", (err) => {
+      // eslint-disable-next-line no-console
+      console.error("[feed:socket] connect_error:", err.message);
+    });
+
+    socket.on("feed:post:new", (post: FeedPost) => upsertPost(post));
+    socket.on("feed:post:updated", (post: FeedPost) => upsertPost(post));
+    socket.on("feed:post:deleted", ({ postId }: { postId: string }) =>
+      receivePostDeleted(postId),
     );
     socket.on(
+      "feed:post:pinned",
+      ({ postId, pinned }: { postId: string; pinned: boolean }) =>
+        receivePinToggled(postId, pinned),
+    );
+
+    socket.on(
       "feed:post:reaction",
-      ({ postId, reactionsCount, reactionCount, total }) => {
-        const count = reactionsCount ?? reactionCount ?? total;
-        if (typeof postId === "string" && typeof count === "number") {
-          receiveReaction(postId, count);
-        }
+      (payload: ReactionSocketPayload & { postId: string }) => {
+        if (!payload?.postId) return;
+        applyReactionUpdate(
+          payload.postId,
+          {
+            reactionsCount: payload.reactionsCount ?? 0,
+            reactionsSummary: payload.reactionsSummary ?? {},
+            recentReactors: payload.recentReactors ?? [],
+            reactionsByUser: payload.reactionsByUser ?? {},
+          },
+          currentUserId,
+        );
       },
     );
-    socket.on("feed:comment:new", ({ postId, comment, commentsCount }) =>
-      receiveNewComment(postId, comment, commentsCount),
-    );
-    socket.on("feed:comment:deleted", ({ postId, commentId, commentsCount }) =>
-      receiveCommentDeleted(postId, commentId, commentsCount),
+
+    socket.on("feed:comment:new", (payload: CommentSocketPayload) => {
+      if (!payload?.postId || !payload?.comment) return;
+      receiveNewComment(payload);
+    });
+
+    socket.on(
+      "feed:comment:deleted",
+      (payload: CommentDeletedSocketPayload) => {
+        if (!payload?.postId || !payload?.commentId) return;
+        receiveCommentDeleted(payload);
+      },
     );
 
     return () => {
+      socket.off("feed:post:new");
+      socket.off("feed:post:updated");
+      socket.off("feed:post:deleted");
+      socket.off("feed:post:pinned");
+      socket.off("feed:post:reaction");
+      socket.off("feed:comment:new");
+      socket.off("feed:comment:deleted");
       socket.disconnect();
       socketRef.current = null;
     };
   }, [
     token,
-    receiveNewPost,
+    currentUserId,
+    upsertPost,
     receivePostDeleted,
     receivePinToggled,
-    receiveReaction,
+    applyReactionUpdate,
     receiveNewComment,
     receiveCommentDeleted,
   ]);
