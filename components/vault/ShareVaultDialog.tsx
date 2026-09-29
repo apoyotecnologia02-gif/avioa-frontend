@@ -158,7 +158,7 @@ export function ShareVaultDialog({
                         .map((u: any) => (
                           <CommandItem
                             key={u.userId}
-                            value={`${u.name} ${u.eamil}`}
+                            value={`${u.name} ${u.email}`}
                             onSelect={() => {
                               setSelectedUserId(u.userId);
                               setUserPopoverOpen(false);

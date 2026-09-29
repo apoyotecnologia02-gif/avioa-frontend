@@ -13,13 +13,19 @@ interface EmbeddedFormProps {
 export function EmbeddedForm({ url, title }: EmbeddedFormProps) {
   const [isLoading, setIsLoading] = useState(true);
 
-  console.log("EmbeddedForm - url:", url);
+  const parsedUrl = new URL(url);
+
+  if (parsedUrl.searchParams.get("embedded") === "true") {
+    parsedUrl.searchParams.delete("embedded");
+  }
+
+  const newUrl = parsedUrl.toString();
 
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
         <Button variant="outline" size="sm" asChild>
-          <a href={url} target="_blank" rel="noopener noreferrer">
+          <a href={newUrl} target="_blank" rel="noopener noreferrer">
             <ExternalLink className="mr-2 h-4 w-4" />
             Abrir en nueva pestaña
           </a>

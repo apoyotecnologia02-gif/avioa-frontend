@@ -12,7 +12,6 @@ export function useDeleteVault(onSuccess?: () => void | Promise<void>) {
       });
       await onSuccess?.();
     } catch (error) {
-      console.log(error);
     } finally {
       setIsSubmitting(false);
     }

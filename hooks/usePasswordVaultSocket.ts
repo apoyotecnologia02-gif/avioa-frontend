@@ -31,8 +31,6 @@ export function usePasswordVaultSocket() {
     });
 
     socket.on("password:shared", (data: { passwordVaultId: string }) => {
-      console.log("🔐 Nuevo password compartido:", data.passwordVaultId);
-
       queryClient.invalidateQueries({
         queryKey: ["vault-shares"],
       });

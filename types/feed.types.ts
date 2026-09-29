@@ -1,44 +1,44 @@
-export interface FeedPostAuthor {
+export type FeedPostType = "PUBLICATION" | "RECOGNITION" | "ANNOUNCEMENT";
+
+export type ReactionType =
+  | "LIKE"
+  | "LOVE"
+  | "CELEBRATE"
+  | "SUPPORT"
+  | "INSIGHTFUL";
+
+export interface FeedAuthor {
   userId: string;
   name: string;
-  avatarUrl?: string;
+  avatarUrl: string | null;
   role: string;
 }
 
 export interface FeedComment {
   feedCommentId: string;
-  postId: string;
   content: string;
-  author: FeedPostAuthor;
+  author: FeedAuthor;
+  parentId: string | null;
+  replies: FeedComment[];
   createdAt: string;
-}
-
-export enum FeedPostType {
-  PUBLICATION = "PUBLICATION",
-  RECOGNITION = "RECOGNITION",
-  ANNOUNCEMENT = "ANNOUNCEMENT",
-}
-
-export enum ReactionType {
-  LIKE = "LIKE",
-  CELEBRATE = "CELEBRATE",
-  SUPPORT = "SUPPORT",
-  LOVE = "LOVE",
 }
 
 export interface FeedPost {
   feedPostId: string;
-  type: "PUBLICATION" | "RECOGNITION" | "ANNOUNCEMENT";
+  type: FeedPostType;
   content: string;
   images: string[];
-  author: FeedPostAuthor;
-  recognizedUser?: FeedPostAuthor;
   pinned: boolean;
+  author: FeedAuthor;
+  recognizedUser: FeedAuthor | null;
   reactionsCount: number;
-  myReaction?: "LIKE" | "CELEBRATE" | "SUPPORT" | "LOVE" | null;
+  reactionsSummary: Partial<Record<ReactionType, number>>;
+  recentReactors: FeedAuthor[];
+  myReaction: ReactionType | null;
   comments: FeedComment[];
   commentsCount: number;
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface Birthday {
@@ -47,4 +47,25 @@ export interface Birthday {
   avatarUrl: string | null;
   birthDay: number;
   birthMonth: number;
+}
+
+export interface ReactionSocketPayload {
+  reactionsCount: number;
+  reactionsSummary: Partial<Record<ReactionType, number>>;
+  recentReactors: FeedAuthor[];
+  reactionsByUser: Record<string, ReactionType>;
+}
+
+export interface CommentSocketPayload {
+  postId: string;
+  comment: FeedComment;
+  commentsCount: number;
+  parentId: string | null;
+}
+
+export interface CommentDeletedSocketPayload {
+  postId: string;
+  commentId: string;
+  parentId: string | null;
+  commentsCount: number;
 }

@@ -67,16 +67,15 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     socket.on("disconnect", () => {
-      console.log("❌ Desconectado de websockets");
+      console.log(" Desconectado de websockets");
     });
 
     socket.on("connect_error", (err) => {
-      console.error("⚠️ Error de conexión a websockets:", err.message);
+      console.error(" Error de conexión a websockets:", err.message);
     });
 
     // ===== HANDLER GENÉRICO =====
     const handleNotification = (data: NotificationPayload) => {
-      console.log("handleNotification", data);
       useNotificationStore.getState().addNotification(data);
       toast(data.title || "Nueva notificación", {
         description: data.message,
@@ -202,6 +201,10 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     socket.on("leave_request_received", handleNotification);
     socket.on("leave_request_approved", handleNotification);
     socket.on("leave_request_rejected", handleNotification);
+    socket.on("compensated_leave_rejected_by_hr", handleNotification);
+    socket.on("compensated_leave_pending_leader", handleNotification);
+    socket.on("compensated_leave_pending_hr", handleNotification);
+    socket.on("compensated_leave_validated_by_hr", handleNotification);
 
     // Overtime
     socket.on("overtime_request_received", handleAddOvertimeRequest);
@@ -217,6 +220,9 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     // socket.onAny((eventName, ...args) => {
     //   console.log("📨 Evento recibido:", eventName, args);
     // });
+    // socket.on("loan:newRequest", handleLoanNewRequest);
+    // socket.on("loan:statusChange", handleLoanStatusChange);
+    // socket.on("loan:pendingApproval", handleLoanPendingApproval);
 
     return () => {
       socket.disconnect();

@@ -341,9 +341,9 @@ export default function AdminVacationsPage() {
                     <TableHead className="text-center">Tomados</TableHead>
                     <TableHead className="text-center">Pendientes</TableHead>
                     <TableHead className="text-center">Saldo Actual</TableHead>
-                    <TableHead className="text-right min-w-[200px]">
+                    {/* <TableHead className="text-right min-w-[200px]">
                       Ajuste (Sumar o restar días)
-                    </TableHead>
+                    </TableHead> */}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -431,7 +431,7 @@ export default function AdminVacationsPage() {
                         </TableCell>
 
                         {/* Ajuste de RRHH */}
-                        <TableCell>
+                        {/* <TableCell>
                           <div className="flex items-center justify-end gap-2">
                             <Input
                               type="number"
@@ -466,7 +466,7 @@ export default function AdminVacationsPage() {
                               )}
                             </Button>
                           </div>
-                        </TableCell>
+                        </TableCell> */}
                       </TableRow>
                     );
                   })}

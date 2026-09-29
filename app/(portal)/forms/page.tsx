@@ -18,8 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useDeleteForm, useForms } from "@/hooks/useForms";
 import type { FormCategory } from "@/types/form.types";
 import CreateFormModal from "./new/page";
-import { toast } from "sonner";
-import { useAuth } from "@/hooks/useAuth";
+import { useModulePermission } from "@/hooks/useModulePermission";
 
 const categories: (FormCategory | "Todos")[] = [
   "Todos",
@@ -37,7 +36,7 @@ const categoryColors: Record<FormCategory, string> = {
 };
 
 export default function FormsPage() {
-  const { user } = useAuth();
+  const { canCreate, canDelete } = useModulePermission("FORMS");
   const { data: forms, isLoading, error } = useForms();
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<FormCategory | "Todos">(
@@ -71,16 +70,15 @@ export default function FormsPage() {
             Selecciona un formulario para completar o visualizar
           </p>
         </div>
-        {user?.role === "admin" ||
-          (user?.isLeader && (
-            <Button
-              onClick={() => setCreateOpen(true)}
-              className="w-full sm:w-auto"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Crear Formulario
-            </Button>
-          ))}
+        {canCreate && (
+          <Button
+            onClick={() => setCreateOpen(true)}
+            className="w-full sm:w-auto"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Crear Formulario
+          </Button>
+        )}
       </div>
 
       {/* Search and filters */}
@@ -182,17 +180,16 @@ export default function FormsPage() {
                         {form.category}
                       </span>
 
-                      {user?.role === "admin" ||
-                        (user?.isLeader && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 tect-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                            onClick={() => deleteForm(form.formId)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        ))}
+                      {canDelete && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => deleteForm(form.formId)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                     <CardTitle className="mt-3 text-base">
                       {form.title}

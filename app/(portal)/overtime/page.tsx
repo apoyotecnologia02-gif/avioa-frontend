@@ -22,9 +22,11 @@ import { ReviewOvertimeModal } from "@/components/overtime/ReviewOvertimeModal";
 import type { OvertimeRecord, OvertimeStatus } from "@/types/overtime.types";
 import { useGetLeaders } from "@/hooks/useGetLeaders";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useOvertimeStore } from "@/store/overtimeStore";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { OPEN_OVERTIME_REQUESTS_MODAL } from "@/utils/constants";
+import { useModalParam } from "@/hooks/useModalParam";
 
 function toDateOnly(value: string) {
   if (!value) return "";
@@ -40,6 +42,16 @@ export default function OvertimePage() {
   //obtener el estado del store (zustand)
   const { shouldOpenModal, clearModalTrigger } = useOvertimeStore();
 
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const { open: openModal, close: closeModal } = useModalParam();
+
+  const openOvertimeId = searchParams.get("openOvertimeId");
+  const openModalFlag =
+    searchParams.get(OPEN_OVERTIME_REQUESTS_MODAL) === "true";
+  const reviewOpen = !!openOvertimeId || openModalFlag;
+
   // Calendar navigation state
   const [currentDate, setCurrentDate] = useState(new Date());
   const year = currentDate.getFullYear();
@@ -50,16 +62,23 @@ export default function OvertimePage() {
 
   // Modal visibility
   const [registerOpen, setRegisterOpen] = useState(false);
-  const [reviewOpen, setReviewOpen] = useState(false);
+  // const [reviewOpen, setReviewOpen] = useState(false);
 
-  const searchParams = useSearchParams();
+  // useEffect(() => {
+  //   if (shouldOpenModal) {
+  //     setReviewOpen(true);
+  //     clearModalTrigger();
+  //   }
+  // }, [shouldOpenModal, clearModalTrigger]);
 
   useEffect(() => {
     if (shouldOpenModal) {
-      setReviewOpen(true);
+      const params = new URLSearchParams(searchParams);
+      params.set(OPEN_OVERTIME_REQUESTS_MODAL, "true");
+      router.replace(`${pathname}?${params}`);
       clearModalTrigger();
     }
-  }, [shouldOpenModal, clearModalTrigger]);
+  }, [shouldOpenModal, clearModalTrigger, router, pathname, searchParams]);
 
   // Data hooks
   const {
@@ -119,13 +138,33 @@ export default function OvertimePage() {
     setSelectedDate("");
   };
 
-  useEffect(() => {
-    const requestId = searchParams.get("review");
+  const handleOpenReview = useCallback(() => {
+    openModal(OPEN_OVERTIME_REQUESTS_MODAL);
+  }, [openModal]);
 
-    if (requestId && isLeaderOrManager) {
-      setReviewOpen(true);
-    }
-  }, [searchParams, isLeaderOrManager]);
+  const handleCloseReview = useCallback(() => {
+    closeModal(OPEN_OVERTIME_REQUESTS_MODAL, "openOvertime");
+  }, [closeModal]);
+
+  // const closeReviewModal = () => {
+  //   const params = new URLSearchParams(searchParams);
+  //   params.delete("openOvertimeId");
+  //   params.delete(OPEN_OVERTIME_REQUESTS_MODAL);
+  //   const qs = params.toString();
+  //   router.replace(qs ? `${pathname}?${qs}` : pathname);
+  // };
+
+  // cuando hacen click en la notificación para abrir el modal
+  // const openOvertimeId =
+  //   searchParams.get("openOvertime") || searchParams.get("openModal");
+
+  // console.log("openOvertimeId", openOvertimeId);
+  // useEffect(() => {
+  //   if (openOvertimeId) {
+  //     setReviewOpen(true);
+  //     clearModalTrigger();
+  //   }
+  // }, [openOvertimeId]);
 
   useEffect(() => {
     const handler = async () => {
@@ -164,7 +203,7 @@ export default function OvertimePage() {
               variant="outline"
               size="sm"
               className="gap-2"
-              onClick={() => setReviewOpen(true)}
+              onClick={handleOpenReview}
             >
               <ClipboardCheck className="h-4 w-4" />
               <span className="hidden sm:inline">Revisar Solicitudes</span>
@@ -232,7 +271,8 @@ export default function OvertimePage() {
       {isLeaderOrManager && (
         <ReviewOvertimeModal
           isOpen={reviewOpen}
-          onClose={() => setReviewOpen(false)}
+          // onClose={() => setReviewOpen(false)}
+          onClose={handleCloseReview}
           records={teamRecords}
           myRecords={myRecords}
           isLoading={teamLoading}

@@ -1,157 +1,148 @@
 "use client";
 
-import { canPublish, canPublishType } from "@/lib/feed-permissions";
-import { useAuthStore } from "@/store/authStore";
-import { useFeedStore } from "@/store/feedStore";
-import { FeedPostType } from "@/types/feed.types";
 import { useState } from "react";
+import { ImagePlus, Send } from "lucide-react";
 import { toast } from "sonner";
-import { Card } from "../ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { Textarea } from "../ui/textarea";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../ui/select";
-import { Button } from "../ui/button";
+} from "@/components/ui/select";
+import type { FeedAuthor, FeedPostType } from "@/types/feed.types";
+import { useAuthStore } from "@/store/authStore";
+import { useFeedStore } from "@/store/feedStore";
+import { POST_TYPE_LABELS } from "@/lib/feed-reactions";
 import { RecognitionUserPicker } from "./RecognitionUserPicket";
-import { Send } from "lucide-react";
-
-const TYPE_LABELS: Record<FeedPostType, string> = {
-  PUBLICATION: "Publicación",
-  RECOGNITION: "Reconocimiento",
-  ANNOUNCEMENT: "Comunicado oficial",
-};
-
-interface UserOption {
-  userId: string;
-  name: string;
-  avatarUrl?: string;
-  role: string;
-}
 
 export function CreatePostBox() {
-  const user = useAuthStore((state) => state.user);
+  const user = useAuthStore((s) => s.user);
   const createPost = useFeedStore((s) => s.createPost);
 
   const [open, setOpen] = useState(false);
   const [content, setContent] = useState("");
-  const [type, setType] = useState<FeedPostType>(FeedPostType.PUBLICATION);
-  const [recognizedUser, setRecognizedUser] = useState<UserOption | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [type, setType] = useState<FeedPostType>("PUBLICATION");
+  const [recognizedUser, setRecognizedUser] = useState<FeedAuthor | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  if (!canPublish(user)) return null;
-
-  const availableTypes = (
-    ["PUBLICATION", "RECOGNITION", "ANNOUNCEMENT"] as FeedPostType[]
-  ).filter((t) => canPublishType(user, t));
-
-  const isRecognition = type === FeedPostType.RECOGNITION;
+  const isRecognition = type === "RECOGNITION";
   const canSubmit =
     content.trim().length > 0 && (!isRecognition || !!recognizedUser);
 
-  const resetForm = () => {
+  const reset = () => {
     setContent("");
-    setType(FeedPostType.PUBLICATION);
+    setType("PUBLICATION");
     setRecognizedUser(null);
     setOpen(false);
   };
 
   const handleSubmit = async () => {
-    if (!content.trim() || !canSubmit) return;
-
-    setIsSubmitting(true);
-
+    if (!canSubmit || submitting) return;
+    setSubmitting(true);
     try {
       await createPost({
         type,
         content: content.trim(),
         recognizedUserId: isRecognition ? recognizedUser!.userId : undefined,
       });
-      // setContent("");
-      // setOpen(false);
-      resetForm();
-      toast.success("Publicación creada");
+      reset();
+      toast.success("¡Publicado!");
     } catch (error) {
       console.error(error);
       toast.error("No se pudo crear la publicación");
     } finally {
-      setIsSubmitting(false);
+      setSubmitting(false);
     }
   };
 
+  const availableTypes: FeedPostType[] = [
+    "PUBLICATION",
+    "RECOGNITION",
+    "ANNOUNCEMENT",
+  ];
+
   return (
-    <Card className="overflow-hidden border-0 bg-gradient-to-br from-card to-muted/30 p-0 shadow-sm transition-shadow hover:shadow-md">
+    <Card className="rounded-2xl border-border/60 bg-card p-0 shadow-sm transition-shadow hover:shadow-md">
       <div className="flex items-start gap-3 p-4 sm:gap-4 sm:p-5">
-        <Avatar className="h-11 w-11 ring-2 ring-primary/10">
-          <AvatarImage src={user?.avatarUrl} />
-          <AvatarFallback className="bg-primary/5 text-primary">
+        <Avatar className="h-11 w-11 shrink-0 ring-2 ring-primary/10">
+          <AvatarImage src={user?.avatarUrl ?? undefined} />
+          <AvatarFallback className="bg-primary/10 text-primary">
             {user?.name?.[0] ?? "U"}
           </AvatarFallback>
         </Avatar>
 
-        <div className="flex-1 space-y-4">
+        <div className="min-w-0 flex-1 space-y-3">
           <Textarea
-            placeholder="¿Qué estás pensando? Compártelo con el equipo…"
+            placeholder={`¿Qué quieres compartir, ${user?.name?.split(" ")[0] ?? ""}?`}
             value={content}
             onChange={(e) => setContent(e.target.value)}
             onFocus={() => setOpen(true)}
-            className="min-h-[56px] resize-none border-0 bg-transparent px-1 py-2 text-base placeholder:text-muted-foreground/60 focus-visible:ring-0"
+            className="min-h-[52px] resize-none rounded-2xl border-border/60 bg-muted/30 px-4 py-3 text-sm placeholder:text-muted-foreground/70 focus-visible:ring-1"
           />
 
           {open && (
-            <>
-              <div className="flex flex-col gap-3 border-t border-border/60 pt-4 sm:flex-row sm:flex-wrap sm:items-center">
-                <Select
-                  value={type}
-                  onValueChange={(v) => {
-                    setType(v as FeedPostType);
-                    if (v !== FeedPostType.RECOGNITION) setRecognizedUser(null);
-                  }}
-                >
-                  <SelectTrigger className="w-full sm:w-[200px] border-0 bg-muted/50 text-sm font-medium hover:bg-muted">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableTypes.map((t) => (
-                      <SelectItem key={t} value={t}>
-                        {TYPE_LABELS[t]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            <div className="flex flex-wrap items-center gap-2 border-t border-border/60 pt-3">
+              <Select
+                value={type}
+                onValueChange={(v) => {
+                  setType(v as FeedPostType);
+                  if (v !== "RECOGNITION") setRecognizedUser(null);
+                }}
+              >
+                <SelectTrigger className="h-9 w-full rounded-full border-border/60 bg-muted/40 px-4 text-xs font-medium sm:w-[190px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableTypes.map((t) => (
+                    <SelectItem key={t} value={t}>
+                      {POST_TYPE_LABELS[t]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-                {isRecognition && (
+              {isRecognition && (
+                <div className="min-w-0 flex-1 sm:flex-initial">
                   <RecognitionUserPicker
                     value={recognizedUser}
                     onChange={setRecognizedUser}
                   />
-                )}
-
-                <div className="flex w-full items-center justify-end gap-2 sm:ml-auto sm:w-auto">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={resetForm}
-                    className="text-muted-foreground hover:text-foreground"
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    size="sm"
-                    disabled={!canSubmit || isSubmitting}
-                    onClick={handleSubmit}
-                    className="bg-gradient-to-r from-primary to-primary/80 font-medium shadow-sm transition-all hover:shadow-md disabled:opacity-50"
-                  >
-                    <Send className="mr-1.5 h-3.5 w-3.5" />
-                    Publicar
-                  </Button>
                 </div>
+              )}
+
+              <button
+                type="button"
+                title="Adjuntar imagen (próximamente)"
+                className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:inline-flex"
+              >
+                <ImagePlus className="h-4 w-4" />
+              </button>
+
+              <div className="ml-auto flex w-full items-center justify-end gap-2 sm:w-auto">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={reset}
+                  className="h-9 rounded-full px-4 text-muted-foreground hover:text-foreground"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  size="sm"
+                  disabled={!canSubmit || submitting}
+                  onClick={handleSubmit}
+                  className="h-9 shrink-0 rounded-full bg-gradient-to-r from-primary to-primary/85 px-5 font-medium shadow-sm hover:shadow-md"
+                >
+                  <Send className="mr-1.5 h-3.5 w-3.5" />
+                  Publicar
+                </Button>
               </div>
-            </>
+            </div>
           )}
         </div>
       </div>

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LeaveStatusBadge } from "./LeaveStatusBadge";
 import { LEAVE_TYPE_META, type LeaveRequest } from "@/types/leaves.types";
+import { formatHours } from "@/lib/leave-hours";
 
 interface LeaveTimelineProps {
   leaves: LeaveRequest[];
@@ -70,6 +71,25 @@ export function LeaveTimeline({
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium">{meta.label}</span>
+
+                      {leave.esCompensada && (
+                        <span
+                          className="rounded-full border border-dashed border-sky-500/60 bg-sky-50 px-1.5 text-[10px] font-medium text-sky-700 dark:bg-sky-900/20 dark:text-sky-300"
+                          title="Días compensados: no genera ausencia"
+                        >
+                          Compensada
+                        </span>
+                      )}
+
+                      {leave.isPartialDay && (
+                        <span
+                          className="rounded-full border border-purple-500/60 bg-purple-50 px-1.5 text-[10px] font-medium text-purple-700 dark:bg-purple-900/20 dark:text-purple-300"
+                          title={`Ausencia parcial: ${leave.startTime} – ${leave.endTime}`}
+                        >
+                          Parcial
+                        </span>
+                      )}
+
                       {leave.attachmentUrl && (
                         <a
                           href={leave.attachmentUrl}
@@ -83,8 +103,18 @@ export function LeaveTimeline({
                       )}
                     </div>
                     <p className="mt-0.5 text-sm text-muted-foreground">
-                      {fmt(leave.startDate)} – {fmt(leave.endDate)} ·{" "}
-                      {leave.businessDays} día(s) hábiles
+                      {leave.isPartialDay ? (
+                        <>
+                          {fmt(leave.startDate)} · {leave.startTime} –{" "}
+                          {leave.endTime} · {formatHours(leave.totalHours ?? 0)}{" "}
+                          ausente
+                        </>
+                      ) : (
+                        <>
+                          {fmt(leave.startDate)} – {fmt(leave.endDate)} ·{" "}
+                          {leave.businessDays} día(s) hábiles
+                        </>
+                      )}
                     </p>
                   </div>
                   <LeaveStatusBadge status={leave.status} />

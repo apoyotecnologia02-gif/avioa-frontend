@@ -248,6 +248,7 @@ export default function LeavesPage() {
         onSubmit={createLeave}
         isSubmitting={isSubmitting}
         balance={balance}
+        user={user ?? null}
       />
       <ReviewLeaveModal
         leave={reviewLeave}

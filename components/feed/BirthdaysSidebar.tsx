@@ -1,21 +1,18 @@
-"use client";
-
-import { useFeedStore } from "@/store/feedStore";
-import { Gift } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { es } from "date-fns/locale";
 import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import { Gift } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useFeedStore } from "@/store/feedStore";
 
 export function BirthdaysSidebar() {
   const birthdays = useFeedStore((s) => s.birthdays);
 
   if (birthdays.length === 0) return null;
 
-  function formatBirthday(day: number, month: number) {
+  const formatBirthday = (day: number, month: number) => {
     const date = new Date(2000, month - 1, day);
-
     return format(date, "d MMM", { locale: es });
-  }
+  };
 
   return (
     <aside className="lg:sticky lg:top-8 lg:self-start">
@@ -28,8 +25,8 @@ export function BirthdaysSidebar() {
         </div>
         <p className="mb-4 text-xs text-muted-foreground">
           {birthdays.length}{" "}
-          {birthdays.length === 1 ? "persona cumple" : "personas que cumplen"}{" "}
-          este mes
+          {birthdays.length === 1 ? "persona cumple" : "personas cumplen"} este
+          mes
         </p>
 
         <div className="flex max-h-72 flex-col gap-4 overflow-y-auto pr-1">

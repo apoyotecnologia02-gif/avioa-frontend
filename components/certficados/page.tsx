@@ -17,9 +17,9 @@ import { useAuth } from "@/hooks/useAuth";
 interface Certificate {
   id: string;
   name: string;
-  type: 'work' | 'income' | 'labor' | 'services' | 'other';
+  type: "work" | "income" | "labor" | "services" | "other";
   issueDate: string;
-  status: 'active' | 'expired' | 'pending';
+  status: "active" | "expired" | "pending";
   description: string;
   fileName: string;
   fileSize: string;
@@ -33,71 +33,77 @@ interface CertificatesModalProps {
 
 const mockCertificates: Certificate[] = [
   {
-    id: '1',
-    name: 'Certificado Laboral',
-    type: 'work',
-    issueDate: '2026-01-15',
-    status: 'active',
-    description: 'Certificado laboral para trámites bancarios',
-    fileName: 'Certificado_Laboral.pdf',
-    fileSize: '245 KB',
-    pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
+    id: "1",
+    name: "Certificado Laboral",
+    type: "work",
+    issueDate: "2026-01-15",
+    status: "active",
+    description: "Certificado laboral para trámites bancarios",
+    fileName: "Certificado_Laboral.pdf",
+    fileSize: "245 KB",
+    pdfUrl:
+      "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
   },
   {
-    id: '2',
-    name: 'Certificado de Ingresos',
-    type: 'income',
-    issueDate: '2026-02-20',
-    status: 'active',
-    description: 'Comprobante de ingresos para crédito hipotecario',
-    fileName: 'Certificado_Ingresos.pdf',
-    fileSize: '189 KB',
-    pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
+    id: "2",
+    name: "Certificado de Ingresos",
+    type: "income",
+    issueDate: "2026-02-20",
+    status: "active",
+    description: "Comprobante de ingresos para crédito hipotecario",
+    fileName: "Certificado_Ingresos.pdf",
+    fileSize: "189 KB",
+    pdfUrl:
+      "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
   },
   {
-    id: '3',
-    name: 'Certificado de Antigüedad',
-    type: 'labor',
-    issueDate: '2025-10-10',
-    status: 'expired',
-    description: 'Certificado de antigüedad laboral',
-    fileName: 'Certificado_Antiguedad.pdf',
-    fileSize: '312 KB',
-    pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
+    id: "3",
+    name: "Certificado de Antigüedad",
+    type: "labor",
+    issueDate: "2025-10-10",
+    status: "expired",
+    description: "Certificado de antigüedad laboral",
+    fileName: "Certificado_Antiguedad.pdf",
+    fileSize: "312 KB",
+    pdfUrl:
+      "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
   },
   {
-    id: '4',
-    name: 'Certificado de Servicios',
-    type: 'services',
-    issueDate: '2026-03-05',
-    status: 'active',
-    description: 'Constancia de prestación de servicios',
-    fileName: 'Certificado_Servicios.pdf',
-    fileSize: '178 KB',
-    pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
+    id: "4",
+    name: "Certificado de Servicios",
+    type: "services",
+    issueDate: "2026-03-05",
+    status: "active",
+    description: "Constancia de prestación de servicios",
+    fileName: "Certificado_Servicios.pdf",
+    fileSize: "178 KB",
+    pdfUrl:
+      "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
   },
   {
-    id: '5',
-    name: 'Certificado de Buen Desempeño',
-    type: 'other',
-    issueDate: '2026-08-01',
-    status: 'active',
-    description: 'Certificado de buen desempeño laboral',
-    fileName: 'Certificado_Desempeno.pdf',
-    fileSize: '156 KB',
-    pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
+    id: "5",
+    name: "Certificado de Buen Desempeño",
+    type: "other",
+    issueDate: "2026-08-01",
+    status: "active",
+    description: "Certificado de buen desempeño laboral",
+    fileName: "Certificado_Desempeno.pdf",
+    fileSize: "156 KB",
+    pdfUrl:
+      "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
   },
   {
-    id: '6',
-    name: 'Certificado de Ingresos 2025',
-    type: 'income',
-    issueDate: '2025-12-01',
-    status: 'pending',
-    description: 'Comprobante de ingresos anual 2025',
-    fileName: 'Certificado_Ingresos_2025.pdf',
-    fileSize: '234 KB',
-    pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
-  }
+    id: "6",
+    name: "Certificado de Ingresos 2025",
+    type: "income",
+    issueDate: "2025-12-01",
+    status: "pending",
+    description: "Comprobante de ingresos anual 2025",
+    fileName: "Certificado_Ingresos_2025.pdf",
+    fileSize: "234 KB",
+    pdfUrl:
+      "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+  },
 ];
 
 const scrollbarStyles = `
@@ -131,85 +137,112 @@ export const CertificatesModal: React.FC<CertificatesModalProps> = ({
   onClose,
 }) => {
   const { user } = useAuth();
-  const [selectedCertificate, setSelectedCertificate] = useState<Certificate | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterType, setFilterType] = useState<string>('all');
+  const [selectedCertificate, setSelectedCertificate] =
+    useState<Certificate | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterType, setFilterType] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const itemsPerPage = 4;
 
-  const userName = user?.name || 'Usuario';
-  const userPosition = user?.position || user?.role || 'Empleado';
-  const userDepartment = user?.area || 'Sin departamento';
+  const userName = user?.name || "Usuario";
+  const userPosition = user?.position || user?.role || "Empleado";
+  const userDepartment = user?.area || "Sin departamento";
   const userInitials = getInitials(userName);
 
-  const filteredCertificates = mockCertificates.filter(cert => {
-    const matchesSearch = cert.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          cert.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = filterType === 'all' || cert.type === filterType;
+  const filteredCertificates = mockCertificates.filter((cert) => {
+    const matchesSearch =
+      cert.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      cert.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesType = filterType === "all" || cert.type === filterType;
     return matchesSearch && matchesType;
   });
 
   const totalPages = Math.ceil(filteredCertificates.length / itemsPerPage);
   const paginatedCertificates = filteredCertificates.slice(
     (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+    currentPage * itemsPerPage,
   );
 
-  const getTypeIcon = (type: Certificate['type']) => {
-    switch(type) {
-      case 'work': return <FileCheck className="w-4 h-4 text-blue-500" />;
-      case 'income': return <FileText className="w-4 h-4 text-blue-500" />;
-      case 'labor': return <Clock className="w-4 h-4 text-blue-500" />;
-      case 'services': return <Building2 className="w-4 h-4 text-blue-500" />;
-      default: return <FileText className="w-4 h-4 text-blue-500" />;
+  const getTypeIcon = (type: Certificate["type"]) => {
+    switch (type) {
+      case "work":
+        return <FileCheck className="w-4 h-4 text-blue-500" />;
+      case "income":
+        return <FileText className="w-4 h-4 text-blue-500" />;
+      case "labor":
+        return <Clock className="w-4 h-4 text-blue-500" />;
+      case "services":
+        return <Building2 className="w-4 h-4 text-blue-500" />;
+      default:
+        return <FileText className="w-4 h-4 text-blue-500" />;
     }
   };
 
-  const getTypeLabel = (type: Certificate['type']) => {
-    switch(type) {
-      case 'work': return 'Laboral';
-      case 'income': return 'Ingresos';
-      case 'labor': return 'Antigüedad';
-      case 'services': return 'Servicios';
-      default: return 'Otro';
+  const getTypeLabel = (type: Certificate["type"]) => {
+    switch (type) {
+      case "work":
+        return "Laboral";
+      case "income":
+        return "Ingresos";
+      case "labor":
+        return "Antigüedad";
+      case "services":
+        return "Servicios";
+      default:
+        return "Otro";
     }
   };
 
-  const getStatusColor = (status: Certificate['status']) => {
-    switch(status) {
-      case 'active': return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
-      case 'expired': return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
-      case 'pending': return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400';
-      default: return 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400';
+  const getStatusColor = (status: Certificate["status"]) => {
+    switch (status) {
+      case "active":
+        return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
+      case "expired":
+        return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
+      case "pending":
+        return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400";
+      default:
+        return "bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400";
     }
   };
 
-  const getStatusLabel = (status: Certificate['status']) => {
-    switch(status) {
-      case 'active': return 'Activo';
-      case 'expired': return 'Expirado';
-      case 'pending': return 'Pendiente';
-      default: return '';
+  const getStatusLabel = (status: Certificate["status"]) => {
+    switch (status) {
+      case "active":
+        return "Activo";
+      case "expired":
+        return "Expirado";
+      case "pending":
+        return "Pendiente";
+      default:
+        return "";
     }
   };
 
-  const getStatusIcon = (status: Certificate['status']) => {
-    switch(status) {
-      case 'active': return <CheckCircle className="w-3.5 h-3.5" />;
-      case 'expired': return <FileCheck className="w-3.5 h-3.5" />;
-      case 'pending': return <Clock className="w-3.5 h-3.5" />;
-      default: return null;
+  const getStatusIcon = (status: Certificate["status"]) => {
+    switch (status) {
+      case "active":
+        return <CheckCircle className="w-3.5 h-3.5" />;
+      case "expired":
+        return <FileCheck className="w-3.5 h-3.5" />;
+      case "pending":
+        return <Clock className="w-3.5 h-3.5" />;
+      default:
+        return null;
     }
   };
 
   const formatDate = (date: string) => {
     const d = new Date(date);
-    return d.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+    return d.toLocaleDateString("es-ES", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
   };
 
   const handleDownload = (certificate: Certificate) => {
-    console.log(`Descargando: ${certificate.fileName}`);
     alert(`Descargando ${certificate.fileName} (${certificate.fileSize})`);
   };
 
@@ -244,7 +277,9 @@ export const CertificatesModal: React.FC<CertificatesModalProps> = ({
                   Mis Certificados
                 </h2>
                 <p className="text-xs text-muted-foreground">
-                  {filteredCertificates.length} certificado{filteredCertificates.length !== 1 ? 's' : ''} disponible{filteredCertificates.length !== 1 ? 's' : ''}
+                  {filteredCertificates.length} certificado
+                  {filteredCertificates.length !== 1 ? "s" : ""} disponible
+                  {filteredCertificates.length !== 1 ? "s" : ""}
                 </p>
               </div>
             </div>
@@ -272,7 +307,9 @@ export const CertificatesModal: React.FC<CertificatesModalProps> = ({
               <div>
                 <p className="font-semibold text-foreground">{userName}</p>
                 <p className="text-sm text-muted-foreground">{userPosition}</p>
-                <p className="text-xs text-muted-foreground">{userDepartment}</p>
+                <p className="text-xs text-muted-foreground">
+                  {userDepartment}
+                </p>
                 {user?.email && (
                   <p className="text-xs text-muted-foreground">{user.email}</p>
                 )}
@@ -314,10 +351,7 @@ export const CertificatesModal: React.FC<CertificatesModalProps> = ({
             </div>
           </div>
 
-          <div className={cn(
-            "flex-1 overflow-y-auto p-4",
-            scrollbarStyles
-          )}>
+          <div className={cn("flex-1 overflow-y-auto p-4", scrollbarStyles)}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {paginatedCertificates.length > 0 ? (
                 paginatedCertificates.map((cert) => (
@@ -339,10 +373,12 @@ export const CertificatesModal: React.FC<CertificatesModalProps> = ({
                           </p>
                         </div>
                       </div>
-                      <span className={cn(
-                        "px-2 py-0.5 rounded-full text-[10px] font-medium inline-flex items-center gap-1",
-                        getStatusColor(cert.status)
-                      )}>
+                      <span
+                        className={cn(
+                          "px-2 py-0.5 rounded-full text-[10px] font-medium inline-flex items-center gap-1",
+                          getStatusColor(cert.status),
+                        )}
+                      >
                         {getStatusIcon(cert.status)}
                         {getStatusLabel(cert.status)}
                       </span>
@@ -395,7 +431,12 @@ export const CertificatesModal: React.FC<CertificatesModalProps> = ({
 
           <div className="flex items-center justify-between px-4 py-3 border-t border-border flex-shrink-0 bg-muted/5">
             <div className="text-sm text-muted-foreground">
-              Mostrando {(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, filteredCertificates.length)} de {filteredCertificates.length}
+              Mostrando {(currentPage - 1) * itemsPerPage + 1} -{" "}
+              {Math.min(
+                currentPage * itemsPerPage,
+                filteredCertificates.length,
+              )}{" "}
+              de {filteredCertificates.length}
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -405,7 +446,7 @@ export const CertificatesModal: React.FC<CertificatesModalProps> = ({
                   "px-3 py-1.5 rounded-lg text-sm transition-colors",
                   currentPage === 1
                     ? "text-muted-foreground cursor-not-allowed opacity-50"
-                    : "text-foreground hover:bg-muted/50"
+                    : "text-foreground hover:bg-muted/50",
                 )}
               >
                 Anterior
@@ -430,7 +471,7 @@ export const CertificatesModal: React.FC<CertificatesModalProps> = ({
                         "w-8 h-8 rounded-lg text-sm transition-colors",
                         currentPage === pageNum
                           ? "bg-primary text-primary-foreground"
-                          : "text-foreground hover:bg-muted/50"
+                          : "text-foreground hover:bg-muted/50",
                       )}
                     >
                       {pageNum}
@@ -439,13 +480,15 @@ export const CertificatesModal: React.FC<CertificatesModalProps> = ({
                 })}
               </div>
               <button
-                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                onClick={() =>
+                  setCurrentPage(Math.min(totalPages, currentPage + 1))
+                }
                 disabled={currentPage === totalPages || totalPages === 0}
                 className={cn(
                   "px-3 py-1.5 rounded-lg text-sm transition-colors",
                   currentPage === totalPages || totalPages === 0
                     ? "text-muted-foreground cursor-not-allowed opacity-50"
-                    : "text-foreground hover:bg-muted/50"
+                    : "text-foreground hover:bg-muted/50",
                 )}
               >
                 Siguiente
@@ -459,7 +502,7 @@ export const CertificatesModal: React.FC<CertificatesModalProps> = ({
         <div
           className={cn(
             "fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm transition-all",
-            isFullscreen && "p-0"
+            isFullscreen && "p-0",
           )}
           onClick={() => !isFullscreen && setSelectedCertificate(null)}
         >
@@ -468,7 +511,7 @@ export const CertificatesModal: React.FC<CertificatesModalProps> = ({
               "bg-card rounded-2xl shadow-2xl border border-border/50 flex flex-col transition-all",
               isFullscreen
                 ? "w-full h-full rounded-none"
-                : "w-full max-w-4xl mx-4 max-h-[90vh]"
+                : "w-full max-w-4xl mx-4 max-h-[90vh]",
             )}
             onClick={(e) => e.stopPropagation()}
           >
@@ -482,7 +525,8 @@ export const CertificatesModal: React.FC<CertificatesModalProps> = ({
                     {selectedCertificate.name}
                   </h3>
                   <p className="text-xs text-muted-foreground">
-                    {selectedCertificate.fileName} • {selectedCertificate.fileSize}
+                    {selectedCertificate.fileName} •{" "}
+                    {selectedCertificate.fileSize}
                   </p>
                 </div>
               </div>
@@ -490,7 +534,11 @@ export const CertificatesModal: React.FC<CertificatesModalProps> = ({
                 <button
                   onClick={toggleFullscreen}
                   className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-                  title={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
+                  title={
+                    isFullscreen
+                      ? "Salir de pantalla completa"
+                      : "Pantalla completa"
+                  }
                 >
                   {isFullscreen ? (
                     <Minimize2 className="w-4 h-4" />
@@ -509,7 +557,10 @@ export const CertificatesModal: React.FC<CertificatesModalProps> = ({
 
             <div className="flex-1 overflow-hidden bg-muted/10">
               <iframe
-                src={selectedCertificate.pdfUrl || 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'}
+                src={
+                  selectedCertificate.pdfUrl ||
+                  "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+                }
                 className="w-full h-full"
                 title={selectedCertificate.name}
               />

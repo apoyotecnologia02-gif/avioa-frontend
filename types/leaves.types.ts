@@ -1,4 +1,9 @@
-export type LeaveStatus = "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED";
+export type LeaveStatus =
+  | "PENDING_HR_VALIDATION"
+  | "PENDING"
+  | "APPROVED"
+  | "REJECTED"
+  | "CANCELLED";
 
 export type LeaveType =
   | "VACACIONES"
@@ -14,7 +19,14 @@ export type LeaveType =
   | "DILIGENCIA_PERSONAL"
   | "OBLIGACION_COMO_ACUDIENTE"
   | "CITA_MEDICA_PARTICULAR"
+  | "CITA_MEDICA_CON_ESPECIALISTA_EPS"
   | "OTRO";
+
+interface HrValidationLeave {
+  validatedAt: string;
+  validatedBy: string;
+  comment: string;
+}
 
 export interface LeaveRequest {
   leaveRequestId: string;
@@ -23,6 +35,10 @@ export interface LeaveRequest {
   type: LeaveType;
   startDate: string; // ISO
   endDate: string; // ISO
+  startTime?: string | null;
+  endTime?: string | null;
+  isPartialDay?: boolean;
+  totalHours?: number | null;
   businessDays: number;
   reason: string;
   attachmentUrl?: string | null;
@@ -30,6 +46,11 @@ export interface LeaveRequest {
   comment?: string | null;
   createdAt: string;
   reviewedAt?: string | null;
+  esCompensada?: boolean;
+  hrValidatedById: string | null;
+  hrValidatedAt: string | null;
+  hrComment: string | null;
+  hrValidation?: HrValidationLeave | null;
   user?: {
     name: string;
     avatarUrl?: string | null;
@@ -55,11 +76,15 @@ export interface VacationBalance {
 
 export interface CreateLeaveDto {
   type: LeaveType;
-  startDate: string; // YYYY-MM-DD
-  endDate: string; // YYYY-MM-DD
+  startDate: string | undefined; // YYYY-MM-DD
+  endDate: string | undefined; // YYYY-MM-DD
+  startTime: string | undefined;
+  endTime: string | undefined;
   reason: string;
+  compensatedDays?: number;
   attachmentUrl?: string;
   leaderId?: string;
+  esCompensada?: boolean;
 }
 
 export interface ReviewLeaveDto {
@@ -79,6 +104,11 @@ export interface LeaveTypeMeta {
   /** Clase de color para acentos (Tailwind) */
   accent: string;
   dot: string;
+}
+
+export interface ValidateCompensatedLeaveDto {
+  action: "APPROVE" | "REJECT";
+  comment?: string;
 }
 
 export const LEAVE_TYPE_META: Record<LeaveType, LeaveTypeMeta> = {
@@ -207,6 +237,15 @@ export const LEAVE_TYPE_META: Record<LeaveType, LeaveTypeMeta> = {
       "text-gray-600 bg-gray-50 border-gray-200 dark:bg-gray-800/40 dark:border-gray-700",
     dot: "bg-gray-400",
   },
+  CITA_MEDICA_CON_ESPECIALISTA_EPS: {
+    label: "Cita médica con especialista EPS",
+    short: "Cita EPS",
+    consumesBalance: false,
+    needsAttachment: true,
+    accent:
+      "text-sky-600 bg-sky-50 border-sky-200 dark:bg-sky-900/20 dark:border-sky-800",
+    dot: "bg-sky-500",
+  },
 };
 
 export const LEAVE_STATUS_META: Record<
@@ -232,5 +271,10 @@ export const LEAVE_STATUS_META: Record<
     label: "Cancelada",
     className:
       "text-slate-600 bg-slate-50 border-slate-200 dark:bg-slate-800/40 dark:border-slate-700",
+  },
+  PENDING_HR_VALIDATION: {
+    label: "Pendiente validación GH",
+    className:
+      "text-purple-700 bg-purple-50 border-purple-200 dark:bg-purple-900/20 dark:border-purple-800 dark:text-purple-400",
   },
 };

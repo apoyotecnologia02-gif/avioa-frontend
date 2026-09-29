@@ -11,12 +11,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Check, X, Loader2, Paperclip } from "lucide-react";
+import { Check, X, Loader2, Paperclip, Info, CheckCircle } from "lucide-react";
 import {
   LEAVE_TYPE_META,
   type LeaveRequest,
   type ReviewLeaveDto,
 } from "@/types/leaves.types";
+import { formatHours } from "@/lib/leave-hours";
 
 interface ReviewLeaveModalProps {
   leave: LeaveRequest | null;
@@ -69,7 +70,17 @@ export function ReviewLeaveModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Revisar solicitud</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            Revisar solicitud
+            {leave.esCompensada && (
+              <span
+                className="rounded-full border border-dashed border-sky-500/60 bg-sky-50 px-2 py-0.5 text-[10px] font-medium text-sky-700 dark:bg-sky-900/20 dark:text-sky-300"
+                title="Días compensados: no genera ausencia"
+              >
+                Compensada
+              </span>
+            )}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
@@ -86,16 +97,89 @@ export function ReviewLeaveModal({
             </div>
           </div>
 
+          {leave.esCompensada && (
+            <div className="flex items-start gap-2 rounded-xl border border-dashed border-sky-500/60 bg-sky-50/60 p-3 dark:bg-sky-900/10">
+              <Info className="mt-0.5 h-4 w-4 shrink-0 text-sky-600 dark:text-sky-400" />
+              <div className="space-y-0.5">
+                <p className="text-sm font-medium text-sky-800 dark:text-sky-300">
+                  Vacaciones compensadas
+                </p>
+                <p className="text-xs text-sky-700/80 dark:text-sky-300/80">
+                  El colaborador optó por compensar estos días.{" "}
+                  <strong>No generará ausencia</strong> en el calendario del
+                  equipo y no bloquea traslapes con otras solicitudes.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {leave.esCompensada && leave.hrValidation && (
+            <div className="rounded-xl border border-emerald-500/40 bg-emerald-50/60 p-3 dark:bg-emerald-900/10">
+              <div className="flex items-start gap-2">
+                <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                <div className="flex-1 space-y-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-medium text-emerald-800 dark:text-emerald-300">
+                      Validada por Gestión Humana
+                    </p>
+                    {leave.hrValidation.validatedAt && (
+                      <span className="text-[10px] text-emerald-700/70 dark:text-emerald-300/70">
+                        {fmt(leave.hrValidation.validatedAt)}
+                      </span>
+                    )}
+                  </div>
+
+                  {leave.hrValidation.validatedBy && (
+                    <p className="text-xs text-emerald-700/80 dark:text-emerald-300/80">
+                      Por {leave.hrValidation.validatedBy}
+                    </p>
+                  )}
+
+                  {leave.hrValidation.comment && (
+                    <div className="mt-1.5 rounded-lg border border-emerald-500/20 bg-white/60 p-2 dark:bg-emerald-950/30">
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
+                        Comentario de GH
+                      </p>
+                      <p className="mt-0.5 whitespace-pre-line text-xs text-emerald-800/90 dark:text-emerald-200/90">
+                        {leave.hrValidation.comment}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Detalle */}
           <div className={`rounded-xl border p-3 ${meta.accent}`}>
             <p className="text-sm font-medium">{meta.label}</p>
             <p className="mt-1 text-sm">
-              {fmt(leave.startDate)} – {fmt(leave.endDate)}
+              {leave.isPartialDay
+                ? `${fmt(leave.startDate)} · ${leave.startTime} – ${leave.endTime}`
+                : `${fmt(leave.startDate)} – ${fmt(leave.endDate)}`}
             </p>
             <p className="mt-0.5 text-xs opacity-80">
-              {leave.businessDays} día(s) hábiles
+              {leave.isPartialDay
+                ? `${formatHours(leave.totalHours ?? 0)} ausente`
+                : `${leave.businessDays} día(s) hábiles`}
             </p>
           </div>
+
+          {leave.isPartialDay && (
+            <div className="flex items-start gap-2 rounded-xl border border-purple-500/40 bg-purple-50/60 p-3 dark:bg-purple-900/10">
+              <Info className="mt-0.5 h-4 w-4 shrink-0 text-purple-600 dark:text-purple-400" />
+              <div className="space-y-0.5">
+                <p className="text-sm font-medium text-purple-800 dark:text-purple-300">
+                  Ausencia parcial
+                </p>
+                <p className="text-xs text-purple-700/80 dark:text-purple-300/80">
+                  El colaborador estará ausente el {fmt(leave.startDate)} de{" "}
+                  {leave.startTime} a {leave.endTime} (
+                  {formatHours(leave.totalHours ?? 0)}).
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Motivo del empleado */}
           <div>
