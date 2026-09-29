@@ -3,8 +3,10 @@
 import { api } from "@/lib/axios";
 import {
   FiltrosNomina,
+  FiltrosSolicitudes,
   NovedadConsolidada,
   ResumenColaborador,
+  SolicitudesPaginadas,
   TotalesNomina,
 } from "@/types/nomina.types";
 import { useQuery } from "@tanstack/react-query";
@@ -138,4 +140,29 @@ export function useExportarNominaExcel() {
   };
 
   return { exportar, isExporting };
+}
+
+export function useSolicitudesContabilidad(filtros: FiltrosSolicitudes) {
+  return useQuery<SolicitudesPaginadas>({
+    queryKey: ["nomina", "solicitudes", filtros],
+    queryFn: async () => {
+      const { data } = await api.get("/nomina/solicitudes", {
+        params: {
+          ...(filtros.userId && { userId: filtros.userId }),
+          ...(filtros.area && { area: filtros.area }),
+          ...(filtros.legalEntity && { legalEntity: filtros.legalEntity }),
+          ...(filtros.tipos?.length && { tipos: filtros.tipos.join(",") }),
+          ...(filtros.estados?.length && {
+            estados: filtros.estados.join(","),
+          }),
+          ...(filtros.desde && { desde: filtros.desde }),
+          ...(filtros.hasta && { hasta: filtros.hasta }),
+          page: filtros.page ?? 1,
+          pageSize: filtros.pageSize ?? 20,
+        },
+      });
+      return data;
+    },
+    placeholderData: (prev) => prev,
+  });
 }

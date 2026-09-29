@@ -53,7 +53,8 @@ export function TablaConsolidada({
             <TableHead className="text-right">Cantidad</TableHead>
             <TableHead>Horario</TableHead>
             <TableHead>Solicitada el</TableHead>
-            <TableHead>Efecto</TableHead>
+            <TableHead className="text-right">Motivo</TableHead>
+            {/* <TableHead>Efecto</TableHead> */}
             <TableHead>Área / Razón Social</TableHead>
             <TableHead>Soporte</TableHead>
           </TableRow>
@@ -155,13 +156,16 @@ export function TablaConsolidada({
                     )
                   : "—"}
               </TableCell>
-              <TableCell>
+              {/* <TableCell>
                 <Badge
                   variant="outline"
                   className={colorPorAfectacion(n.afectaNomina)}
                 >
                   {n.afectaNomina === "SUMA" ? "+ Suma" : "− Resta"}
                 </Badge>
+              </TableCell> */}
+              <TableCell className="max-w-[240px] whitespace-normal break-words text-right text-sm text-muted-foreground">
+                {n.motivo ?? "—"}
               </TableCell>
               <TableCell className="text-sm text-muted-foreground">
                 {n.area ?? "—"} · {n.legalEntity ?? "—"}

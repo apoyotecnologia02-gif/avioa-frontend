@@ -15,7 +15,7 @@ export type LeaveType =
   | "CITA_MEDICA_CON_ESPECIALISTA_EPS"
   | "OTRO";
 
-export type TipoNovedad = LeaveType | "HORAS_EXTRA";
+export type TipoNovedad = LeaveType | "HORAS_EXTRA" | "OVERTIME";
 
 export interface NovedadConsolidada {
   id: string;
@@ -96,4 +96,58 @@ export interface FiltrosNomina {
   legalEntity?: string;
   soloRemuneradas?: boolean;
   esCompensada?: boolean;
+}
+
+export interface SolicitudResumen {
+  id: string;
+  origen: "LEAVE" | "OVERTIME";
+  tipo: string;
+  tipoLabel: string;
+  unidad: "DIAS" | "HORAS";
+  status: string;
+  statusLabel: string;
+
+  userId: string;
+  nombreColaborador: string;
+  documentNumber: string | null;
+  position: string | null;
+  area: string | null;
+  department: string | null;
+  legalEntity: string | null;
+
+  fechaInicio: string;
+  fechaFin: string;
+  cantidad: number;
+
+  horaInicio: string | null;
+  horaFin: string | null;
+
+  esCompensada: boolean;
+  motivo: string;
+  attachmentUrl: string | null;
+  comentario: string | null;
+
+  nombreAprobador: string | null;
+  fechaRegistro: string;
+  fechaDecision: string | null;
+}
+
+export interface SolicitudesPaginadas {
+  data: SolicitudResumen[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface FiltrosSolicitudes {
+  userId?: string;
+  area?: string;
+  legalEntity?: string;
+  tipos?: string[];
+  estados?: string[];
+  desde?: string;
+  hasta?: string;
+  page?: number;
+  pageSize?: number;
 }

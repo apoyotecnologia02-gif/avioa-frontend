@@ -53,6 +53,7 @@ function getBreadcrumbs(pathname: string): Breadcrumb[] {
     "equipment-maintenance": "Equipos y mantenimiento",
     nomina: "Contabilidad",
     "hr-validation": "Vacaciones compensadas",
+    solicitudes: "Solicitudes",
   };
 
   let currentPath = "";

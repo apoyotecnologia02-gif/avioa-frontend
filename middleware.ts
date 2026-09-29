@@ -19,6 +19,7 @@ const MODULE_GATES: Record<string, string[]> = {
   "/admin/vacations": ["USERS_ADMIN_VACATIONS"],
   "/admin/permissions": ["USERS_ADMIN"],
   "/nomina": ["NOMINA"],
+  "/nomina/solicitudes": ["NOMINA_SOLICITUDES"],
   // "/forms": ["FORMS"],
 };
 
@@ -134,9 +135,12 @@ export function middleware(request: NextRequest) {
     return response;
   }
 
-  const matched = Object.entries(MODULE_GATES).find(([prefix]) =>
-    pathname.startsWith(prefix),
-  );
+  // const matched = Object.entries(MODULE_GATES).find(([prefix]) =>
+  //   pathname.startsWith(prefix),
+  // );
+  const matched = Object.entries(MODULE_GATES)
+    .sort(([a], [b]) => b.length - a.length)
+    .find(([prefix]) => pathname.startsWith(prefix));
 
   if (matched) {
     const [, requiredModules] = matched;
