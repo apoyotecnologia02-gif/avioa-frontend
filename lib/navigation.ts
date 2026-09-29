@@ -15,6 +15,7 @@ import {
   DollarSign,
   CircleDollarSign,
   Coins,
+  ClipboardList,
 } from "lucide-react";
 import { isAdminRole, isLeaderOrManagerOrAdminRole } from "@/lib/roles";
 import { AppModuleKey } from "./modules";
@@ -220,6 +221,12 @@ export const NAV_SECTIONS: NavSection[] = [
             label: "Nomina",
             icon: DollarSign,
             module: "NOMINA",
+          },
+          {
+            href: "/nomina/solicitudes",
+            label: "Ver solicitudes",
+            icon: ClipboardList,
+            module: "NOMINA_SOLICITUDES",
           },
         ],
       },
