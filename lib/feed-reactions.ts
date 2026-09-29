@@ -45,16 +45,17 @@ export const REACTIONS_ORDER: ReactionType[] = [
 ];
 
 export const POST_TYPE_LABELS: Record<
-  "PUBLICATION" | "RECOGNITION" | "ANNOUNCEMENT",
+  "PUBLICATION" | "RECOGNITION" | "ANNOUNCEMENT" | "BIRTHDAY",
   string
 > = {
   PUBLICATION: "Publicación",
   RECOGNITION: "Reconocimiento",
   ANNOUNCEMENT: "Comunicado oficial",
+  BIRTHDAY: "Cumpleaños",
 };
 
 export const POST_TYPE_BADGE: Record<
-  "PUBLICATION" | "RECOGNITION" | "ANNOUNCEMENT",
+  "PUBLICATION" | "RECOGNITION" | "ANNOUNCEMENT" | "BIRTHDAY",
   { label: string; className: string }
 > = {
   PUBLICATION: {
@@ -70,5 +71,10 @@ export const POST_TYPE_BADGE: Record<
     label: "📢 Comunicado oficial",
     className:
       "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300",
+  },
+  BIRTHDAY: {
+    label: "🎂 Cumpleaños",
+    className:
+      "bg-pink-100 text-pink-800 dark:bg-pink-900/40 dark:text-pink-300",
   },
 };

@@ -37,3 +37,46 @@ export function colorPorAfectacion(afecta: "SUMA" | "RESTA"): string {
     ? "bg-emerald-100 text-emerald-700"
     : "bg-red-100 text-red-700";
 }
+
+export const CATALOGO_ESTADO_SOLICITUD: {
+  value: string;
+  label: string;
+  className: string;
+}[] = [
+  {
+    value: "PENDING_HR_VALIDATION",
+    label: "Pendiente validación GH",
+    className:
+      "text-purple-700 bg-purple-50 border-purple-200 dark:bg-purple-900/20 dark:border-purple-800 dark:text-purple-400",
+  },
+  {
+    value: "PENDING",
+    label: "Pendiente",
+    className:
+      "text-amber-700 bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-400",
+  },
+  {
+    value: "APPROVED",
+    label: "Aprobada",
+    className:
+      "text-emerald-700 bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800 dark:text-emerald-400",
+  },
+  {
+    value: "REJECTED",
+    label: "Rechazada",
+    className:
+      "text-rose-700 bg-rose-50 border-rose-200 dark:bg-rose-900/20 dark:border-rose-800 dark:text-rose-400",
+  },
+  {
+    value: "CANCELLED",
+    label: "Cancelada",
+    className:
+      "text-slate-600 bg-slate-50 border-slate-200 dark:bg-slate-800/40 dark:border-slate-700",
+  },
+];
+
+export function claseEstado(status: string): string {
+  return (
+    CATALOGO_ESTADO_SOLICITUD.find((s) => s.value === status)?.className ?? ""
+  );
+}

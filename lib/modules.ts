@@ -21,6 +21,13 @@ export const APP_MODULES = [
     description: "Consolidado de novedades de nómina",
   },
   {
+    key: "NOMINA_SOLICITUDES",
+    kind: "module",
+    category: "ACCOUNTING",
+    label: "Solicitudes (Vacaciones, Ausencias, Horas extra)",
+    description: "Solicitudes de vacaciones, ausencias y horas extra",
+  },
+  {
     key: "CESANTIAS",
     kind: "module",
     category: "RRHH",

@@ -1,4 +1,8 @@
-export type FeedPostType = "PUBLICATION" | "RECOGNITION" | "ANNOUNCEMENT";
+export type FeedPostType =
+  | "PUBLICATION"
+  | "RECOGNITION"
+  | "ANNOUNCEMENT"
+  | "BIRTHDAY";
 
 export type ReactionType =
   | "LIKE"

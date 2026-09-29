@@ -12,6 +12,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
+import { BirthdayCelebrationModal } from "@/components/birthdays/BirthdayCelebrationModal";
 
 const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
@@ -42,6 +43,7 @@ export default function RootLayout({
         <AuthProvider>
           
           <Providers>{children}</Providers>
+          <BirthdayCelebrationModal />
         </AuthProvider>
         {process.env.NODE_ENV === "production" && <Analytics />}
       </body>
