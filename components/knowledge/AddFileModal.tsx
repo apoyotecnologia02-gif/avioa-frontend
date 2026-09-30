@@ -25,8 +25,10 @@ interface AddFileModalProps {
   folderId?: string;
 }
 
-const GOOGLE_DRIVE_URL =
-  /^https:\/\/drive\.google\.com\/(file\/d\/|drive\/folders\/|open\?id=)/;
+// const GOOGLE_DRIVE_URL =
+//   /^https:\/\/drive\.google\.com\/(file\/d\/|drive\/folders\/|open\?id=)/;
+
+const URL_REGEX = /^https?:\/\/\S+$/i;
 
 export function AddFileModal({ isOpen, onClose, folderId }: AddFileModalProps) {
   const { toast } = useToast();
@@ -52,8 +54,16 @@ export function AddFileModal({ isOpen, onClose, folderId }: AddFileModalProps) {
   const validateUrl = (url: string): string | null => {
     const trimmed = url.trim();
     if (!trimmed) return "El link de Google Drive es obligatorio.";
-    if (!GOOGLE_DRIVE_URL.test(trimmed))
-      return "Debe ser un link válido de Google Drive (drive.google.com/file/d/... o /open?id=...).";
+    if (!URL_REGEX.test(trimmed))
+      return "Debe ser un link válido de Google Drive (debe empezar con http:// o https://).";
+    try {
+      const u = new URL(trimmed);
+      if (u.protocol !== "http:" && u.protocol !== "https:") {
+        return "Solo se permiten links http o https.";
+      }
+    } catch {
+      return "Debe se un link válido (debe empezar con http:// o https://).";
+    }
     return null;
   };
 
@@ -103,7 +113,7 @@ export function AddFileModal({ isOpen, onClose, folderId }: AddFileModalProps) {
         <DialogHeader>
           <DialogTitle>Agregar archivo</DialogTitle>
           <DialogDescription>
-            Enlaza un archivo alojado en Google Drive a esta carpeta.
+            Enlaza un archivo externo a esta carpeta.
           </DialogDescription>
         </DialogHeader>
 
@@ -123,7 +133,7 @@ export function AddFileModal({ isOpen, onClose, folderId }: AddFileModalProps) {
             >
               <RadioGroupItem value="drive" id="source-drive" />
               <Link2 className="h-4 w-4 text-muted-foreground shrink-0" />
-              Link de Drive
+              Enlace
             </label>
 
             <label
@@ -150,7 +160,7 @@ export function AddFileModal({ isOpen, onClose, folderId }: AddFileModalProps) {
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="file-url">Link de Google Drive</Label>
+            <Label htmlFor="file-url">Link del archivo</Label>
             <Input
               id="file-url"
               value={driveUrl}
@@ -158,12 +168,11 @@ export function AddFileModal({ isOpen, onClose, folderId }: AddFileModalProps) {
                 setDriveUrl(e.target.value);
                 if (urlError) setUrlError(null);
               }}
-              placeholder="https://drive.google.com/file/d/..."
+              placeholder="https://..."
             />
             {urlError && <p className="text-xs text-destructive">{urlError}</p>}
             <p className="text-xs text-muted-foreground">
-              Asegúrate de que el archivo tenga permisos de "Cualquiera con el
-              enlace puede ver".
+              Asegúrate de que el link sea accesible para quienes deban verlo.
             </p>
           </div>
         </div>
