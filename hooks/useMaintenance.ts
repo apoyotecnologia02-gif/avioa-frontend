@@ -37,10 +37,12 @@ const api = {
     }),
 
   getMyRequests: (): Promise<MaintenanceRequest[]> =>
-    fetch(`${API_URL}?path=my`, { credentials: "include" }).then(async (res) => {
-      if (!res.ok) throw new Error("Error al obtener mis solicitudes");
-      return res.json();
-    }),
+    fetch(`${API_URL}?path=my`, { credentials: "include" }).then(
+      async (res) => {
+        if (!res.ok) throw new Error("Error al obtener mis solicitudes");
+        return res.json();
+      },
+    ),
 
   getAllRequests: (
     filters?: MaintenanceFilters,

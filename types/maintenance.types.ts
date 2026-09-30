@@ -7,6 +7,11 @@ export enum MaintenanceStatus {
   CANCELLED = "CANCELLED",
 }
 
+export enum MaintenanceRequestType {
+  EQUIPMENT = "EQUIPMENT",
+  GENERAL = "GENERAL",
+}
+
 export const maintenanceStatusConfig: Record<
   MaintenanceStatus,
   { label: string; className: string }
@@ -37,9 +42,25 @@ export const maintenanceStatusConfig: Record<
   },
 };
 
+export const maintenanceRequestTypeConfig: Record<
+  MaintenanceRequestType,
+  { label: string; className: string }
+> = {
+  [MaintenanceRequestType.EQUIPMENT]: {
+    label: "Equipo",
+    className: "bg-blue-100 text-blue-800 hover:bg-blue-100",
+  },
+  [MaintenanceRequestType.GENERAL]: {
+    label: "General",
+    className: "bg-purple-100 text-purple-800 hover:bg-purple-100",
+  },
+};
+
 export interface MaintenanceRequest {
   maintenanceRequestId: string;
-  equipmentId: string;
+  requestType: MaintenanceRequestType; 
+  equipmentId?: string | null;         
+  locationId?: string | null;          
   userId: string;
   reason: string;
   description?: string | null;
@@ -58,6 +79,11 @@ export interface MaintenanceRequest {
     status: string;
     location?: { name: string } | null;
   } | null;
+  location?: {                       
+    locationId: string;
+    name: string;
+    isActive: boolean;
+  } | null;
   user?: {
     userId: string;
     name: string;
@@ -72,10 +98,13 @@ export interface MaintenanceRequest {
 }
 
 export interface CreateMaintenanceDto {
-  equipmentId: string;
-  reason: string;
+  requestType: MaintenanceRequestType; 
+  equipmentId?: string;                
+  locationId?: string;                 
+  reason?: string;                     
   description?: string;
 }
+
 
 export interface UpdateMaintenanceStatusDto {
   status: MaintenanceStatus;

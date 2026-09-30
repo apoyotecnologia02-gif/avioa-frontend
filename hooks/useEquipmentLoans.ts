@@ -17,6 +17,9 @@ export const EQUIPMENT_LOAN_KEYS = {
 
   locations: ["locations"] as const,
   locationsList: () => [...EQUIPMENT_LOAN_KEYS.locations, "list"] as const,
+
+  myLoanedEquipment: () =>
+    [...EQUIPMENT_LOAN_KEYS.equipment, "my-loaned"] as const,
 };
 
 // ===== FUNCIONES DE API =====
@@ -108,11 +111,26 @@ const api = {
       if (!res.ok) throw new Error("Error al obtener ubicaciones");
       return res.json();
     }),
+
+  getMyLoanedEquipment: (): Promise<any[]> =>
+    fetch(`${API_URL}?path=equipment/my-loaned`, {
+      credentials: "include",
+    }).then((res) => {
+      if (!res.ok) throw new Error("Error al obtener mis equipos");
+      return res.json();
+    }),
 };
 
 // ===== HOOKS =====
 export function useEquipmentLoans() {
   const queryClient = useQueryClient();
+
+  const useMyLoanedEquipment = () => {
+    return useQuery({
+      queryKey: EQUIPMENT_LOAN_KEYS.myLoanedEquipment(),
+      queryFn: api.getMyLoanedEquipment,
+    });
+  };
 
   const useEquipment = () => {
     return useQuery({
@@ -225,5 +243,6 @@ export function useEquipmentLoans() {
     useUpdateLoanStatus,
     useCancelLoan,
     useLocations,
+    useMyLoanedEquipment,
   };
 }

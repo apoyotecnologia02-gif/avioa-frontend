@@ -1,4 +1,3 @@
-// components/maintenance/Maintenance.tsx
 "use client";
 
 import {
@@ -71,7 +70,9 @@ import { useMaintenance } from "@/hooks/useMaintenance";
 import { useEquipmentLoans } from "@/hooks/useEquipmentLoans";
 import {
   MaintenanceStatus,
+  MaintenanceRequestType,
   maintenanceStatusConfig,
+  maintenanceRequestTypeConfig,
 } from "@/types/maintenance.types";
 import { EquipmentStatus } from "@/types/equipment-loan.types";
 
@@ -96,11 +97,27 @@ export function Maintenance() {
     "ALL",
   );
 
-  // Modal de crear
+  const { useEquipment, useMyLoanedEquipment, useLocations } =
+    useEquipmentLoans();
+
+  const { data: equipment, refetch: refetchEquipment } = useEquipment();
+  const {
+    data: myLoanedEquipment,
+    isLoading: isLoadingMyLoaned,
+    refetch: refetchMyLoaned,
+  } = useMyLoanedEquipment();
+  const { data: locations } = useLocations();
+
+  // Modal de crear (EQUIPMENT)
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [selectedEquipmentId, setSelectedEquipmentId] = useState("");
   const [reason, setReason] = useState("");
   const [description, setDescription] = useState("");
+
+  // Modal de Mantenimiento General (GENERAL)
+  const [showGeneralDialog, setShowGeneralDialog] = useState(false);
+  const [generalLocationId, setGeneralLocationId] = useState("");
+  const [generalDescription, setGeneralDescription] = useState("");
 
   // Modal de cambiar estado
   const [showStatusDialog, setShowStatusDialog] = useState(false);
@@ -123,8 +140,6 @@ export function Maintenance() {
     useCancelRequest,
   } = useMaintenance();
 
-  const { useEquipment } = useEquipmentLoans();
-
   const {
     data: myRequests,
     isLoading: isLoadingMyRequests,
@@ -136,8 +151,6 @@ export function Maintenance() {
     isLoading: isLoadingAllRequests,
     refetch: refetchAllRequests,
   } = useAllRequests(undefined, { enabled: isLeader });
-
-  const { data: equipment, refetch: refetchEquipment } = useEquipment();
 
   const createRequest = useCreateRequest();
   const updateStatus = useUpdateStatus();
@@ -156,12 +169,26 @@ export function Maintenance() {
     return () => {
       window.removeEventListener("maintenance-update", handleMaintenanceUpdate);
     };
-  }, [isLeader, refetchMyRequests, refetchAllRequests, refetchEquipment]);
+  }, [
+    isLeader,
+    refetchMyRequests,
+    refetchAllRequests,
+    refetchEquipment,
+    refetchMyLoaned,
+  ]);
 
   // Contadores
   const pendingCount = (allRequests ?? []).filter(
     (r: any) => r.status === MaintenanceStatus.PENDING,
   ).length;
+
+  // Helper para obtener el nombre a mostrar según el tipo
+  const getRequestName = (item: any) => {
+    if (item.requestType === MaintenanceRequestType.EQUIPMENT) {
+      return item.equipment?.name || "Equipo";
+    }
+    return item.location?.name || "Ubicación";
+  };
 
   // Filtros — Mis Solicitudes
   const filteredMyRequests = (myRequests ?? []).filter((item: any) => {
@@ -175,6 +202,7 @@ export function Maintenance() {
     // Filtro por búsqueda
     return (
       (item.equipment?.name ?? "").toLowerCase().includes(searchLower) ||
+      (item.location?.name ?? "").toLowerCase().includes(searchLower) ||
       item.status.toLowerCase().includes(searchLower) ||
       (item.reason && item.reason.toLowerCase().includes(searchLower))
     );
@@ -190,6 +218,7 @@ export function Maintenance() {
 
     return (
       (item.equipment?.name ?? "").toLowerCase().includes(searchLower) ||
+      (item.location?.name ?? "").toLowerCase().includes(searchLower) ||
       (item.user?.name ?? "").toLowerCase().includes(searchLower) ||
       item.status.toLowerCase().includes(searchLower) ||
       (item.reason && item.reason.toLowerCase().includes(searchLower))
@@ -257,6 +286,7 @@ export function Maintenance() {
 
     createRequest.mutate(
       {
+        requestType: MaintenanceRequestType.EQUIPMENT,
         equipmentId: selectedEquipmentId,
         reason: reason.trim(),
         description: description.trim() || undefined,
@@ -269,6 +299,27 @@ export function Maintenance() {
           setDescription("");
           refetchMyRequests();
           refetchEquipment();
+          if (isLeader) refetchAllRequests();
+        },
+      },
+    );
+  };
+
+  const handleCreateGeneralRequest = () => {
+    if (!generalLocationId || !generalDescription.trim()) return;
+
+    createRequest.mutate(
+      {
+        requestType: MaintenanceRequestType.GENERAL,
+        locationId: generalLocationId,
+        description: generalDescription.trim(),
+      },
+      {
+        onSuccess: () => {
+          setShowGeneralDialog(false);
+          setGeneralLocationId("");
+          setGeneralDescription("");
+          refetchMyRequests();
           if (isLeader) refetchAllRequests();
         },
       },
@@ -346,6 +397,16 @@ export function Maintenance() {
     );
   };
 
+  const getRequestTypeBadge = (type: MaintenanceRequestType) => {
+    const config = maintenanceRequestTypeConfig[type];
+    if (!config) return null;
+    return (
+      <Badge className={config.className} variant="secondary">
+        {config.label}
+      </Badge>
+    );
+  };
+
   // Estados de carga inicial
   if (isLoadingMyRequests && isLoadingAllRequests) {
     return (
@@ -375,12 +436,8 @@ export function Maintenance() {
     );
   }
 
-  // Equipos disponibles para solicitar mantenimiento (excluye los ya en mantenimiento)
-  const availableEquipment = (equipment ?? []).filter(
-    (e: any) =>
-      e.status === EquipmentStatus.AVAILABLE ||
-      e.status === EquipmentStatus.DAMAGED,
-  );
+  // Equipos disponibles para solicitar mantenimiento
+  const availableEquipment = myLoanedEquipment ?? [];
 
   return (
     <div className="space-y-6">
@@ -394,7 +451,14 @@ export function Maintenance() {
         <div className="flex gap-2">
           <Button onClick={() => setShowCreateDialog(true)}>
             <Plus className="mr-2 h-4 w-4" />
-            Solicitar Mantenimiento
+            Mantenimiento Equipos
+          </Button>
+
+          <Button
+            onClick={() => setShowGeneralDialog(true)}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Mantenimiento General
           </Button>
         </div>
       </div>
@@ -504,8 +568,10 @@ export function Maintenance() {
                             <div className="space-y-1">
                               <div className="flex items-center gap-2 flex-wrap">
                                 <p className="font-medium">
-                                  {item.equipment?.name || "Equipo"}
+                                  {getRequestName(item)}
                                 </p>
+                                {item.requestType &&
+                                  getRequestTypeBadge(item.requestType)}
                                 {getStatusBadge(item.status)}
                               </div>
                               <p className="text-sm text-muted-foreground">
@@ -653,8 +719,10 @@ export function Maintenance() {
                                 <div className="space-y-1">
                                   <div className="flex items-center gap-2 flex-wrap">
                                     <p className="font-medium">
-                                      {item.equipment?.name || "Equipo"}
+                                      {getRequestName(item)}
                                     </p>
+                                    {item.requestType &&
+                                      getRequestTypeBadge(item.requestType)}
                                     {getStatusBadge(item.status)}
                                     <Badge variant="outline">
                                       {item.user?.name || "Usuario"}
@@ -765,7 +833,7 @@ export function Maintenance() {
         )}
       </Tabs>
 
-      {/* Dialog: Crear solicitud */}
+      {/* Dialog: Crear solicitud (EQUIPMENT) */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
@@ -813,7 +881,11 @@ export function Maintenance() {
                   >
                     <CommandInput placeholder="Buscar por nombre, serial o ubicación..." />
                     <CommandList className="max-h-[400px] overflow-y-auto">
-                      <CommandEmpty>No se encontraron equipos.</CommandEmpty>
+                      <CommandEmpty>
+                        {availableEquipment.length === 0
+                          ? "No tienes equipos asignados para generar el reporte de mantenimiento."
+                          : "No se encontraron equipos con esa búsqueda."}
+                      </CommandEmpty>
                       <CommandGroup>
                         {availableEquipment.map((item: any) => {
                           const label = `${item.name}${item.serialNumber ? ` (${item.serialNumber})` : ""}${item.location?.name ? ` - ${item.location.name}` : ""}`;
@@ -892,6 +964,72 @@ export function Maintenance() {
               }
             >
               {createRequest.isPending ? "Enviando..." : "Solicitar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog: Mantenimiento General */}
+      <Dialog open={showGeneralDialog} onOpenChange={setShowGeneralDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Mantenimiento General</DialogTitle>
+            <DialogDescription>
+              Reporta problemas de internet, impresoras, cafetera u otras
+              instalaciones
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Ubicación *</Label>
+              <Select
+                value={generalLocationId}
+                onValueChange={setGeneralLocationId}
+                required
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona una ubicación" />
+                </SelectTrigger>
+                <SelectContent>
+                  {locations?.map((loc: any) => (
+                    <SelectItem key={loc.locationId} value={loc.locationId}>
+                      {loc.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="generalDescription">
+                Descripción del problema *
+              </Label>
+              <Textarea
+                id="generalDescription"
+                placeholder="Ej: El internet está muy lento desde ayer. No se puede trabajar en reuniones virtuales."
+                value={generalDescription}
+                onChange={(e) => setGeneralDescription(e.target.value)}
+                rows={5}
+                required
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowGeneralDialog(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleCreateGeneralRequest}
+              disabled={
+                createRequest.isPending ||
+                !generalLocationId ||
+                !generalDescription.trim()
+              }
+            >
+              {createRequest.isPending ? "Enviando..." : "Enviar reporte"}
             </Button>
           </DialogFooter>
         </DialogContent>
