@@ -45,6 +45,15 @@ function KnowledgeLibraryContent() {
     }
   };
 
+  const getDomain = (url?: string | null): string => {
+    if (!url) return "Enlace externo";
+    try {
+      return new URL(url).hostname.replace(/^www\./, "");
+    } catch {
+      return "Enlace externo";
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -171,7 +180,9 @@ function KnowledgeLibraryContent() {
                         {file.title}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        Google Drive
+                        {file.driveUrl
+                          ? getDomain(file.driveUrl)
+                          : "Enlace externo"}
                       </p>
                     </div>
                     <div className="flex shrink-0 items-center gap-1">
