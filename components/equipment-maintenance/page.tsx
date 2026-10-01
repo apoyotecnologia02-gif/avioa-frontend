@@ -1,21 +1,5 @@
 "use client";
 
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Check, ChevronsUpDown } from "lucide-react";
-import { cn } from "@/lib/utils";
-
 import { useState, useEffect } from "react";
 import {
   Card,
@@ -92,7 +76,6 @@ export function Maintenance() {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("my-requests");
   const [currentPage, setCurrentPage] = useState(1);
-  const [equipmentPopoverOpen, setEquipmentPopoverOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<MaintenanceStatus | "ALL">(
     "ALL",
   );
@@ -454,9 +437,7 @@ export function Maintenance() {
             Mantenimiento Equipos
           </Button>
 
-          <Button
-            onClick={() => setShowGeneralDialog(true)}
-          >
+          <Button onClick={() => setShowGeneralDialog(true)}>
             <Plus className="mr-2 h-4 w-4" />
             Mantenimiento General
           </Button>
@@ -845,86 +826,32 @@ export function Maintenance() {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>Equipo *</Label>
-              <Popover
-                open={equipmentPopoverOpen}
-                onOpenChange={setEquipmentPopoverOpen}
+              <Select
+                value={selectedEquipmentId}
+                onValueChange={setSelectedEquipmentId}
               >
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={equipmentPopoverOpen}
-                    className="w-full justify-between font-normal"
-                  >
-                    {selectedEquipmentId
-                      ? (() => {
-                          const eq = availableEquipment.find(
-                            (e: any) => e.equipmentId === selectedEquipmentId,
-                          );
-                          return eq
-                            ? `${eq.name}${eq.serialNumber ? ` (${eq.serialNumber})` : ""}`
-                            : "Selecciona un equipo";
-                        })()
-                      : "Selecciona un equipo"}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent
-                  className="w-full min-w-[var(--radix-popover-trigger-width)] p-0"
-                  align="start"
-                >
-                  <Command
-                    filter={(value, search) => {
-                      const searchLower = search.toLowerCase();
-                      return value.toLowerCase().includes(searchLower) ? 1 : 0;
-                    }}
-                  >
-                    <CommandInput placeholder="Buscar por nombre, serial o ubicación..." />
-                    <CommandList className="max-h-[400px] overflow-y-auto">
-                      <CommandEmpty>
-                        {availableEquipment.length === 0
-                          ? "No tienes equipos asignados para generar el reporte de mantenimiento."
-                          : "No se encontraron equipos con esa búsqueda."}
-                      </CommandEmpty>
-                      <CommandGroup>
-                        {availableEquipment.map((item: any) => {
-                          const label = `${item.name}${item.serialNumber ? ` (${item.serialNumber})` : ""}${item.location?.name ? ` - ${item.location.name}` : ""}`;
-                          return (
-                            <CommandItem
-                              key={item.equipmentId}
-                              value={label}
-                              onSelect={() => {
-                                setSelectedEquipmentId(item.equipmentId);
-                                setEquipmentPopoverOpen(false);
-                              }}
-                            >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  selectedEquipmentId === item.equipmentId
-                                    ? "opacity-100"
-                                    : "opacity-0",
-                                )}
-                              />
-                              <div className="flex flex-col">
-                                <span className="font-medium">{item.name}</span>
-                                <span className="text-xs text-muted-foreground">
-                                  {item.serialNumber &&
-                                    `Serial: ${item.serialNumber}`}
-                                  {item.serialNumber &&
-                                    item.location?.name &&
-                                    " · "}
-                                  {item.location?.name}
-                                </span>
-                              </div>
-                            </CommandItem>
-                          );
-                        })}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona un equipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableEquipment.length === 0 ? (
+                    <div className="p-2 text-sm text-muted-foreground">
+                      No tienes equipos asignados para generar el reporte de
+                      mantenimiento.
+                    </div>
+                  ) : (
+                    availableEquipment.map((item: any) => (
+                      <SelectItem
+                        key={item.equipmentId}
+                        value={item.equipmentId} 
+                      >
+                        {item.name}
+                        {item.serialNumber && ` (${item.serialNumber})`}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
