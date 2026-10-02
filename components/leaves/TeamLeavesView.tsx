@@ -4,16 +4,27 @@ import { useMemo, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Inbox, CalendarRange, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Inbox,
+  CalendarRange,
+  ChevronLeft,
+  ChevronRight,
+  RotateCcw,
+} from "lucide-react";
 import { LEAVE_TYPE_META, type LeaveRequest } from "@/types/leaves.types";
 import { LeaveStatusBadge } from "./LeaveStatusBadge";
 import { isHoliday } from "@/lib/business-days";
 import { formatHours } from "@/lib/leave-hours";
+import { useAuth } from "@/hooks/useAuth";
+import { hasModuleAccess } from "@/lib/permissions";
+import { MarkNotTakenDialog } from "./MarkNotTakenDialog";
+import { RevertNotTakenDialog } from "./RevertNotTakenDialog";
 
 interface TeamLeavesViewProps {
   leaves: LeaveRequest[];
   isLoading: boolean;
   onReviewClick: (leave: LeaveRequest) => void;
+  onLeaveUpdated: () => void;
 }
 
 function fmt(dateStr: string) {
@@ -47,7 +58,32 @@ export function TeamLeavesView({
   leaves,
   isLoading,
   onReviewClick,
+  onLeaveUpdated,
 }: TeamLeavesViewProps) {
+  const { user } = useAuth();
+  const canMarkNotTaken = hasModuleAccess(user, "LEAVES_HR_VALIDATION");
+  const [notTakenTarget, setNotTakenTarget] = useState<LeaveRequest | null>(
+    null,
+  );
+
+  const [revertTarget, setRevertTarget] = useState<LeaveRequest | null>(null);
+
+  const puedeMarcarComoNoTomada = (leave: LeaveRequest) => {
+    const puede =
+      canMarkNotTaken &&
+      leave.status === "APPROVED" &&
+      // leave.type === "VACACIONES" &&
+      !leave.esCompensada &&
+      !leave.notTaken &&
+      new Date(leave.endDate) <= new Date();
+
+    return puede;
+  };
+
+  const puedeRevertir = (leave: LeaveRequest) => {
+    return canMarkNotTaken && !!leave.notTaken;
+  };
+
   const pending = leaves.filter((l) => l.status === "PENDING");
 
   return (
@@ -128,6 +164,15 @@ export function TeamLeavesView({
                             Parcial
                           </span>
                         )}
+
+                        {leave.notTaken && (
+                          <span
+                            className="rounded-full border border-slate-400/60 bg-slate-50 px-1.5 text-[10px] font-medium text-slate-600 dark:bg-slate-800/40 dark:text-slate-300"
+                            title={leave.notTaken.reason}
+                          >
+                            No tomada
+                          </span>
+                        )}
                       </div>
                       <p className="text-sm text-muted-foreground">
                         {leave.isPartialDay ? (
@@ -151,6 +196,29 @@ export function TeamLeavesView({
                     ) : (
                       <LeaveStatusBadge status={leave.status} />
                     )}
+                    {puedeMarcarComoNoTomada(leave) && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 gap-1 px-2 text-[11px] text-muted-foreground hover:text-destructive"
+                        onClick={() => setNotTakenTarget(leave)}
+                      >
+                        <RotateCcw className="h-3 w-3" />
+                        No se tomó
+                      </Button>
+                    )}
+
+                    {puedeRevertir(leave) && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 gap-1 px-2 text-[11px] text-muted-foreground hover:text-primary"
+                        onClick={() => setRevertTarget(leave)}
+                      >
+                        <RotateCcw className="h-3 w-3" />
+                        Revertir no tomada
+                      </Button>
+                    )}
                   </div>
                 );
               })}
@@ -162,6 +230,28 @@ export function TeamLeavesView({
       <TabsContent value="calendar" className="mt-4">
         <TeamCalendar leaves={leaves} />
       </TabsContent>
+
+      {notTakenTarget && (
+        <MarkNotTakenDialog
+          leaveRequestId={notTakenTarget.leaveRequestId}
+          nombreColaborador={notTakenTarget.user?.name ?? "el colaborador"}
+          businessDays={notTakenTarget.businessDays}
+          open={!!notTakenTarget}
+          onOpenChange={(open: any) => !open && setNotTakenTarget(null)}
+          onSuccess={onLeaveUpdated}
+        />
+      )}
+
+      {revertTarget && (
+        <RevertNotTakenDialog
+          leaveRequestId={revertTarget.leaveRequestId}
+          nombreColaborador={revertTarget.user?.name ?? "el colaborador"}
+          businessDays={revertTarget.businessDays}
+          open={!!revertTarget}
+          onOpenChange={(open) => !open && setRevertTarget(null)}
+          onSuccess={onLeaveUpdated}
+        />
+      )}
     </Tabs>
   );
 }

@@ -90,6 +90,15 @@ export function LeaveTimeline({
                         </span>
                       )}
 
+                      {leave.notTaken && (
+                        <span
+                          className="rounded-full border border-gray-500/60 bg-gray-50 px-1.5 text-[10px] font-medium text-gray-700 dark:bg-gray-900/20 dark:text-gray-300"
+                          title={`Ausencia marcada como no tomada: ${leave.notTakenReason}`}
+                        >
+                          No tomada
+                        </span>
+                      )}
+
                       {leave.attachmentUrl && (
                         <a
                           href={leave.attachmentUrl}
