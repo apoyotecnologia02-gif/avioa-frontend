@@ -243,9 +243,19 @@ export function Sidebar() {
                                   asChild
                                   isActive={isLeafActive(item, pathname)}
                                 >
-                                  <Link href={item.href}>
-                                    <span>{item.label}</span>
-                                  </Link>
+                                  {item.external ? (
+                                    <a
+                                      href={item.href}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                    >
+                                      <span>{item.label}</span>
+                                    </a>
+                                  ) : (
+                                    <Link href={item.href}>
+                                      <span>{item.label}</span>
+                                    </Link>
+                                  )}
                                 </SidebarMenuSubButton>
                               </SidebarMenuSubItem>
                             ))}
