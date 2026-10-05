@@ -40,6 +40,9 @@ export interface NavLeaf {
   module?: AppModuleKey;
   /** true = coincide solo con la ruta exacta */
   exact?: boolean;
+
+  // si es un link externo para solo redirigir
+  external?: boolean;
 }
 
 export interface NavGroup {
@@ -145,10 +148,22 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: Users,
         items: [
           { href: "/colaboradores", label: "Colaboradores" },
-          {href: "/loans", label: "Solicitudes de equipos"},
-          { href: "/equipment-maintenance", label: "Mantenimiento de equipos"},
+          { href: "/loans", label: "Solicitudes de equipos" },
+          { href: "/equipment-maintenance", label: "Mantenimiento de equipos" },
           // { href: "/equipment-requests", label: "Solicitud Equipos" },
           // { href: "/books-files", label: "Biblioteca" }
+          {
+            href: process.env.NEXT_PUBLIC_DIRECTORIO_AVIOA ?? "#",
+            label: "Directorio aVioa",
+            module: "AVIOA_DIRECTORY",
+            external: true,
+          },
+          {
+            href: process.env.NEXT_PUBLIC_AVIOA_GASTOS ?? "#",
+            label: "aVioa Gastos",
+            module: "AVIOA_GASTOS",
+            external: true,
+          },
         ],
       },
       {
