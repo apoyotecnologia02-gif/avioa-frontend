@@ -72,10 +72,10 @@ export function TeamLeavesView({
     const puede =
       canMarkNotTaken &&
       leave.status === "APPROVED" &&
-      // leave.type === "VACACIONES" &&
+      leave.type === "VACACIONES" &&
       !leave.esCompensada &&
       !leave.notTaken &&
-      new Date(leave.endDate) <= new Date();
+      new Date(leave.startDate) > new Date();
 
     return puede;
   };
