@@ -126,27 +126,41 @@ export function LeaveCalendar({ leaves }: LeaveCalendarProps) {
           const isToday = k === todayKey;
 
           const isCompensated = leave?.esCompensada === true;
+          const isNotTaken = leave?.notTaken;
+
           const isAbsence = !!meta && !isCompensated;
 
           return (
             <div
               key={i}
               className={`relative aspect-square rounded-lg border text-center text-sm ${
-                isAbsence
-                  ? `${meta!.accent} font-medium`
-                  : isCompensated
-                    ? "border-dashed border-sky-500/60 bg-sky-50/40 text-sky-800 dark:bg-sky-900/10 dark:text-sky-300"
-                    : weekend || holiday
-                      ? "border-transparent bg-muted/30 text-muted-foreground"
-                      : "border-transparent"
+                isNotTaken
+                  ? "border-gray-500/60 bg-gray-50 text-gray-700 dark:bg-gray-900/20 dark:text-gray-300"
+                  : isAbsence
+                    ? `${meta!.accent} font-medium`
+                    : isCompensated
+                      ? "border-dashed border-sky-500/60 bg-sky-50/40 text-sky-800 dark:bg-sky-900/10 dark:text-sky-300"
+                      : weekend || holiday
+                        ? "border-transparent bg-muted/30 text-muted-foreground"
+                        : "border-transparent"
               }`}
               title={
                 leave
-                  ? isCompensated
-                    ? `${meta?.label} · Compensada (no genera ausencia)`
-                    : leave.isPartialDay
-                      ? `${meta?.label} · ${leave.startTime} – ${leave.endTime} (${leave.status === "PENDING" ? "Pendiente" : "Aprobada"})`
-                      : `${meta?.label} · ${leave.status === "PENDING" ? "Pendiente" : "Aprobada"}`
+                  ? isNotTaken
+                    ? `${meta?.label ?? "Solicitud"} · No tomada`
+                    : isCompensated
+                      ? `${meta?.label} · Compensada (no genera ausencia)`
+                      : leave.isPartialDay
+                        ? `${meta?.label} · ${
+                            leave.status === "PENDING"
+                              ? "Pendiente"
+                              : "Aprobada"
+                          } · ${leave.startTime} – ${leave.endTime}`
+                        : `${meta?.label} · ${
+                            leave.status === "PENDING"
+                              ? "Pendiente"
+                              : "Aprobada"
+                          }`
                   : holiday
                     ? "Festivo"
                     : undefined
@@ -162,7 +176,7 @@ export function LeaveCalendar({ leaves }: LeaveCalendarProps) {
               {isToday && (
                 <span className="absolute bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-primary" />
               )}
-              {leave?.status === "PENDING" && (
+              {leave?.status === "PENDING" && !isNotTaken && (
                 <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-amber-400" />
               )}
             </div>
@@ -187,6 +201,10 @@ export function LeaveCalendar({ leaves }: LeaveCalendarProps) {
         <span className="flex items-center gap-1.5">
           <span className="h-2.5 w-2.5 rounded bg-muted/50" />
           Fin de semana / festivo
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded border border-gray-500/60 bg-gray-50 dark:bg-gray-900/20" />
+          No tomada
         </span>
       </div>
     </div>

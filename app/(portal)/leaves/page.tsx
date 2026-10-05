@@ -219,6 +219,11 @@ export default function LeavesPage() {
             leaves={teamLeaves}
             isLoading={teamLeavesLoading}
             onReviewClick={handleReviewClick}
+            onLeaveUpdated={() => {
+              reloadTeam();
+              reloadBalance();
+              reloadMy();
+            }}
           />
         </section>
       )}

@@ -11,7 +11,6 @@ import {
 } from "../ui/table";
 import { CruceBadge } from "./CruceBadge";
 import { Badge } from "../ui/badge";
-import { colorPorAfectacion } from "@/lib/nomina/catalogos";
 import { format, parseISO } from "date-fns";
 
 interface TablaConsolidadaProps {
