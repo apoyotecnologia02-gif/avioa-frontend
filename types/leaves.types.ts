@@ -28,6 +28,12 @@ interface HrValidationLeave {
   comment: string;
 }
 
+interface NoTakenLeave {
+  at: string;
+  reason: string;
+  byName: string | null;
+}
+
 export interface LeaveRequest {
   leaveRequestId: string;
   userId: string;
@@ -51,6 +57,10 @@ export interface LeaveRequest {
   hrValidatedAt: string | null;
   hrComment: string | null;
   hrValidation?: HrValidationLeave | null;
+  notTakenAt: string | null;
+  notTakenById: string | null;
+  notTakenReason: string | null;
+  notTaken?: NoTakenLeave | null;
   user?: {
     name: string;
     avatarUrl?: string | null;

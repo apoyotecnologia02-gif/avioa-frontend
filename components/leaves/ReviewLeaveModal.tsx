@@ -145,6 +145,22 @@ export function ReviewLeaveModal({
                       </p>
                     </div>
                   )}
+
+                  {leave.notTaken && (
+                    <div className="flex items-start gap-2 rounded-xl border border-slate-400/40 bg-slate-50/60 p-3 dark:bg-slate-800/20">
+                      <Info className="mt-0.5 h-4 w-4 shrink-0 text-slate-600 dark:text-slate-400" />
+                      <div className="space-y-0.5">
+                        <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                          Marcada como no tomada
+                        </p>
+                        <p className="text-xs text-slate-600/80 dark:text-slate-400/80">
+                          {leave.notTaken.reason}
+                          {leave.notTaken.byName &&
+                            ` · Por ${leave.notTaken.byName}`}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -182,11 +198,13 @@ export function ReviewLeaveModal({
           )}
 
           {/* Motivo del empleado */}
-          <div>
+          <div className="min-w-0 max-w-full">
             <Label className="text-xs text-muted-foreground">
               Motivo del empleado
             </Label>
-            <p className="mt-1 text-sm">{leave.reason}</p>
+            <p className="mt-1 text-sm whitespace-pre-wrap break-all">
+              {leave.reason}
+            </p>
           </div>
 
           {leave.attachmentUrl && (

@@ -60,6 +60,9 @@ export interface NovedadConsolidada {
   totalHoras?: number | null;
 
   createdAt: string | null;
+
+  notTakenAt: string | null;
+  notTakenReason: string | null;
 }
 
 export interface ResumenColaborador {
@@ -130,6 +133,9 @@ export interface SolicitudResumen {
   nombreAprobador: string | null;
   fechaRegistro: string;
   fechaDecision: string | null;
+
+  notTakenAt: string | null;
+  notTakenReason: string | null;
 }
 
 export interface SolicitudesPaginadas {

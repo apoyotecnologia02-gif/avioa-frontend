@@ -269,6 +269,7 @@ export default function SolicitudesContabilidadPage() {
                   <TableHead>Fechas</TableHead>
                   <TableHead className="text-right">Cantidad</TableHead>
                   <TableHead className="text-right">Motivo</TableHead>
+                  <TableHead>Tomadas</TableHead>
                   <TableHead>Área</TableHead>
                   <TableHead>Solicitada el</TableHead>
                 </TableRow>
@@ -317,6 +318,9 @@ export default function SolicitudesContabilidadPage() {
                     </TableCell>
                     <TableCell className="max-w-[240px] whitespace-normal break-words text-right text-sm text-muted-foreground">
                       {s.motivo ?? "—"}
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {s.notTakenAt ? "No" : "Si"}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {s.area ?? "—"}
