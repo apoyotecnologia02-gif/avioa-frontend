@@ -133,17 +133,6 @@ export default function LeavesPage() {
             )}
           </div>
 
-          {/* <div className="rounded-xl border bg-card p-4">
-            <p className="text-xs text-muted-foreground">
-              Devengado desde tu ingreso
-            </p>
-            <p className="mt-1.5 text-sm font-medium">
-              {balance?.accrued ?? 0} días hábiles
-            </p>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              15 por año · Art. 186 CST
-            </p>
-          </div> */}
           <div className="rounded-xl border bg-card p-4 space-y-3">
             <div>
               <p className="text-xs text-muted-foreground">
