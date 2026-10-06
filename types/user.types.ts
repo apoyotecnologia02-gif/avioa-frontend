@@ -48,6 +48,7 @@ export interface User {
   canPublishInFeed?: boolean;
   isLeader?: boolean;
   vacationDaysAdjustment?: number;
+  birthDate?: string;
 }
 
 export interface CreateUserDto {
@@ -73,6 +74,35 @@ export interface CreateUserDto {
   emergencyContactPhone?: string;
   emergencyContactRel?: string;
   vacationDaysAdjustment?: number;
+  legalEntity?: LegalEntity;
+}
+
+export interface UserDetail {
+  userId: string;
+  email: string;
+  name: string;
+  role: Role;
+  isLeader: boolean;
+  status: UserStatus;
+  department?: string | null;
+  area?: Area | null;
+  position?: string | null;
+  leaderId?: string | null;
+  managerId?: string | null;
+  birthDate?: string | null;
+  startDate?: string | null;
+  documentType?: DocumentType | null;
+  documentNumber?: string | null;
+  office?: Office | null;
+  contractType?: ContractType | null;
+  eps?: string | null;
+  afp?: string | null;
+  arl?: string | null;
+  salary?: number | string | null;
+  legalEntity?: LegalEntity | null;
+  emergencyContactName?: string | null;
+  emergencyContactPhone?: string | null;
+  emergencyContactRel?: string | null;
 }
 
 export interface AcceptInviteDto {
@@ -109,4 +139,10 @@ export enum Office {
   SANTUARIO_PARQUE = "SANTUARIO PARQUE",
   SANTUARIO_CALLE_DEL_COMERCIO = "SANTUARIO CALLE DEL COMERCIO",
   TELETRABAJO = "TELETRABAJO",
+}
+
+export enum LegalEntity {
+  INVERSIONES_AVIOA_SAS = "INVERSIONES AVIOA SAS",
+  GESTION_TURISMO_SAS = "GESTIÓN TURISMO SAS",
+  AVIOA_MAYORISTA_SAS = "AVIOA MAYORISTA SAS",
 }
