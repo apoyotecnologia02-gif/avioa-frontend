@@ -130,6 +130,10 @@ export function EquipmentLoans() {
   const isAdmin = role === "admin";
   const isLeader =
     user?.isLeader === true || role === "leader" || role === "admin";
+  const isSupport = user?.isSupport === true;
+
+  // Quien puede ver "Todos los Préstamos" y gestionar
+  const canManageLoans = isLeader || isSupport;
 
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("equipment");
@@ -166,11 +170,12 @@ export function EquipmentLoans() {
     refetch: refetchMyLoans,
   } = useMyLoans();
 
+  // enabled usa canManageLoans en lugar de isLeader
   const {
     data: allLoans,
     isLoading: isLoadingAllLoans,
     refetch: refetchAllLoans,
-  } = useAllLoans(undefined, { enabled: isLeader });
+  } = useAllLoans(undefined, { enabled: canManageLoans });
 
   const { data: locations } = useLocations();
 
@@ -182,10 +187,9 @@ export function EquipmentLoans() {
   // Refetch automático cuando lleguen eventos de equipment loans por websocket
   useEffect(() => {
     const handleEquipmentLoanUpdate = () => {
-      console.log("🔄 Refetcheando equipment loans...");
       refetchEquipment();
       refetchMyLoans();
-      if (isLeader) refetchAllLoans();
+      if (canManageLoans) refetchAllLoans();
     };
 
     window.addEventListener("equipment-loan-update", handleEquipmentLoanUpdate);
@@ -196,7 +200,7 @@ export function EquipmentLoans() {
         handleEquipmentLoanUpdate,
       );
     };
-  }, [isLeader, refetchEquipment, refetchMyLoans, refetchAllLoans]);
+  }, [canManageLoans, refetchEquipment, refetchMyLoans, refetchAllLoans]);
 
   const pendingCount = (allLoans ?? []).filter(
     (l: any) => l.status === LoanStatus.PENDING,
@@ -304,7 +308,7 @@ export function EquipmentLoans() {
           setLoanObservation("");
           refetchMyLoans();
           refetchEquipment();
-          if (isLeader) refetchAllLoans();
+          if (canManageLoans) refetchAllLoans();
         },
       },
     );
@@ -364,7 +368,7 @@ export function EquipmentLoans() {
       onSuccess: () => {
         refetchMyLoans();
         refetchEquipment();
-        if (isLeader) refetchAllLoans();
+        if (canManageLoans) refetchAllLoans();
       },
     });
   };
@@ -490,7 +494,8 @@ export function EquipmentLoans() {
           >
             Mis Préstamos
           </TabsTrigger>
-          {isLeader && (
+          {/* isLeader → canManageLoans */}
+          {canManageLoans && (
             <TabsTrigger
               value="all-loans"
               className="rounded-md border px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
@@ -821,7 +826,8 @@ export function EquipmentLoans() {
           </Card>
         </TabsContent>
 
-        {isLeader && (
+        {/* isLeader → canManageLoans */}
+        {canManageLoans && (
           <TabsContent value="all-loans" className="mt-6">
             <Card>
               <CardHeader>

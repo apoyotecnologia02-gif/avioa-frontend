@@ -205,6 +205,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       ...(payload?.modulePermissions && {
         modulePermissions: payload.modulePermissions,
       }),
+
+      ...(payload?.isSupport !== undefined && {
+        isSupport: Boolean(payload.isSupport),
+      }),
     };
 
     setSession(accessToken, refreshToken);
@@ -254,6 +258,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             user.isLeader !== Boolean(payload.isLeader)
           ) {
             user.isLeader = Boolean(payload.isLeader);
+            userUpdated = true;
+          }
+          if (payload.isSupport !== undefined && user.isSupport !== Boolean(payload.isSupport)) {
+            user.isSupport = Boolean(payload.isSupport);
             userUpdated = true;
           }
           if (payload.role && user.role !== payload.role) {

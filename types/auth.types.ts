@@ -23,6 +23,7 @@ export interface User {
   avatarUrl?: string;
   twoFactorEnabled: boolean;
   isLeader?: boolean;
+  isSupport?: boolean;
   modulePermissions?: ModulePermission[];
 }
 
