@@ -28,6 +28,28 @@ interface HrValidationLeave {
   comment: string;
 }
 
+export interface ActiveLeaveRequest {
+  leaveRequestId: string;
+  type: LeaveType;
+  startDate: string;
+  endDate: string;
+  startTime?: string | null;
+  endTime?: string | null;
+  isPartialDay?: boolean;
+  totalHours?: number | null;
+  businessDays: number;
+  status: LeaveStatus;
+  esCompensada: boolean;
+  user: {
+    userId: string;
+    name: string;
+    avatarUrl: string | null;
+    position: string | null;
+    department: string | null;
+    area: string | null;
+  };
+}
+
 export interface LeaveRequest {
   leaveRequestId: string;
   userId: string;

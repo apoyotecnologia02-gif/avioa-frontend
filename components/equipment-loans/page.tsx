@@ -775,8 +775,17 @@ export function EquipmentLoans() {
                               )}
                               {loan.approvedBy && (
                                 <p className="text-sm text-muted-foreground">
-                                  <User className="inline h-3 w-3 mr-1" />
-                                  Aprobado por: {loan.approvedBy.name}
+                                  {loan.status === LoanStatus.REJECTED ? (
+                                    <>
+                                      <XCircle className="inline h-3 w-3 mr-1 text-red-500" />
+                                      Rechazado por: {loan.approvedBy.name}
+                                    </>
+                                  ) : (
+                                    <>
+                                      <CheckCircle className="inline h-3 w-3 mr-1 text-green-500" />
+                                      Aprobado por: {loan.approvedBy.name}
+                                    </>
+                                  )}
                                 </p>
                               )}
                             </div>
@@ -882,8 +891,17 @@ export function EquipmentLoans() {
                                   )}
                                   {loan.approvedBy && (
                                     <p className="text-sm text-muted-foreground">
-                                      <CheckCircle className="inline h-3 w-3 mr-1 text-green-500" />
-                                      Aprobado por: {loan.approvedBy.name}
+                                      {loan.status === LoanStatus.REJECTED ? (
+                                        <>
+                                          <XCircle className="inline h-3 w-3 mr-1 text-red-500" />
+                                          Rechazado por: {loan.approvedBy.name}
+                                        </>
+                                      ) : (
+                                        <>
+                                          <CheckCircle className="inline h-3 w-3 mr-1 text-green-500" />
+                                          Aprobado por: {loan.approvedBy.name}
+                                        </>
+                                      )}
                                     </p>
                                   )}
                                   {loan.actualReturnDate && (
@@ -968,10 +986,10 @@ export function EquipmentLoans() {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="equipment">Equipo</Label>
-              <Select 
-              value={selectedEquipmentId}
-              onValueChange={setSelectedEquipmentId} 
-              required
+              <Select
+                value={selectedEquipmentId}
+                onValueChange={setSelectedEquipmentId}
+                required
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecciona un equipo" />

@@ -1,4 +1,3 @@
-// app/(portal)/colaboradores/page.tsx
 import { FeedList } from "@/components/feed/FeedList";
 import { WallOfPosts } from "@/components/mainPage/main";
 export default function Dashboard() {
