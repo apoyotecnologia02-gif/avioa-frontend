@@ -18,12 +18,15 @@ export interface User {
   email: string;
   role: UserRole;
   area: Area;
+  phone?: string;
   leaderId?: string;
   leaderName?: string;
-  avatarUrl?: string;
+  avatar?: string;
   twoFactorEnabled: boolean;
   isLeader?: boolean;
   modulePermissions?: ModulePermission[];
+  office?: string;
+  birthDate?: string;
 }
 
 export interface AuthTokens {

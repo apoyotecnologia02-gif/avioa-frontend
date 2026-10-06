@@ -66,6 +66,11 @@ function GoogleIcon({ className }: { className?: string }) {
   );
 }
 
+const toInputDate = (date?: string | null) => {
+  if (!date) return "";
+  return date.slice(0, 10);
+};
+
 const profileFormSchema = z.object({
   name: z
     .string()
@@ -118,9 +123,9 @@ export function ProfileForm() {
       name: user?.name || "",
       email: user?.email || "",
       // area: user?.area || "",
-      birthDate: "",
-      phone: "",
-      office: "",
+      birthDate: toInputDate(user?.birthDate) || "",
+      phone: user?.phone || "",
+      office: user?.office || "",
     },
   });
 
@@ -130,9 +135,9 @@ export function ProfileForm() {
         name: user.name || "",
         email: user.email || "",
         // area: user.area,
-        birthDate: "",
-        phone: "",
-        office: "",
+        birthDate: toInputDate(user.birthDate) || "",
+        phone: user.phone || "",
+        office: user.office || "",
       });
       hasResetRef.current = true;
     }
@@ -238,9 +243,9 @@ export function ProfileForm() {
         <div className="flex flex-col items-center gap-5 text-center sm:flex-row sm:items-center sm:gap-6 sm:text-left">
           <div className="relative group">
             <Avatar className="size-24 border-2 border-border transition-all duration-300 group-hover:border-primary/50 shadow-sm">
-              {avatarUrl ? (
+              {user?.avatar ? (
                 <AvatarImage
-                  src={avatarUrl}
+                  src={user.avatar}
                   alt="Avatar"
                   className="object-cover"
                 />
@@ -380,7 +385,7 @@ export function ProfileForm() {
                 <FormLabel>Oficina</FormLabel>
                 <FormControl>
                   <Select onValueChange={field.onChange} value={field.value}>
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-background w-full">
                       <SelectValue placeholder="Seleccione una oficina" />
                     </SelectTrigger>
                     <SelectContent>
