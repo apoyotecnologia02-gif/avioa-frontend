@@ -258,6 +258,15 @@ export function RequestLeaveModal({
                     como vacaciones, de acuerdo con la programación y aprobación
                     correspondiente.
                   </li>
+                  <li>
+                    Si finalmente no vas a tomar las vacaciones aprobadas, debes
+                    notificarlo a más tardar el{" "}
+                    <strong>
+                      día anterior al inicio del período solicitado
+                    </strong>
+                    . Una vez iniciado el periodo, ya no será posible revertir
+                    la solicitud
+                  </li>
                 </ul>
               </div>
             </div>

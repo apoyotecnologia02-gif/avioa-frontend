@@ -112,6 +112,20 @@ export const APP_MODULES = [
     description: "Publicaciones y novedades",
     action: ["create", "update", "delete"],
   },
+  {
+    key: "AVIOA_DIRECTORY",
+    kind: "module",
+    category: "HERRAMIENTAS",
+    label: "Directorio aVioa",
+    description: "Acceso al link del directirio de aVioa",
+  },
+  {
+    key: "AVIOA_GASTOS",
+    kind: "module",
+    category: "HERRAMIENTAS",
+    label: "Gastos aVioa",
+    description: "Acceso al link para registrar gastos",
+  },
 
   // ── Administración (capacidades) ──────────────────────
   {
