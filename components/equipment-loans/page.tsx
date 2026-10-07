@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Card,
   CardContent,
@@ -51,6 +51,7 @@ import {
   Users,
   ChevronLeft,
   ChevronRight,
+  Filter,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
@@ -109,7 +110,7 @@ const loanStatusConfig = {
   },
 };
 
-const categoryLabels = {
+const categoryLabels: Record<EquipmentCategory, string> = {
   [EquipmentCategory.LAPTOP]: "Laptop",
   [EquipmentCategory.CELLPHONE]: "Teléfono",
   [EquipmentCategory.KEYBOARD]: "Teclado",
@@ -121,7 +122,55 @@ const categoryLabels = {
   [EquipmentCategory.OTHER]: "Otro",
 };
 
-const ITEMS_PER_PAGE = 6;
+const AVATAR_COLORS = [
+  "bg-red-500/15 text-red-700 dark:text-red-300",
+  "bg-blue-500/15 text-blue-700 dark:text-blue-300",
+  "bg-green-500/15 text-green-700 dark:text-green-300",
+  "bg-purple-500/15 text-purple-700 dark:text-purple-300",
+  "bg-amber-500/15 text-amber-700 dark:text-amber-300",
+  "bg-pink-500/15 text-pink-700 dark:text-pink-300",
+  "bg-teal-500/15 text-teal-700 dark:text-teal-300",
+];
+
+function getInitials(name: string): string {
+  if (!name) return "?";
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+function getAvatarColor(name: string): string {
+  if (!name) return AVATAR_COLORS[0];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+
+function UserAvatar({
+  name,
+  size = "sm",
+}: {
+  name: string;
+  size?: "sm" | "md";
+}) {
+  const initials = getInitials(name);
+  const color = getAvatarColor(name);
+  const dim = size === "sm" ? "h-7 w-7 text-[10px]" : "h-8 w-8 text-xs";
+  return (
+    <div
+      className={`${dim} ${color} shrink-0 rounded-full flex items-center justify-center font-semibold`}
+      title={name}
+    >
+      {initials}
+    </div>
+  );
+}
+
+const ITEMS_PER_PAGE = 8;
+
+type LoanFilterStatus = LoanStatus | "ALL";
 
 export function EquipmentLoans() {
   const { user } = useAuth();
@@ -132,10 +181,14 @@ export function EquipmentLoans() {
     user?.isLeader === true || role === "leader" || role === "admin";
   const isSupport = user?.isSupport === true;
 
-  // Quien puede ver "Todos los Préstamos" y gestionar
   const canManageLoans = isLeader || isSupport;
 
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<LoanFilterStatus>("ALL");
+  const [equipmentStatusFilter, setEquipmentStatusFilter] = useState<
+    EquipmentStatus | "ALL"
+  >("ALL");
+
   const [activeTab, setActiveTab] = useState("equipment");
   const [selectedLoanId, setSelectedLoanId] = useState<string | null>(null);
   const [showLoanDialog, setShowLoanDialog] = useState(false);
@@ -170,7 +223,6 @@ export function EquipmentLoans() {
     refetch: refetchMyLoans,
   } = useMyLoans();
 
-  // enabled usa canManageLoans en lugar de isLeader
   const {
     data: allLoans,
     isLoading: isLoadingAllLoans,
@@ -184,7 +236,6 @@ export function EquipmentLoans() {
   const updateStatus = useUpdateLoanStatus();
   const cancelLoan = useCancelLoan();
 
-  // Refetch automático cuando lleguen eventos de equipment loans por websocket
   useEffect(() => {
     const handleEquipmentLoanUpdate = () => {
       refetchEquipment();
@@ -206,40 +257,52 @@ export function EquipmentLoans() {
     (l: any) => l.status === LoanStatus.PENDING,
   ).length;
 
-  const filteredEquipment = (equipment ?? []).filter((item: any) => {
+  const filteredEquipment = useMemo(() => {
     const searchLower = searchTerm.toLowerCase();
+    return (equipment ?? []).filter((item: any) => {
+      if (
+        equipmentStatusFilter !== "ALL" &&
+        item.status !== equipmentStatusFilter
+      ) {
+        return false;
+      }
+      const activeLoan = item.loans?.find((l: any) => l.status === "APPROVED");
+      const holderName = (activeLoan?.user?.name ?? "").toLowerCase();
+      return (
+        item.name.toLowerCase().includes(searchLower) ||
+        item.category.toLowerCase().includes(searchLower) ||
+        (item.serialNumber &&
+          item.serialNumber.toLowerCase().includes(searchLower)) ||
+        (item.location?.name &&
+          item.location.name.toLowerCase().includes(searchLower)) ||
+        holderName.includes(searchLower)
+      );
+    });
+  }, [equipment, searchTerm, equipmentStatusFilter]);
 
-    const activeLoan = item.loans?.find((l: any) => l.status === "APPROVED");
-    const holderName = (activeLoan?.user?.name ?? "").toLowerCase();
-
-    return (
-      item.name.toLowerCase().includes(searchLower) ||
-      item.category.toLowerCase().includes(searchLower) ||
-      (item.serialNumber &&
-        item.serialNumber.toLowerCase().includes(searchLower)) ||
-      (item.location?.name &&
-        item.location.name.toLowerCase().includes(searchLower)) ||
-      holderName.includes(searchLower)
-    );
-  });
-
-  const filteredMyLoans = (myLoans ?? []).filter((loan: any) => {
+  const filteredMyLoans = useMemo(() => {
     const searchLower = searchTerm.toLowerCase();
-    return (
-      (loan.equipment?.name ?? "").toLowerCase().includes(searchLower) ||
-      loan.status.toLowerCase().includes(searchLower) ||
-      (loan.reason && loan.reason.toLowerCase().includes(searchLower))
-    );
-  });
+    return (myLoans ?? []).filter((loan: any) => {
+      if (statusFilter !== "ALL" && loan.status !== statusFilter) return false;
+      return (
+        (loan.equipment?.name ?? "").toLowerCase().includes(searchLower) ||
+        loan.status.toLowerCase().includes(searchLower) ||
+        (loan.reason && loan.reason.toLowerCase().includes(searchLower))
+      );
+    });
+  }, [myLoans, searchTerm, statusFilter]);
 
-  const filteredAllLoans = (allLoans ?? []).filter((loan: any) => {
+  const filteredAllLoans = useMemo(() => {
     const searchLower = searchTerm.toLowerCase();
-    return (
-      (loan.equipment?.name ?? "").toLowerCase().includes(searchLower) ||
-      (loan.user?.name ?? "").toLowerCase().includes(searchLower) ||
-      loan.status.toLowerCase().includes(searchLower)
-    );
-  });
+    return (allLoans ?? []).filter((loan: any) => {
+      if (statusFilter !== "ALL" && loan.status !== statusFilter) return false;
+      return (
+        (loan.equipment?.name ?? "").toLowerCase().includes(searchLower) ||
+        (loan.user?.name ?? "").toLowerCase().includes(searchLower) ||
+        loan.status.toLowerCase().includes(searchLower)
+      );
+    });
+  }, [allLoans, searchTerm, statusFilter]);
 
   const totalPages = (items: any[]) => Math.ceil(items.length / ITEMS_PER_PAGE);
   const paginate = (items: any[]) => {
@@ -251,6 +314,8 @@ export function EquipmentLoans() {
   const handleTabChange = (value: string) => {
     setActiveTab(value);
     setCurrentPage(1);
+    setStatusFilter("ALL");
+    setEquipmentStatusFilter("ALL");
   };
 
   const handleSearchChange = (value: string) => {
@@ -263,30 +328,32 @@ export function EquipmentLoans() {
     if (total <= 1) return null;
 
     return (
-      <div className="flex items-center justify-center gap-2 mt-4">
-        <Button
-          variant="outline"
-          size="icon"
-          className="h-8 w-8"
-          onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-          disabled={currentPage === 1}
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-
-        <span className="text-sm font-medium min-w-[40px] text-center">
-          {currentPage}
-        </span>
-
-        <Button
-          variant="outline"
-          size="icon"
-          className="h-8 w-8"
-          onClick={() => setCurrentPage((p) => Math.min(total, p + 1))}
-          disabled={currentPage === total}
-        >
-          <ChevronRight className="h-4 w-4" />
-        </Button>
+      <div className="flex items-center justify-between gap-2 mt-4">
+        <p className="text-xs text-muted-foreground">
+          Página {currentPage} de {total}
+        </p>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 gap-1"
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+            Anterior
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 gap-1"
+            onClick={() => setCurrentPage((p) => Math.min(total, p + 1))}
+            disabled={currentPage === total}
+          >
+            Siguiente
+            <ChevronRight className="h-3.5 w-3.5" />
+          </Button>
+        </div>
       </div>
     );
   };
@@ -405,6 +472,7 @@ export function EquipmentLoans() {
 
   const getEquipmentStatusBadge = (status: EquipmentStatus) => {
     const config = statusConfig[status];
+    if (!config) return null;
     return (
       <Badge className={config.className} variant="secondary">
         {config.label}
@@ -414,6 +482,7 @@ export function EquipmentLoans() {
 
   const getLoanStatusBadge = (status: LoanStatus) => {
     const config = loanStatusConfig[status];
+    if (!config) return null;
     return (
       <Badge className={config.className} variant="secondary">
         {config.label}
@@ -494,7 +563,6 @@ export function EquipmentLoans() {
           >
             Mis Préstamos
           </TabsTrigger>
-          {/* isLeader → canManageLoans */}
           {canManageLoans && (
             <TabsTrigger
               value="all-loans"
@@ -514,164 +582,194 @@ export function EquipmentLoans() {
 
         <TabsContent value="equipment" className="mt-6">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Package className="h-5 w-5" />
-                Inventario de Equipos
-              </CardTitle>
-              <CardDescription>
-                Lista de todos los equipos disponibles
-              </CardDescription>
-              <div className="relative mt-4">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar por nombre, categoría, serial o ubicación..."
-                  value={searchTerm}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                  className="pl-10"
-                />
+            <CardHeader className="pb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Package className="h-5 w-5" />
+                    Inventario de Equipos
+                    <Badge variant="secondary" className="ml-1">
+                      {filteredEquipment.length}
+                    </Badge>
+                  </CardTitle>
+                  <CardDescription className="mt-1">
+                    Lista de todos los equipos registrados
+                  </CardDescription>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
+              <div className="mb-4 flex flex-col sm:flex-row gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar por nombre, categoría, serial o ubicación..."
+                    value={searchTerm}
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <Select
+                  value={equipmentStatusFilter}
+                  onValueChange={(v) => {
+                    setEquipmentStatusFilter(v as EquipmentStatus | "ALL");
+                    setCurrentPage(1);
+                  }}
+                >
+                  <SelectTrigger className="w-full sm:w-[180px]">
+                    <Filter className="mr-2 h-3.5 w-3.5" />
+                    <SelectValue placeholder="Estado" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">Todos los estados</SelectItem>
+                    <SelectItem value={EquipmentStatus.AVAILABLE}>
+                      Disponible
+                    </SelectItem>
+                    <SelectItem value={EquipmentStatus.LOANED}>
+                      En préstamo
+                    </SelectItem>
+                    <SelectItem value={EquipmentStatus.MAINTENANCE}>
+                      Mantenimiento
+                    </SelectItem>
+                    <SelectItem value={EquipmentStatus.DAMAGED}>
+                      Dañado
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               {isLoadingEquipment ? (
                 <div className="space-y-3">
-                  <Skeleton className="h-12 w-full" />
-                  <Skeleton className="h-12 w-full" />
-                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-14 w-full" />
+                  <Skeleton className="h-14 w-full" />
+                  <Skeleton className="h-14 w-full" />
                 </div>
               ) : filteredEquipment.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
+                <div className="text-center py-12 text-muted-foreground">
                   <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No se encontraron equipos</p>
+                  <p className="font-medium">No se encontraron equipos</p>
+                  <p className="text-sm mt-1">
+                    Intenta ajustar los filtros de búsqueda
+                  </p>
                 </div>
               ) : (
                 <>
-                  <div className="hidden md:block rounded-md border">
+                  <div className="hidden md:block rounded-md border overflow-hidden">
                     <Table>
                       <TableHeader>
-                        <TableRow>
-                          <TableHead>Equipo</TableHead>
-                          <TableHead>Categoría</TableHead>
-                          <TableHead>Serial</TableHead>
-                          <TableHead>Ubicación</TableHead>
-                          <TableHead>En posesión de</TableHead>
+                        <TableRow className="bg-muted/40 hover:bg-muted/40">
+                          <TableHead className="w-[35%]">Equipo</TableHead>
+                          <TableHead className="w-[20%]">Ubicación</TableHead>
+                          <TableHead className="w-[25%]">
+                            En posesión de
+                          </TableHead>
                           <TableHead className="text-right">Estado</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {paginate(filteredEquipment).map((item: any) => (
-                          <TableRow key={item.equipmentId}>
-                            <TableCell className="font-medium">
-                              {item.name}
-                            </TableCell>
-                            <TableCell>
-                              {
-                                categoryLabels[
-                                  item.category as EquipmentCategory
-                                ]
-                              }
-                            </TableCell>
-                            <TableCell>{item.serialNumber || "—"}</TableCell>
-                            <TableCell>
-                              {item.location?.name || "Sin ubicación"}
-                            </TableCell>
-                            <TableCell>
-                              {(() => {
-                                const activeLoan = item.loans?.find(
-                                  (l: any) => l.status === "APPROVED",
-                                );
-                                return activeLoan?.user?.name || "—";
-                              })()}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex items-center justify-end gap-2">
-                                {item.status === EquipmentStatus.AVAILABLE && (
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7 rounded-full hover:bg-primary/10"
-                                    title="Solicitar este equipo"
-                                    onClick={() =>
-                                      handleRequestLoanFor(item.equipmentId)
+                        {paginate(filteredEquipment).map((item: any) => {
+                          const activeLoan = item.loans?.find(
+                            (l: any) => l.status === "APPROVED",
+                          );
+                          const holderName = activeLoan?.user?.name;
+                          return (
+                            <TableRow key={item.equipmentId} className="h-14">
+                              <TableCell>
+                                <div className="flex flex-col">
+                                  <span className="font-medium leading-tight">
+                                    {item.name}
+                                  </span>
+                                  <span className="text-xs text-muted-foreground mt-0.5">
+                                    {
+                                      categoryLabels[
+                                        item.category as EquipmentCategory
+                                      ]
                                     }
-                                  >
-                                    <Plus className="h-4 w-4" />
-                                  </Button>
+                                    {item.serialNumber &&
+                                      ` · ${item.serialNumber}`}
+                                  </span>
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-sm text-muted-foreground">
+                                {item.location?.name || "—"}
+                              </TableCell>
+                              <TableCell>
+                                {holderName ? (
+                                  <div className="flex items-center gap-2">
+                                    <UserAvatar name={holderName} />
+                                    <span className="text-sm truncate">
+                                      {holderName}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <span className="text-sm text-muted-foreground">
+                                    —
+                                  </span>
                                 )}
-                                {getEquipmentStatusBadge(item.status)}
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center justify-end gap-2">
+                                  {item.status ===
+                                    EquipmentStatus.AVAILABLE && (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-7 w-7 rounded-full hover:bg-primary/10"
+                                      title="Solicitar este equipo"
+                                      onClick={() =>
+                                        handleRequestLoanFor(item.equipmentId)
+                                      }
+                                    >
+                                      <Plus className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                  {getEquipmentStatusBadge(item.status)}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
                       </TableBody>
                     </Table>
                   </div>
 
                   <div className="md:hidden space-y-3">
-                    {paginate(filteredEquipment).map((item: any) => (
-                      <Card key={item.equipmentId}>
-                        <CardContent className="pt-6">
-                          <div className="flex items-start justify-between">
-                            <div>
-                              <p className="font-medium">{item.name}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {
-                                  categoryLabels[
-                                    item.category as EquipmentCategory
-                                  ]
-                                }
-                              </p>
-                              {item.serialNumber && (
-                                <p className="text-sm text-muted-foreground">
-                                  Serial: {item.serialNumber}
+                    {paginate(filteredEquipment).map((item: any) => {
+                      const activeLoan = item.loans?.find(
+                        (l: any) => l.status === "APPROVED",
+                      );
+                      const holderName = activeLoan?.user?.name;
+                      return (
+                        <Card key={item.equipmentId}>
+                          <CardContent className="p-4">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0 flex-1">
+                                <p className="font-medium truncate">
+                                  {item.name}
                                 </p>
-                              )}
-                              <p className="text-sm text-muted-foreground">
-                                {item.location?.name || "Sin ubicación"}
-                              </p>
-                              {(() => {
-                                const activeLoan = item.loans?.find(
-                                  (l: any) => l.status === "APPROVED",
-                                );
-                                return activeLoan?.user?.name ? (
-                                  <p className="text-sm text-muted-foreground">
-                                    <User className="inline h-3 w-3 mr-1" />
-                                    En posesión de: {activeLoan.user.name}
-                                  </p>
-                                ) : null;
-                              })()}
-                            </div>
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="flex-1">
-                                <p className="font-medium">{item.name}</p>
-                                <p className="text-sm text-muted-foreground">
+                                <p className="text-xs text-muted-foreground mt-0.5">
                                   {
                                     categoryLabels[
                                       item.category as EquipmentCategory
                                     ]
                                   }
+                                  {item.serialNumber &&
+                                    ` · ${item.serialNumber}`}
                                 </p>
-                                {item.serialNumber && (
-                                  <p className="text-sm text-muted-foreground">
-                                    Serial: {item.serialNumber}
-                                  </p>
-                                )}
-                                <p className="text-sm text-muted-foreground">
+                                <p className="text-xs text-muted-foreground mt-1">
                                   {item.location?.name || "Sin ubicación"}
                                 </p>
-                                {(() => {
-                                  const activeLoan = item.loans?.find(
-                                    (l: any) => l.status === "APPROVED",
-                                  );
-                                  return activeLoan?.user?.name ? (
-                                    <p className="text-sm text-muted-foreground">
-                                      <User className="inline h-3 w-3 mr-1" />
-                                      En posesión de: {activeLoan.user.name}
-                                    </p>
-                                  ) : null;
-                                })()}
+                                {holderName && (
+                                  <div className="flex items-center gap-2 mt-2">
+                                    <UserAvatar name={holderName} />
+                                    <span className="text-xs text-muted-foreground truncate">
+                                      {holderName}
+                                    </span>
+                                  </div>
+                                )}
                               </div>
-                              <div className="flex items-center gap-2 shrink-0">
+                              <div className="flex flex-col items-end gap-2 shrink-0">
+                                {getEquipmentStatusBadge(item.status)}
                                 {item.status === EquipmentStatus.AVAILABLE && (
                                   <Button
                                     variant="ghost"
@@ -685,20 +783,12 @@ export function EquipmentLoans() {
                                     <Plus className="h-4 w-4" />
                                   </Button>
                                 )}
-                                {getEquipmentStatusBadge(item.status)}
                               </div>
                             </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-
-                  <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
-                    <p>
-                      Mostrando {paginate(filteredEquipment).length} de{" "}
-                      {filteredEquipment.length} equipos
-                    </p>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
                   </div>
 
                   {renderPagination(filteredEquipment)}
@@ -710,113 +800,212 @@ export function EquipmentLoans() {
 
         <TabsContent value="my-loans" className="mt-6">
           <Card>
-            <CardHeader>
+            <CardHeader className="pb-4">
               <CardTitle className="flex items-center gap-2">
                 <Clock className="h-5 w-5" />
                 Mis Préstamos
+                <Badge variant="secondary" className="ml-1">
+                  {filteredMyLoans.length}
+                </Badge>
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="mt-1">
                 Historial de tus solicitudes de préstamo
               </CardDescription>
-              <div className="relative mt-4">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar por equipo o estado..."
-                  value={searchTerm}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
             </CardHeader>
             <CardContent>
+              <div className="mb-4 flex flex-col sm:flex-row gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar por equipo o estado..."
+                    value={searchTerm}
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <Select
+                  value={statusFilter}
+                  onValueChange={(v) => {
+                    setStatusFilter(v as LoanFilterStatus);
+                    setCurrentPage(1);
+                  }}
+                >
+                  <SelectTrigger className="w-full sm:w-[180px]">
+                    <Filter className="mr-2 h-3.5 w-3.5" />
+                    <SelectValue placeholder="Estado" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">Todos los estados</SelectItem>
+                    <SelectItem value={LoanStatus.PENDING}>
+                      Pendiente
+                    </SelectItem>
+                    <SelectItem value={LoanStatus.APPROVED}>
+                      Aprobado
+                    </SelectItem>
+                    <SelectItem value={LoanStatus.RETURNED}>
+                      Devuelto
+                    </SelectItem>
+                    <SelectItem value={LoanStatus.REJECTED}>
+                      Rechazado
+                    </SelectItem>
+                    <SelectItem value={LoanStatus.CANCELLED}>
+                      Cancelado
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               {isLoadingMyLoans ? (
                 <div className="space-y-3">
-                  <Skeleton className="h-12 w-full" />
-                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-14 w-full" />
+                  <Skeleton className="h-14 w-full" />
                 </div>
               ) : filteredMyLoans.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
+                <div className="text-center py-12 text-muted-foreground">
                   <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No tienes solicitudes de préstamo</p>
+                  <p className="font-medium">No tienes solicitudes</p>
+                  <p className="text-sm mt-1">
+                    Cuando solicites un préstamo aparecerá aquí
+                  </p>
                   <Button
-                    variant="link"
+                    variant="outline"
                     onClick={() => setShowLoanDialog(true)}
-                    className="mt-2"
+                    className="mt-4"
                   >
+                    <Plus className="mr-2 h-4 w-4" />
                     Solicitar un préstamo
                   </Button>
                 </div>
               ) : (
                 <>
-                  <div className="space-y-4">
-                    {paginate(filteredMyLoans).map((loan: any) => (
-                      <Card key={loan.equipmentLoanId}>
-                        <CardContent className="pt-6">
-                          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2">
-                                <p className="font-medium">
+                  <div className="hidden md:block rounded-md border overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/40 hover:bg-muted/40">
+                          <TableHead className="w-[35%]">Equipo</TableHead>
+                          <TableHead className="w-[25%]">Motivo</TableHead>
+                          <TableHead className="w-[15%]">Devolución</TableHead>
+                          <TableHead className="w-[15%]">Estado</TableHead>
+                          <TableHead className="text-right">Acciones</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {paginate(filteredMyLoans).map((loan: any) => (
+                          <TableRow key={loan.equipmentLoanId} className="h-14">
+                            <TableCell>
+                              <div className="flex flex-col">
+                                <span className="font-medium leading-tight">
                                   {loan.equipment?.name || "Equipo"}
-                                </p>
+                                </span>
+                                {loan.equipment?.category && (
+                                  <span className="text-xs text-muted-foreground mt-0.5">
+                                    {
+                                      categoryLabels[
+                                        loan.equipment
+                                          .category as EquipmentCategory
+                                      ]
+                                    }
+                                  </span>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">
+                              {loan.reason || "—"}
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {loan.expectedReturnDate ? (
+                                <span className="inline-flex items-center gap-1">
+                                  <Calendar className="h-3 w-3" />
+                                  {formatDate(loan.expectedReturnDate)}
+                                </span>
+                              ) : (
+                                "—"
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <div
+                                title={
+                                  loan.approvedBy
+                                    ? loan.status === LoanStatus.REJECTED
+                                      ? `Rechazado por ${loan.approvedBy.name}`
+                                      : `Aprobado por ${loan.approvedBy.name}`
+                                    : undefined
+                                }
+                              >
                                 {getLoanStatusBadge(loan.status)}
                               </div>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {loan.status === LoanStatus.PENDING && (
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() =>
+                                    handleCancelLoan(loan.equipmentLoanId)
+                                  }
+                                  disabled={cancelLoan.isPending}
+                                >
+                                  Cancelar
+                                </Button>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  <div className="md:hidden space-y-3">
+                    {paginate(filteredMyLoans).map((loan: any) => (
+                      <Card key={loan.equipmentLoanId}>
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0 flex-1">
+                              <p className="font-medium truncate">
+                                {loan.equipment?.name || "Equipo"}
+                              </p>
+                              {loan.equipment?.category && (
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                  {
+                                    categoryLabels[
+                                      loan.equipment
+                                        .category as EquipmentCategory
+                                    ]
+                                  }
+                                </p>
+                              )}
                               {loan.reason && (
-                                <p className="text-sm text-muted-foreground">
+                                <p className="text-xs text-muted-foreground mt-1 truncate">
                                   Motivo: {loan.reason}
                                 </p>
                               )}
                               {loan.expectedReturnDate && (
-                                <p className="text-sm text-muted-foreground">
+                                <p className="text-xs text-muted-foreground mt-1">
                                   <Calendar className="inline h-3 w-3 mr-1" />
-                                  Devolución esperada:{" "}
                                   {formatDate(loan.expectedReturnDate)}
                                 </p>
                               )}
-                              {loan.actualReturnDate && (
-                                <p className="text-sm text-muted-foreground">
-                                  <RotateCcw className="inline h-3 w-3 mr-1" />
-                                  Devuelto: {formatDate(loan.actualReturnDate)}
-                                </p>
-                              )}
-                              {loan.approvedBy && (
-                                <p className="text-sm text-muted-foreground">
-                                  {loan.status === LoanStatus.REJECTED ? (
-                                    <>
-                                      <XCircle className="inline h-3 w-3 mr-1 text-red-500" />
-                                      Rechazado por: {loan.approvedBy.name}
-                                    </>
-                                  ) : (
-                                    <>
-                                      <CheckCircle className="inline h-3 w-3 mr-1 text-green-500" />
-                                      Aprobado por: {loan.approvedBy.name}
-                                    </>
-                                  )}
-                                </p>
+                            </div>
+                            <div className="flex flex-col items-end gap-2 shrink-0">
+                              {getLoanStatusBadge(loan.status)}
+                              {loan.status === LoanStatus.PENDING && (
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  className="h-7 text-xs"
+                                  onClick={() =>
+                                    handleCancelLoan(loan.equipmentLoanId)
+                                  }
+                                  disabled={cancelLoan.isPending}
+                                >
+                                  Cancelar
+                                </Button>
                               )}
                             </div>
-                            {loan.status === LoanStatus.PENDING && (
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() =>
-                                  handleCancelLoan(loan.equipmentLoanId)
-                                }
-                                disabled={cancelLoan.isPending}
-                              >
-                                Cancelar
-                              </Button>
-                            )}
                           </div>
                         </CardContent>
                       </Card>
                     ))}
-                  </div>
-
-                  <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
-                    <p>
-                      Mostrando {paginate(filteredMyLoans).length} de{" "}
-                      {filteredMyLoans.length} solicitudes
-                    </p>
                   </div>
 
                   {renderPagination(filteredMyLoans)}
@@ -826,122 +1015,269 @@ export function EquipmentLoans() {
           </Card>
         </TabsContent>
 
-        {/* isLeader → canManageLoans */}
         {canManageLoans && (
           <TabsContent value="all-loans" className="mt-6">
             <Card>
-              <CardHeader>
+              <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-2">
                   <Users className="h-5 w-5" />
                   Todas las Solicitudes
+                  <Badge variant="secondary" className="ml-1">
+                    {filteredAllLoans.length}
+                  </Badge>
+                  {pendingCount > 0 && (
+                    <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">
+                      {pendingCount} pendientes
+                    </Badge>
+                  )}
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="mt-1">
                   Gestiona las solicitudes de préstamo de los colaboradores
                 </CardDescription>
-                <div className="relative mt-4">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar por equipo, usuario o estado..."
-                    value={searchTerm}
-                    onChange={(e) => handleSearchChange(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
               </CardHeader>
               <CardContent>
+                <div className="mb-4 flex flex-col sm:flex-row gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      placeholder="Buscar por equipo, usuario o estado..."
+                      value={searchTerm}
+                      onChange={(e) => handleSearchChange(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  <Select
+                    value={statusFilter}
+                    onValueChange={(v) => {
+                      setStatusFilter(v as LoanFilterStatus);
+                      setCurrentPage(1);
+                    }}
+                  >
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                      <Filter className="mr-2 h-3.5 w-3.5" />
+                      <SelectValue placeholder="Estado" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ALL">Todos los estados</SelectItem>
+                      <SelectItem value={LoanStatus.PENDING}>
+                        Pendiente
+                      </SelectItem>
+                      <SelectItem value={LoanStatus.APPROVED}>
+                        Aprobado
+                      </SelectItem>
+                      <SelectItem value={LoanStatus.RETURNED}>
+                        Devuelto
+                      </SelectItem>
+                      <SelectItem value={LoanStatus.REJECTED}>
+                        Rechazado
+                      </SelectItem>
+                      <SelectItem value={LoanStatus.CANCELLED}>
+                        Cancelado
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 {isLoadingAllLoans ? (
                   <div className="space-y-3">
-                    <Skeleton className="h-12 w-full" />
-                    <Skeleton className="h-12 w-full" />
-                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-14 w-full" />
+                    <Skeleton className="h-14 w-full" />
+                    <Skeleton className="h-14 w-full" />
                   </div>
                 ) : filteredAllLoans.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
+                  <div className="text-center py-12 text-muted-foreground">
                     <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>No hay solicitudes de préstamo</p>
+                    <p className="font-medium">No hay solicitudes</p>
+                    <p className="text-sm mt-1">
+                      Cuando los colaboradores soliciten préstamos aparecerán
+                      aquí
+                    </p>
                   </div>
                 ) : (
                   <>
-                    <div className="space-y-4">
-                      {paginate(filteredAllLoans).map((loan: any) => (
-                        <Card key={loan.equipmentLoanId}>
-                          <CardContent className="pt-6">
-                            <div className="flex flex-col gap-3">
-                              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                                <div className="space-y-1">
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    <p className="font-medium">
-                                      {loan.equipment?.name || "Equipo"}
-                                    </p>
-                                    {getLoanStatusBadge(loan.status)}
-                                    <Badge variant="outline">
-                                      {loan.user?.name || "Usuario"}
-                                    </Badge>
-                                  </div>
-                                  {loan.reason && (
-                                    <p className="text-sm text-muted-foreground">
-                                      Motivo: {loan.reason}
-                                    </p>
-                                  )}
-                                  {loan.observation && (
-                                    <p className="text-sm text-muted-foreground">
-                                      Observación: {loan.observation}
-                                    </p>
-                                  )}
-                                  {loan.expectedReturnDate && (
-                                    <p className="text-sm text-muted-foreground">
-                                      <Calendar className="inline h-3 w-3 mr-1" />
-                                      Devolución esperada:{" "}
-                                      {formatDateLong(loan.expectedReturnDate)}
-                                    </p>
-                                  )}
-                                  {loan.approvedBy && (
-                                    <p className="text-sm text-muted-foreground">
-                                      {loan.status === LoanStatus.REJECTED ? (
-                                        <>
-                                          <XCircle className="inline h-3 w-3 mr-1 text-red-500" />
-                                          Rechazado por: {loan.approvedBy.name}
-                                        </>
-                                      ) : (
-                                        <>
-                                          <CheckCircle className="inline h-3 w-3 mr-1 text-green-500" />
-                                          Aprobado por: {loan.approvedBy.name}
-                                        </>
-                                      )}
-                                    </p>
-                                  )}
-                                  {loan.actualReturnDate && (
-                                    <p className="text-sm text-muted-foreground">
-                                      <RotateCcw className="inline h-3 w-3 mr-1" />
-                                      Devuelto:{" "}
-                                      {formatDateLong(loan.actualReturnDate)}
-                                    </p>
+                    <div className="hidden md:block rounded-md border overflow-hidden">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-muted/40 hover:bg-muted/40">
+                            <TableHead className="w-[28%]">Equipo</TableHead>
+                            <TableHead className="w-[18%]">
+                              Solicitante
+                            </TableHead>
+                            <TableHead className="w-[18%]">Motivo</TableHead>
+                            <TableHead className="w-[14%]">Estado</TableHead>
+                            <TableHead className="w-[22%] text-right">
+                              Acciones
+                            </TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {paginate(filteredAllLoans).map((loan: any) => (
+                            <TableRow
+                              key={loan.equipmentLoanId}
+                              className="h-14"
+                            >
+                              <TableCell>
+                                <div className="flex flex-col">
+                                  <span className="font-medium leading-tight">
+                                    {loan.equipment?.name || "Equipo"}
+                                  </span>
+                                  {loan.equipment?.category && (
+                                    <span className="text-xs text-muted-foreground mt-0.5">
+                                      {
+                                        categoryLabels[
+                                          loan.equipment
+                                            .category as EquipmentCategory
+                                        ]
+                                      }
+                                      {loan.expectedReturnDate &&
+                                        ` · Dev. ${formatDate(loan.expectedReturnDate)}`}
+                                    </span>
                                   )}
                                 </div>
-                              </div>
+                              </TableCell>
+                              <TableCell>
+                                {loan.user?.name ? (
+                                  <div className="flex items-center gap-2">
+                                    <UserAvatar name={loan.user.name} />
+                                    <span className="text-sm truncate">
+                                      {loan.user.name}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <span className="text-sm text-muted-foreground">
+                                    —
+                                  </span>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">
+                                {loan.reason || "—"}
+                              </TableCell>
+                              <TableCell>
+                                {getLoanStatusBadge(loan.status)}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end gap-1.5 flex-wrap">
+                                  {loan.status === LoanStatus.PENDING && (
+                                    <>
+                                      <Button
+                                        size="sm"
+                                        className="h-7 text-xs"
+                                        onClick={() =>
+                                          handleApproveLoan(
+                                            loan.equipmentLoanId,
+                                          )
+                                        }
+                                        disabled={updateStatus.isPending}
+                                      >
+                                        <CheckCircle className="mr-1 h-3 w-3" />
+                                        Aprobar
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="destructive"
+                                        className="h-7 text-xs"
+                                        onClick={() =>
+                                          handleRejectLoan(loan.equipmentLoanId)
+                                        }
+                                        disabled={updateStatus.isPending}
+                                      >
+                                        <XCircle className="mr-1 h-3 w-3" />
+                                        Rechazar
+                                      </Button>
+                                    </>
+                                  )}
+                                  {loan.status === LoanStatus.APPROVED && (
+                                    <Button
+                                      size="sm"
+                                      className="h-7 text-xs"
+                                      onClick={() =>
+                                        handleReturnLoan(loan.equipmentLoanId)
+                                      }
+                                      disabled={updateStatus.isPending}
+                                    >
+                                      <RotateCcw className="mr-1 h-3 w-3" />
+                                      Devolución
+                                    </Button>
+                                  )}
+                                  {(loan.status === LoanStatus.RETURNED ||
+                                    loan.status === LoanStatus.REJECTED ||
+                                    loan.status === LoanStatus.CANCELLED) && (
+                                    <span className="text-xs text-muted-foreground self-center">
+                                      —
+                                    </span>
+                                  )}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
 
-                              <div className="flex gap-2 flex-wrap">
+                    <div className="md:hidden space-y-3">
+                      {paginate(filteredAllLoans).map((loan: any) => (
+                        <Card key={loan.equipmentLoanId}>
+                          <CardContent className="p-4">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0 flex-1">
+                                <p className="font-medium truncate">
+                                  {loan.equipment?.name || "Equipo"}
+                                </p>
+                                {loan.equipment?.category && (
+                                  <p className="text-xs text-muted-foreground mt-0.5">
+                                    {
+                                      categoryLabels[
+                                        loan.equipment
+                                          .category as EquipmentCategory
+                                      ]
+                                    }
+                                  </p>
+                                )}
+                                {loan.user?.name && (
+                                  <div className="flex items-center gap-2 mt-2">
+                                    <UserAvatar name={loan.user.name} />
+                                    <span className="text-xs text-muted-foreground truncate">
+                                      {loan.user.name}
+                                    </span>
+                                  </div>
+                                )}
+                                {loan.reason && (
+                                  <p className="text-xs text-muted-foreground mt-1 truncate">
+                                    Motivo: {loan.reason}
+                                  </p>
+                                )}
+                              </div>
+                              <div className="shrink-0">
+                                {getLoanStatusBadge(loan.status)}
+                              </div>
+                            </div>
+
+                            {(loan.status === LoanStatus.PENDING ||
+                              loan.status === LoanStatus.APPROVED) && (
+                              <div className="flex gap-2 mt-3 pt-3 border-t">
                                 {loan.status === LoanStatus.PENDING && (
                                   <>
                                     <Button
                                       size="sm"
+                                      className="flex-1 h-8 text-xs"
                                       onClick={() =>
                                         handleApproveLoan(loan.equipmentLoanId)
                                       }
                                       disabled={updateStatus.isPending}
                                     >
-                                      <CheckCircle className="mr-1 h-4 w-4" />
+                                      <CheckCircle className="mr-1 h-3 w-3" />
                                       Aprobar
                                     </Button>
                                     <Button
                                       size="sm"
                                       variant="destructive"
+                                      className="flex-1 h-8 text-xs"
                                       onClick={() =>
                                         handleRejectLoan(loan.equipmentLoanId)
                                       }
                                       disabled={updateStatus.isPending}
                                     >
-                                      <XCircle className="mr-1 h-4 w-4" />
+                                      <XCircle className="mr-1 h-3 w-3" />
                                       Rechazar
                                     </Button>
                                   </>
@@ -949,27 +1285,21 @@ export function EquipmentLoans() {
                                 {loan.status === LoanStatus.APPROVED && (
                                   <Button
                                     size="sm"
+                                    className="flex-1 h-8 text-xs"
                                     onClick={() =>
                                       handleReturnLoan(loan.equipmentLoanId)
                                     }
                                     disabled={updateStatus.isPending}
                                   >
-                                    <RotateCcw className="mr-1 h-4 w-4" />
-                                    Registrar Devolución
+                                    <RotateCcw className="mr-1 h-3 w-3" />
+                                    Registrar devolución
                                   </Button>
                                 )}
                               </div>
-                            </div>
+                            )}
                           </CardContent>
                         </Card>
                       ))}
-                    </div>
-
-                    <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
-                      <p>
-                        Mostrando {paginate(filteredAllLoans).length} de{" "}
-                        {filteredAllLoans.length} solicitudes
-                      </p>
                     </div>
 
                     {renderPagination(filteredAllLoans)}
@@ -982,7 +1312,7 @@ export function EquipmentLoans() {
       </Tabs>
 
       <Dialog open={showLoanDialog} onOpenChange={setShowLoanDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-md overflow-hidden">
           <DialogHeader>
             <DialogTitle>Solicitar Préstamo</DialogTitle>
             <DialogDescription>
@@ -990,17 +1320,17 @@ export function EquipmentLoans() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
+            <div className="space-y-2 min-w-0">
               <Label htmlFor="equipment">Equipo</Label>
               <Select
                 value={selectedEquipmentId}
                 onValueChange={setSelectedEquipmentId}
                 required
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Selecciona un equipo" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="w-[var(--radix-select-trigger-width)]">
                   {equipment
                     ?.filter((e: any) => e.status === EquipmentStatus.AVAILABLE)
                     .map((item: any) => (
@@ -1008,12 +1338,26 @@ export function EquipmentLoans() {
                         key={item.equipmentId}
                         value={item.equipmentId}
                       >
-                        {item.name}{" "}
-                        {item.serialNumber && `(${item.serialNumber})`}
+                        <div className="flex flex-col">
+                          <span className="text-sm">{item.name}</span>
+                          
+                        </div>
                       </SelectItem>
                     ))}
                 </SelectContent>
               </Select>
+
+              {selectedEquipmentId &&
+                (() => {
+                  const selectedEquipment = equipment?.find(
+                    (e: any) => e.equipmentId === selectedEquipmentId,
+                  );
+                  return selectedEquipment?.serialNumber ? (
+                    <p className="text-xs text-muted-foreground">
+                      Serial: {selectedEquipment.serialNumber}
+                    </p>
+                  ) : null;
+                })()}
             </div>
 
             <div className="space-y-2">

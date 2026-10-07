@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Card,
   CardContent,
@@ -8,6 +8,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -45,6 +53,7 @@ import {
   AlertCircle,
   Loader2,
   Ban,
+  Filter,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
@@ -60,7 +69,46 @@ import {
 } from "@/types/maintenance.types";
 import { EquipmentStatus } from "@/types/equipment-loan.types";
 
-const ITEMS_PER_PAGE = 6;
+const ITEMS_PER_PAGE = 8;
+
+const AVATAR_COLORS = [
+  "bg-red-500/15 text-red-700 dark:text-red-300",
+  "bg-blue-500/15 text-blue-700 dark:text-blue-300",
+  "bg-green-500/15 text-green-700 dark:text-green-300",
+  "bg-purple-500/15 text-purple-700 dark:text-purple-300",
+  "bg-amber-500/15 text-amber-700 dark:text-amber-300",
+  "bg-pink-500/15 text-pink-700 dark:text-pink-300",
+  "bg-teal-500/15 text-teal-700 dark:text-teal-300",
+];
+
+function getInitials(name: string): string {
+  if (!name) return "?";
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+function getAvatarColor(name: string): string {
+  if (!name) return AVATAR_COLORS[0];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+
+function UserAvatar({ name }: { name: string }) {
+  const initials = getInitials(name);
+  const color = getAvatarColor(name);
+  return (
+    <div
+      className={`h-7 w-7 ${color} shrink-0 rounded-full flex items-center justify-center font-semibold text-[10px]`}
+      title={name}
+    >
+      {initials}
+    </div>
+  );
+}
 
 export function Maintenance() {
   const { user } = useAuth();
@@ -72,6 +120,9 @@ export function Maintenance() {
     role === "leader" ||
     role === "manager" ||
     role === "admin";
+  const isSupport = user?.isSupport === true;
+
+  const canManageRequests = isLeader || isSupport;
 
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("my-requests");
@@ -83,26 +134,22 @@ export function Maintenance() {
   const { useEquipment, useMyLoanedEquipment, useLocations } =
     useEquipmentLoans();
 
-  const { data: equipment, refetch: refetchEquipment } = useEquipment();
+  const { refetch: refetchEquipment } = useEquipment();
   const {
     data: myLoanedEquipment,
-    isLoading: isLoadingMyLoaned,
     refetch: refetchMyLoaned,
   } = useMyLoanedEquipment();
   const { data: locations } = useLocations();
 
-  // Modal de crear (EQUIPMENT)
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [selectedEquipmentId, setSelectedEquipmentId] = useState("");
   const [reason, setReason] = useState("");
   const [description, setDescription] = useState("");
 
-  // Modal de Mantenimiento General (GENERAL)
   const [showGeneralDialog, setShowGeneralDialog] = useState(false);
   const [generalLocationId, setGeneralLocationId] = useState("");
   const [generalDescription, setGeneralDescription] = useState("");
 
-  // Modal de cambiar estado
   const [showStatusDialog, setShowStatusDialog] = useState(false);
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(
     null,
@@ -111,7 +158,6 @@ export function Maintenance() {
   const [resolutionNotes, setResolutionNotes] = useState("");
   const [rejectedReason, setRejectedReason] = useState("");
 
-  // Modal de confirmación de cancelación
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [cancelRequestId, setCancelRequestId] = useState<string | null>(null);
 
@@ -133,18 +179,17 @@ export function Maintenance() {
     data: allRequests,
     isLoading: isLoadingAllRequests,
     refetch: refetchAllRequests,
-  } = useAllRequests(undefined, { enabled: isLeader });
+  } = useAllRequests(undefined, { enabled: canManageRequests });
 
   const createRequest = useCreateRequest();
   const updateStatus = useUpdateStatus();
   const cancelRequest = useCancelRequest();
 
-  // Refetch automático por eventos websocket
   useEffect(() => {
     const handleMaintenanceUpdate = () => {
       refetchMyRequests();
       refetchEquipment();
-      if (isLeader) refetchAllRequests();
+      if (canManageRequests) refetchAllRequests();
     };
 
     window.addEventListener("maintenance-update", handleMaintenanceUpdate);
@@ -153,19 +198,17 @@ export function Maintenance() {
       window.removeEventListener("maintenance-update", handleMaintenanceUpdate);
     };
   }, [
-    isLeader,
+    canManageRequests,
     refetchMyRequests,
     refetchAllRequests,
     refetchEquipment,
     refetchMyLoaned,
   ]);
 
-  // Contadores
   const pendingCount = (allRequests ?? []).filter(
     (r: any) => r.status === MaintenanceStatus.PENDING,
   ).length;
 
-  // Helper para obtener el nombre a mostrar según el tipo
   const getRequestName = (item: any) => {
     if (item.requestType === MaintenanceRequestType.EQUIPMENT) {
       return item.equipment?.name || "Equipo";
@@ -173,42 +216,42 @@ export function Maintenance() {
     return item.location?.name || "Ubicación";
   };
 
-  // Filtros — Mis Solicitudes
-  const filteredMyRequests = (myRequests ?? []).filter((item: any) => {
-    const searchLower = searchTerm.toLowerCase();
-
-    // Filtro por estado
-    if (statusFilter !== "ALL" && item.status !== statusFilter) {
-      return false;
+  const getRequestSubtitle = (item: any) => {
+    if (item.requestType === MaintenanceRequestType.EQUIPMENT) {
+      return item.equipment?.serialNumber
+        ? `Serial: ${item.equipment.serialNumber}`
+        : null;
     }
+    return null;
+  };
 
-    // Filtro por búsqueda
-    return (
-      (item.equipment?.name ?? "").toLowerCase().includes(searchLower) ||
-      (item.location?.name ?? "").toLowerCase().includes(searchLower) ||
-      item.status.toLowerCase().includes(searchLower) ||
-      (item.reason && item.reason.toLowerCase().includes(searchLower))
-    );
-  });
-
-  // Filtros — Todas las Solicitudes
-  const filteredAllRequests = (allRequests ?? []).filter((item: any) => {
+  const filteredMyRequests = useMemo(() => {
     const searchLower = searchTerm.toLowerCase();
+    return (myRequests ?? []).filter((item: any) => {
+      if (statusFilter !== "ALL" && item.status !== statusFilter) return false;
+      return (
+        (item.equipment?.name ?? "").toLowerCase().includes(searchLower) ||
+        (item.location?.name ?? "").toLowerCase().includes(searchLower) ||
+        item.status.toLowerCase().includes(searchLower) ||
+        (item.reason && item.reason.toLowerCase().includes(searchLower))
+      );
+    });
+  }, [myRequests, searchTerm, statusFilter]);
 
-    if (statusFilter !== "ALL" && item.status !== statusFilter) {
-      return false;
-    }
+  const filteredAllRequests = useMemo(() => {
+    const searchLower = searchTerm.toLowerCase();
+    return (allRequests ?? []).filter((item: any) => {
+      if (statusFilter !== "ALL" && item.status !== statusFilter) return false;
+      return (
+        (item.equipment?.name ?? "").toLowerCase().includes(searchLower) ||
+        (item.location?.name ?? "").toLowerCase().includes(searchLower) ||
+        (item.user?.name ?? "").toLowerCase().includes(searchLower) ||
+        item.status.toLowerCase().includes(searchLower) ||
+        (item.reason && item.reason.toLowerCase().includes(searchLower))
+      );
+    });
+  }, [allRequests, searchTerm, statusFilter]);
 
-    return (
-      (item.equipment?.name ?? "").toLowerCase().includes(searchLower) ||
-      (item.location?.name ?? "").toLowerCase().includes(searchLower) ||
-      (item.user?.name ?? "").toLowerCase().includes(searchLower) ||
-      item.status.toLowerCase().includes(searchLower) ||
-      (item.reason && item.reason.toLowerCase().includes(searchLower))
-    );
-  });
-
-  // Paginación
   const totalPages = (items: any[]) => Math.ceil(items.length / ITEMS_PER_PAGE);
   const paginate = (items: any[]) => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -218,6 +261,7 @@ export function Maintenance() {
   const handleTabChange = (value: string) => {
     setActiveTab(value);
     setCurrentPage(1);
+    setStatusFilter("ALL");
   };
 
   const handleSearchChange = (value: string) => {
@@ -235,35 +279,36 @@ export function Maintenance() {
     if (total <= 1) return null;
 
     return (
-      <div className="flex items-center justify-center gap-2 mt-4">
-        <Button
-          variant="outline"
-          size="icon"
-          className="h-8 w-8"
-          onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-          disabled={currentPage === 1}
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-
-        <span className="text-sm font-medium min-w-[40px] text-center">
-          {currentPage} / {total}
-        </span>
-
-        <Button
-          variant="outline"
-          size="icon"
-          className="h-8 w-8"
-          onClick={() => setCurrentPage((p) => Math.min(total, p + 1))}
-          disabled={currentPage === total}
-        >
-          <ChevronRight className="h-4 w-4" />
-        </Button>
+      <div className="flex items-center justify-between gap-2 mt-4">
+        <p className="text-xs text-muted-foreground">
+          Página {currentPage} de {total}
+        </p>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 gap-1"
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+            Anterior
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 gap-1"
+            onClick={() => setCurrentPage((p) => Math.min(total, p + 1))}
+            disabled={currentPage === total}
+          >
+            Siguiente
+            <ChevronRight className="h-3.5 w-3.5" />
+          </Button>
+        </div>
       </div>
     );
   };
 
-  // Handlers
   const handleCreateRequest = () => {
     if (!selectedEquipmentId || !reason.trim()) return;
 
@@ -282,7 +327,7 @@ export function Maintenance() {
           setDescription("");
           refetchMyRequests();
           refetchEquipment();
-          if (isLeader) refetchAllRequests();
+          if (canManageRequests) refetchAllRequests();
         },
       },
     );
@@ -303,7 +348,7 @@ export function Maintenance() {
           setGeneralLocationId("");
           setGeneralDescription("");
           refetchMyRequests();
-          if (isLeader) refetchAllRequests();
+          if (canManageRequests) refetchAllRequests();
         },
       },
     );
@@ -357,12 +402,11 @@ export function Maintenance() {
         setCancelRequestId(null);
         refetchMyRequests();
         refetchEquipment();
-        if (isLeader) refetchAllRequests();
+        if (canManageRequests) refetchAllRequests();
       },
     });
   };
 
-  // Helpers de formato
   const formatDate = (date: string) => {
     return format(new Date(date), "dd/MM/yyyy", { locale: es });
   };
@@ -373,6 +417,7 @@ export function Maintenance() {
 
   const getStatusBadge = (status: MaintenanceStatus) => {
     const config = maintenanceStatusConfig[status];
+    if (!config) return null;
     return (
       <Badge className={config.className} variant="secondary">
         {config.label}
@@ -390,7 +435,6 @@ export function Maintenance() {
     );
   };
 
-  // Estados de carga inicial
   if (isLoadingMyRequests && isLoadingAllRequests) {
     return (
       <div className="space-y-6">
@@ -409,9 +453,9 @@ export function Maintenance() {
           <CardContent>
             <div className="space-y-4">
               <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-14 w-full" />
+              <Skeleton className="h-14 w-full" />
+              <Skeleton className="h-14 w-full" />
             </div>
           </CardContent>
         </Card>
@@ -419,7 +463,6 @@ export function Maintenance() {
     );
   }
 
-  // Equipos disponibles para solicitar mantenimiento
   const availableEquipment = myLoanedEquipment ?? [];
 
   return (
@@ -452,7 +495,7 @@ export function Maintenance() {
           >
             Mis Solicitudes
           </TabsTrigger>
-          {isLeader && (
+          {canManageRequests && (
             <TabsTrigger
               value="all-requests"
               className="rounded-md border px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
@@ -469,22 +512,26 @@ export function Maintenance() {
           )}
         </TabsList>
 
-        {/* TAB: Mis Solicitudes */}
         <TabsContent value="my-requests" className="mt-6">
           <Card>
-            <CardHeader>
+            <CardHeader className="pb-4">
               <CardTitle className="flex items-center gap-2">
                 <Wrench className="h-5 w-5" />
-                Mis Solicitudes de Mantenimiento
+                Mis Solicitudes
+                <Badge variant="secondary" className="ml-1">
+                  {filteredMyRequests.length}
+                </Badge>
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="mt-1">
                 Historial de tus solicitudes de mantenimiento
               </CardDescription>
-              <div className="mt-4 flex flex-col sm:flex-row gap-3">
+            </CardHeader>
+            <CardContent>
+              <div className="mb-4 flex flex-col sm:flex-row gap-2">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
-                    placeholder="Buscar por equipo o motivo..."
+                    placeholder="Buscar por equipo, ubicación o motivo..."
                     value={searchTerm}
                     onChange={(e) => handleSearchChange(e.target.value)}
                     className="pl-10"
@@ -495,7 +542,8 @@ export function Maintenance() {
                   onValueChange={handleStatusFilterChange}
                 >
                   <SelectTrigger className="w-full sm:w-[200px]">
-                    <SelectValue placeholder="Todos los estados" />
+                    <Filter className="mr-2 h-3.5 w-3.5" />
+                    <SelectValue placeholder="Estado" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="ALL">Todos los estados</SelectItem>
@@ -520,81 +568,128 @@ export function Maintenance() {
                   </SelectContent>
                 </Select>
               </div>
-            </CardHeader>
-            <CardContent>
+
               {isLoadingMyRequests ? (
                 <div className="space-y-3">
-                  <Skeleton className="h-12 w-full" />
-                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-14 w-full" />
+                  <Skeleton className="h-14 w-full" />
                 </div>
               ) : filteredMyRequests.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
+                <div className="text-center py-12 text-muted-foreground">
                   <Wrench className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No tienes solicitudes de mantenimiento</p>
+                  <p className="font-medium">No tienes solicitudes</p>
+                  <p className="text-sm mt-1">
+                    Cuando solicites un mantenimiento aparecerá aquí
+                  </p>
                   <Button
-                    variant="link"
+                    variant="outline"
                     onClick={() => setShowCreateDialog(true)}
-                    className="mt-2"
+                    className="mt-4"
                   >
-                    Solicitar un mantenimiento
+                    <Plus className="mr-2 h-4 w-4" />
+                    Solicitar mantenimiento
                   </Button>
                 </div>
               ) : (
                 <>
-                  <div className="space-y-4">
+                  <div className="hidden md:block rounded-md border overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/40 hover:bg-muted/40">
+                          <TableHead className="w-[35%]">
+                            Equipo / Ubicación
+                          </TableHead>
+                          <TableHead className="w-[25%]">Motivo</TableHead>
+                          <TableHead className="w-[15%]">Solicitado</TableHead>
+                          <TableHead className="w-[15%]">Estado</TableHead>
+                          <TableHead className="text-right">Acciones</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {paginate(filteredMyRequests).map((item: any) => {
+                          const subtitle = getRequestSubtitle(item);
+                          return (
+                            <TableRow
+                              key={item.maintenanceRequestId}
+                              className="h-14"
+                            >
+                              <TableCell>
+                                <div className="flex flex-col">
+                                  <span className="font-medium leading-tight">
+                                    {getRequestName(item)}
+                                  </span>
+                                  <span className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+                                    {item.requestType &&
+                                      getRequestTypeBadge(item.requestType)}
+                                    {subtitle && <span>· {subtitle}</span>}
+                                  </span>
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-sm text-muted-foreground max-w-[220px] truncate">
+                                {item.reason || "—"}
+                              </TableCell>
+                              <TableCell className="text-sm text-muted-foreground">
+                                <span className="inline-flex items-center gap-1">
+                                  <Calendar className="h-3 w-3" />
+                                  {formatDate(item.createdAt)}
+                                </span>
+                              </TableCell>
+                              <TableCell>{getStatusBadge(item.status)}</TableCell>
+                              <TableCell className="text-right">
+                                {item.status ===
+                                  MaintenanceStatus.PENDING && (
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    className="h-7 text-xs"
+                                    onClick={() =>
+                                      handleOpenCancelDialog(
+                                        item.maintenanceRequestId,
+                                      )
+                                    }
+                                    disabled={cancelRequest.isPending}
+                                  >
+                                    <Ban className="mr-1 h-3 w-3" />
+                                    Cancelar
+                                  </Button>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  <div className="md:hidden space-y-3">
                     {paginate(filteredMyRequests).map((item: any) => (
                       <Card key={item.maintenanceRequestId}>
-                        <CardContent className="pt-6">
-                          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <p className="font-medium">
-                                  {getRequestName(item)}
-                                </p>
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0 flex-1">
+                              <p className="font-medium truncate">
+                                {getRequestName(item)}
+                              </p>
+                              <div className="flex items-center gap-2 mt-1 flex-wrap">
                                 {item.requestType &&
                                   getRequestTypeBadge(item.requestType)}
                                 {getStatusBadge(item.status)}
                               </div>
-                              <p className="text-sm text-muted-foreground">
-                                Motivo: {item.reason}
-                              </p>
-                              {item.description && (
-                                <p className="text-sm text-muted-foreground">
-                                  Detalles: {item.description}
+                              {item.reason && (
+                                <p className="text-xs text-muted-foreground mt-2 truncate">
+                                  Motivo: {item.reason}
                                 </p>
                               )}
-                              <p className="text-sm text-muted-foreground">
+                              <p className="text-xs text-muted-foreground mt-1">
                                 <Calendar className="inline h-3 w-3 mr-1" />
-                                Solicitado: {formatDate(item.createdAt)}
+                                {formatDate(item.createdAt)}
                               </p>
-                              {item.assignedTo && (
-                                <p className="text-sm text-muted-foreground">
-                                  <User className="inline h-3 w-3 mr-1" />
-                                  Atendido por: {item.assignedTo.name}
-                                </p>
-                              )}
-                              {item.resolvedAt && (
-                                <p className="text-sm text-muted-foreground">
-                                  <CheckCircle className="inline h-3 w-3 mr-1 text-green-500" />
-                                  Resuelto: {formatDate(item.resolvedAt)}
-                                </p>
-                              )}
-                              {item.resolutionNotes && (
-                                <p className="text-sm text-muted-foreground">
-                                  Notas: {item.resolutionNotes}
-                                </p>
-                              )}
-                              {item.rejectedReason && (
-                                <p className="text-sm text-red-600">
-                                  <XCircle className="inline h-3 w-3 mr-1" />
-                                  Rechazado: {item.rejectedReason}
-                                </p>
-                              )}
                             </div>
                             {item.status === MaintenanceStatus.PENDING && (
                               <Button
                                 variant="destructive"
                                 size="sm"
+                                className="h-7 text-xs shrink-0"
                                 onClick={() =>
                                   handleOpenCancelDialog(
                                     item.maintenanceRequestId,
@@ -602,7 +697,7 @@ export function Maintenance() {
                                 }
                                 disabled={cancelRequest.isPending}
                               >
-                                <Ban className="mr-1 h-4 w-4" />
+                                <Ban className="mr-1 h-3 w-3" />
                                 Cancelar
                               </Button>
                             )}
@@ -612,11 +707,6 @@ export function Maintenance() {
                     ))}
                   </div>
 
-                  <div className="mt-4 text-sm text-muted-foreground">
-                    Mostrando {paginate(filteredMyRequests).length} de{" "}
-                    {filteredMyRequests.length} solicitudes
-                  </div>
-
                   {renderPagination(filteredMyRequests)}
                 </>
               )}
@@ -624,19 +714,29 @@ export function Maintenance() {
           </Card>
         </TabsContent>
 
-        {/* TAB: Todas las Solicitudes (solo líderes/admin) */}
-        {isLeader && (
+        {canManageRequests && (
           <TabsContent value="all-requests" className="mt-6">
             <Card>
-              <CardHeader>
+              <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-2">
                   <Users className="h-5 w-5" />
                   Todas las Solicitudes
+                  <Badge variant="secondary" className="ml-1">
+                    {filteredAllRequests.length}
+                  </Badge>
+                  {pendingCount > 0 && (
+                    <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">
+                      {pendingCount} pendientes
+                    </Badge>
+                  )}
                 </CardTitle>
-                <CardDescription>
-                  Gestiona las solicitudes de mantenimiento de los colaboradores
+                <CardDescription className="mt-1">
+                  Gestiona las solicitudes de mantenimiento de los
+                  colaboradores
                 </CardDescription>
-                <div className="mt-4 flex flex-col sm:flex-row gap-3">
+              </CardHeader>
+              <CardContent>
+                <div className="mb-4 flex flex-col sm:flex-row gap-2">
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
@@ -651,7 +751,8 @@ export function Maintenance() {
                     onValueChange={handleStatusFilterChange}
                   >
                     <SelectTrigger className="w-full sm:w-[200px]">
-                      <SelectValue placeholder="Todos los estados" />
+                      <Filter className="mr-2 h-3.5 w-3.5" />
+                      <SelectValue placeholder="Estado" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="ALL">Todos los estados</SelectItem>
@@ -676,82 +777,195 @@ export function Maintenance() {
                     </SelectContent>
                   </Select>
                 </div>
-              </CardHeader>
-              <CardContent>
+
                 {isLoadingAllRequests ? (
                   <div className="space-y-3">
-                    <Skeleton className="h-12 w-full" />
-                    <Skeleton className="h-12 w-full" />
-                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-14 w-full" />
+                    <Skeleton className="h-14 w-full" />
+                    <Skeleton className="h-14 w-full" />
                   </div>
                 ) : filteredAllRequests.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
+                  <div className="text-center py-12 text-muted-foreground">
                     <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>No hay solicitudes de mantenimiento</p>
+                    <p className="font-medium">No hay solicitudes</p>
+                    <p className="text-sm mt-1">
+                      Cuando los colaboradores soliciten mantenimientos
+                      aparecerán aquí
+                    </p>
                   </div>
                 ) : (
                   <>
-                    <div className="space-y-4">
+                    <div className="hidden md:block rounded-md border overflow-hidden">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-muted/40 hover:bg-muted/40">
+                            <TableHead className="w-[30%]">
+                              Equipo / Ubicación
+                            </TableHead>
+                            <TableHead className="w-[16%]">
+                              Solicitante
+                            </TableHead>
+                            <TableHead className="w-[18%]">Motivo</TableHead>
+                            <TableHead className="w-[14%]">Estado</TableHead>
+                            <TableHead className="w-[22%] text-right">
+                              Acciones
+                            </TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {paginate(filteredAllRequests).map((item: any) => {
+                            const subtitle = getRequestSubtitle(item);
+                            return (
+                              <TableRow
+                                key={item.maintenanceRequestId}
+                                className="h-14"
+                              >
+                                <TableCell>
+                                  <div className="flex flex-col">
+                                    <span className="font-medium leading-tight">
+                                      {getRequestName(item)}
+                                    </span>
+                                    <span className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1 flex-wrap">
+                                      {item.requestType &&
+                                        getRequestTypeBadge(item.requestType)}
+                                      {subtitle && <span>· {subtitle}</span>}
+                                    </span>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  {item.user?.name ? (
+                                    <div className="flex items-center gap-2">
+                                      <UserAvatar name={item.user.name} />
+                                      <span className="text-sm truncate">
+                                        {item.user.name}
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <span className="text-sm text-muted-foreground">
+                                      —
+                                    </span>
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-sm text-muted-foreground max-w-[220px] truncate">
+                                  {item.reason || "—"}
+                                </TableCell>
+                                <TableCell>
+                                  {getStatusBadge(item.status)}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <div className="flex justify-end gap-1.5 flex-wrap">
+                                    {item.status ===
+                                      MaintenanceStatus.PENDING && (
+                                      <Button
+                                        size="sm"
+                                        className="h-7 text-xs"
+                                        onClick={() =>
+                                          handleOpenStatusDialog(
+                                            item.maintenanceRequestId,
+                                          )
+                                        }
+                                        disabled={updateStatus.isPending}
+                                      >
+                                        <AlertCircle className="mr-1 h-3 w-3" />
+                                        Gestionar
+                                      </Button>
+                                    )}
+                                    {item.status ===
+                                      MaintenanceStatus.IN_REVIEW && (
+                                      <Button
+                                        size="sm"
+                                        className="h-7 text-xs"
+                                        onClick={() =>
+                                          handleOpenStatusDialog(
+                                            item.maintenanceRequestId,
+                                          )
+                                        }
+                                        disabled={updateStatus.isPending}
+                                      >
+                                        <Loader2 className="mr-1 h-3 w-3" />
+                                        Actualizar
+                                      </Button>
+                                    )}
+                                    {item.status ===
+                                      MaintenanceStatus.IN_PROGRESS && (
+                                      <Button
+                                        size="sm"
+                                        className="h-7 text-xs"
+                                        onClick={() =>
+                                          handleOpenStatusDialog(
+                                            item.maintenanceRequestId,
+                                          )
+                                        }
+                                        disabled={updateStatus.isPending}
+                                      >
+                                        <CheckCircle className="mr-1 h-3 w-3" />
+                                        Resolver
+                                      </Button>
+                                    )}
+                                    {(item.status ===
+                                      MaintenanceStatus.RESOLVED ||
+                                      item.status ===
+                                        MaintenanceStatus.REJECTED ||
+                                      item.status ===
+                                        MaintenanceStatus.CANCELLED) && (
+                                      <span className="text-xs text-muted-foreground self-center">
+                                        —
+                                      </span>
+                                    )}
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </div>
+
+                    <div className="md:hidden space-y-3">
                       {paginate(filteredAllRequests).map((item: any) => (
                         <Card key={item.maintenanceRequestId}>
-                          <CardContent className="pt-6">
-                            <div className="flex flex-col gap-3">
-                              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                                <div className="space-y-1">
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    <p className="font-medium">
-                                      {getRequestName(item)}
-                                    </p>
-                                    {item.requestType &&
-                                      getRequestTypeBadge(item.requestType)}
-                                    {getStatusBadge(item.status)}
-                                    <Badge variant="outline">
-                                      {item.user?.name || "Usuario"}
-                                    </Badge>
+                          <CardContent className="p-4">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0 flex-1">
+                                <p className="font-medium truncate">
+                                  {getRequestName(item)}
+                                </p>
+                                <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                  {item.requestType &&
+                                    getRequestTypeBadge(item.requestType)}
+                                  {getStatusBadge(item.status)}
+                                </div>
+                                {item.user?.name && (
+                                  <div className="flex items-center gap-2 mt-2">
+                                    <UserAvatar name={item.user.name} />
+                                    <span className="text-xs text-muted-foreground truncate">
+                                      {item.user.name}
+                                    </span>
                                   </div>
-                                  <p className="text-sm text-muted-foreground">
+                                )}
+                                {item.reason && (
+                                  <p className="text-xs text-muted-foreground mt-2 truncate">
                                     Motivo: {item.reason}
                                   </p>
-                                  {item.description && (
-                                    <p className="text-sm text-muted-foreground">
-                                      Detalles: {item.description}
-                                    </p>
-                                  )}
-                                  <p className="text-sm text-muted-foreground">
-                                    <Calendar className="inline h-3 w-3 mr-1" />
-                                    Solicitado: {formatDateLong(item.createdAt)}
-                                  </p>
-                                  {item.assignedTo && (
-                                    <p className="text-sm text-muted-foreground">
-                                      <User className="inline h-3 w-3 mr-1" />
-                                      Atendido por: {item.assignedTo.name}
-                                    </p>
-                                  )}
-                                  {item.resolvedAt && (
-                                    <p className="text-sm text-muted-foreground">
-                                      <CheckCircle className="inline h-3 w-3 mr-1 text-green-500" />
-                                      Resuelto:{" "}
-                                      {formatDateLong(item.resolvedAt)}
-                                    </p>
-                                  )}
-                                  {item.resolutionNotes && (
-                                    <p className="text-sm text-muted-foreground">
-                                      Notas: {item.resolutionNotes}
-                                    </p>
-                                  )}
-                                  {item.rejectedReason && (
-                                    <p className="text-sm text-red-600">
-                                      <XCircle className="inline h-3 w-3 mr-1" />
-                                      Rechazado: {item.rejectedReason}
-                                    </p>
-                                  )}
-                                </div>
+                                )}
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  <Calendar className="inline h-3 w-3 mr-1" />
+                                  {formatDate(item.createdAt)}
+                                </p>
                               </div>
+                            </div>
 
-                              <div className="flex gap-2 flex-wrap">
-                                {item.status === MaintenanceStatus.PENDING && (
+                            {(item.status === MaintenanceStatus.PENDING ||
+                              item.status ===
+                                MaintenanceStatus.IN_REVIEW ||
+                              item.status ===
+                                MaintenanceStatus.IN_PROGRESS) && (
+                              <div className="flex gap-2 mt-3 pt-3 border-t">
+                                {item.status ===
+                                  MaintenanceStatus.PENDING && (
                                   <Button
                                     size="sm"
+                                    className="flex-1 h-8 text-xs"
                                     onClick={() =>
                                       handleOpenStatusDialog(
                                         item.maintenanceRequestId,
@@ -759,7 +973,7 @@ export function Maintenance() {
                                     }
                                     disabled={updateStatus.isPending}
                                   >
-                                    <AlertCircle className="mr-1 h-4 w-4" />
+                                    <AlertCircle className="mr-1 h-3 w-3" />
                                     Gestionar
                                   </Button>
                                 )}
@@ -767,6 +981,7 @@ export function Maintenance() {
                                   MaintenanceStatus.IN_REVIEW && (
                                   <Button
                                     size="sm"
+                                    className="flex-1 h-8 text-xs"
                                     onClick={() =>
                                       handleOpenStatusDialog(
                                         item.maintenanceRequestId,
@@ -774,7 +989,7 @@ export function Maintenance() {
                                     }
                                     disabled={updateStatus.isPending}
                                   >
-                                    <Loader2 className="mr-1 h-4 w-4" />
+                                    <Loader2 className="mr-1 h-3 w-3" />
                                     Actualizar
                                   </Button>
                                 )}
@@ -782,6 +997,7 @@ export function Maintenance() {
                                   MaintenanceStatus.IN_PROGRESS && (
                                   <Button
                                     size="sm"
+                                    className="flex-1 h-8 text-xs"
                                     onClick={() =>
                                       handleOpenStatusDialog(
                                         item.maintenanceRequestId,
@@ -789,20 +1005,15 @@ export function Maintenance() {
                                     }
                                     disabled={updateStatus.isPending}
                                   >
-                                    <CheckCircle className="mr-1 h-4 w-4" />
+                                    <CheckCircle className="mr-1 h-3 w-3" />
                                     Marcar como resuelto
                                   </Button>
                                 )}
                               </div>
-                            </div>
+                            )}
                           </CardContent>
                         </Card>
                       ))}
-                    </div>
-
-                    <div className="mt-4 text-sm text-muted-foreground">
-                      Mostrando {paginate(filteredAllRequests).length} de{" "}
-                      {filteredAllRequests.length} solicitudes
                     </div>
 
                     {renderPagination(filteredAllRequests)}
@@ -814,9 +1025,8 @@ export function Maintenance() {
         )}
       </Tabs>
 
-      {/* Dialog: Crear solicitud (EQUIPMENT) */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-lg overflow-hidden">
           <DialogHeader>
             <DialogTitle>Solicitar Mantenimiento</DialogTitle>
             <DialogDescription>
@@ -824,16 +1034,16 @@ export function Maintenance() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
+            <div className="space-y-2 min-w-0">
               <Label>Equipo *</Label>
               <Select
                 value={selectedEquipmentId}
                 onValueChange={setSelectedEquipmentId}
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Selecciona un equipo" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="w-[var(--radix-select-trigger-width)]">
                   {availableEquipment.length === 0 ? (
                     <div className="p-2 text-sm text-muted-foreground">
                       No tienes equipos asignados para generar el reporte de
@@ -843,7 +1053,7 @@ export function Maintenance() {
                     availableEquipment.map((item: any) => (
                       <SelectItem
                         key={item.equipmentId}
-                        value={item.equipmentId} 
+                        value={item.equipmentId}
                       >
                         {item.name}
                         {item.serialNumber && ` (${item.serialNumber})`}
@@ -896,9 +1106,8 @@ export function Maintenance() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog: Mantenimiento General */}
       <Dialog open={showGeneralDialog} onOpenChange={setShowGeneralDialog}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-lg overflow-hidden">
           <DialogHeader>
             <DialogTitle>Mantenimiento General</DialogTitle>
             <DialogDescription>
@@ -907,17 +1116,17 @@ export function Maintenance() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
+            <div className="space-y-2 min-w-0">
               <Label>Ubicación *</Label>
               <Select
                 value={generalLocationId}
                 onValueChange={setGeneralLocationId}
                 required
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Selecciona una ubicación" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="w-[var(--radix-select-trigger-width)]">
                   {locations?.map((loc: any) => (
                     <SelectItem key={loc.locationId} value={loc.locationId}>
                       {loc.name}
@@ -962,9 +1171,8 @@ export function Maintenance() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog: Cambiar estado */}
       <Dialog open={showStatusDialog} onOpenChange={setShowStatusDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-md overflow-hidden">
           <DialogHeader>
             <DialogTitle>Gestionar Solicitud</DialogTitle>
             <DialogDescription>
@@ -972,16 +1180,16 @@ export function Maintenance() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
+            <div className="space-y-2 min-w-0">
               <Label>Nuevo estado</Label>
               <Select
                 onValueChange={(v) => setNewStatus(v as MaintenanceStatus)}
                 value={newStatus}
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Selecciona un estado" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="w-[var(--radix-select-trigger-width)]">
                   <SelectItem value={MaintenanceStatus.IN_REVIEW}>
                     En revisión
                   </SelectItem>
@@ -1043,9 +1251,8 @@ export function Maintenance() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog: Confirmar cancelación */}
       <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
-        <DialogContent>
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-md overflow-hidden">
           <DialogHeader>
             <DialogTitle>Cancelar Solicitud</DialogTitle>
             <DialogDescription>
