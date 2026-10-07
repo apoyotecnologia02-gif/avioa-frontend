@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useForm, Controller, FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -12,6 +12,7 @@ import {
   Pencil,
   Plus,
   Search,
+  Upload,
   UserCog,
   UserX,
   X,
@@ -191,6 +192,8 @@ export default function AdminUsersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [isImporting, setIsImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const filteredUsers = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -555,6 +558,54 @@ export default function AdminUsersPage() {
     }
   };
 
+  const handleImportExcel = async (file: File) => {
+    setIsImporting(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const { data } = await api.post<{
+        total: number;
+        updated: number;
+        notFound: number;
+        errors: number;
+        invalid: number;
+        results: Array<{
+          row: number;
+          documentNumber: string;
+          status: "updated" | "not_found" | "error" | "invalid";
+          message?: string;
+        }>;
+      }>("/admin/users/import-excel", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+        skip401Redirect: true,
+      });
+
+      toast({
+        title: "Importación finalizada",
+        description: `Actualizados: ${data.updated} · No encontrados: ${data.notFound} · Errores: ${data.errors} · Inválidos: ${data.invalid}`,
+      });
+
+      const failed = data.results.filter(
+        (r) => r.status === "error" || r.status === "not_found",
+      );
+
+      if (failed.length > 0) {
+        console.warn("Filas con problemas", failed);
+      }
+
+      await loadUsers();
+    } catch (err) {
+      toast({
+        title: "Error al importar",
+        description: err instanceof Error ? err.message : "Intenta nuevamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
   const formatDate = (value?: string | null) => {
     if (!value) return "-";
     const date = new Date(value);
@@ -601,6 +652,35 @@ export default function AdminUsersPage() {
                 </>
               ) : (
                 "Actualizar"
+              )}
+            </Button>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx,.xls"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleImportExcel(file);
+                e.target.value = "";
+              }}
+            />
+            <Button
+              variant="outline"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isImporting || isLoadingUsers}
+            >
+              {isImporting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Importando...
+                </>
+              ) : (
+                <>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Importar Excel
+                </>
               )}
             </Button>
 
