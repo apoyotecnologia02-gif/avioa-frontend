@@ -28,6 +28,7 @@ export interface User {
   modulePermissions?: ModulePermission[];
   office?: string;
   birthDate?: string;
+  legalEntity?: string;
 }
 
 export interface AuthTokens {

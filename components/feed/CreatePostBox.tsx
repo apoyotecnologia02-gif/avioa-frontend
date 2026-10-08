@@ -19,6 +19,7 @@ import { useAuthStore } from "@/store/authStore";
 import { useFeedStore } from "@/store/feedStore";
 import { POST_TYPE_LABELS } from "@/lib/feed-reactions";
 import { RecognitionUserPicker } from "./RecognitionUserPicket";
+import { RichTextEditor } from "./RichTextEditor";
 
 export function CreatePostBox() {
   const user = useAuthStore((s) => s.user);
@@ -31,6 +32,12 @@ export function CreatePostBox() {
   const [submitting, setSubmitting] = useState(false);
 
   const isRecognition = type === "RECOGNITION";
+
+  const plainText = content
+    .replace(/<[^>]*>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .trim();
+
   const canSubmit =
     content.trim().length > 0 && (!isRecognition || !!recognizedUser);
 
@@ -71,19 +78,27 @@ export function CreatePostBox() {
     <Card className="rounded-2xl border-border/60 bg-card p-0 shadow-sm transition-shadow hover:shadow-md">
       <div className="flex items-start gap-3 p-4 sm:gap-4 sm:p-5">
         <Avatar className="h-11 w-11 shrink-0 ring-2 ring-primary/10">
-          <AvatarImage src={user?.avatarUrl ?? undefined} />
+          <AvatarImage src={user?.avatar ?? undefined} />
           <AvatarFallback className="bg-primary/10 text-primary">
             {user?.name?.[0] ?? "U"}
           </AvatarFallback>
         </Avatar>
 
         <div className="min-w-0 flex-1 space-y-3">
-          <Textarea
+          {/* <Textarea
             placeholder={`¿Qué quieres compartir, ${user?.name?.split(" ")[0] ?? ""}?`}
             value={content}
             onChange={(e) => setContent(e.target.value)}
             onFocus={() => setOpen(true)}
             className="min-h-[52px] resize-none rounded-2xl border-border/60 bg-muted/30 px-4 py-3 text-sm placeholder:text-muted-foreground/70 focus-visible:ring-1"
+          /> */}
+
+          <RichTextEditor
+            value={content}
+            onChange={setContent}
+            onFocus={() => setOpen(true)}
+            placeholder={`¿Qué quieres compartir, ${user?.name?.split(" ")[0] ?? ""}?`}
+            showToolbar={open}
           />
 
           {open && (

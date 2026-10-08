@@ -186,3 +186,70 @@
     @apply translate-x-0;
   }
 }
+
+
+/* Contenido enriquecido del feed + editor Tiptap */
+.rich-content ul,
+.ProseMirror ul {
+  list-style-type: disc;
+  padding-left: 1.25rem;
+  margin: 0.25rem 0;
+}
+.rich-content ul ul,
+.ProseMirror ul ul {
+  list-style-type: circle;
+}
+.rich-content ul ul ul,
+.ProseMirror ul ul ul {
+  list-style-type: square;
+}
+
+.rich-content ol,
+.ProseMirror ol {
+  list-style-type: decimal;
+  padding-left: 1.25rem;
+  margin: 0.25rem 0;
+}
+
+.rich-content li,
+.ProseMirror li {
+  margin: 0.125rem 0;
+  padding-left: 0.25rem;
+  display: list-item;
+}
+
+.rich-content li > p,
+.ProseMirror li > p {
+  margin: 0;
+}
+
+.rich-content p,
+.ProseMirror p {
+  margin: 0.25rem 0;
+}
+
+.rich-content a,
+.ProseMirror a {
+  color: hsl(var(--primary));
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.rich-content strong,
+.ProseMirror strong {
+  font-weight: 600;
+}
+
+.rich-content em,
+.ProseMirror em {
+  font-style: italic;
+}
+
+.rich-content s,
+.ProseMirror s {
+  text-decoration: line-through;
+}
+
+.ProseMirror:focus {
+  outline: none;
+}

@@ -221,6 +221,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       ...(payload?.phone && {
         phone: payload.phone,
       }),
+
+      ...(payload?.legalEntity && {
+        legalEntity: payload.legalEntity,
+      }),
     };
 
     setSession(accessToken, refreshToken);
