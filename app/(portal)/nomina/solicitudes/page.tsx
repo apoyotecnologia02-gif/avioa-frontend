@@ -40,6 +40,7 @@ import {
 } from "@/lib/nomina/catalogos";
 import type { FiltrosSolicitudes } from "@/types/nomina.types";
 import { useDirectory } from "@/hooks/useDirectory";
+import { formatDateOnly } from "@/utils/format-date-only";
 
 export default function SolicitudesContabilidadPage() {
   const [userId, setUserId] = useState<string | undefined>();
@@ -293,19 +294,9 @@ export default function SolicitudesContabilidadPage() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {new Date(s.fechaInicio).toLocaleDateString("es-CO", {
-                        day: "numeric",
-                        month: "short",
-                      })}
+                      {formatDateOnly(s.fechaInicio)}{" "}
                       {s.fechaInicio !== s.fechaFin && (
-                        <>
-                          {" "}
-                          –{" "}
-                          {new Date(s.fechaFin).toLocaleDateString("es-CO", {
-                            day: "numeric",
-                            month: "short",
-                          })}
-                        </>
+                        <>– {formatDateOnly(s.fechaFin)}</>
                       )}
                       {s.horaInicio && (
                         <div className="text-xs">
