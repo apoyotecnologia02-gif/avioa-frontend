@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Calendar, FileText, Gift, FileCheck, Sparkles } from "lucide-react";
+import { Calendar, FileText, FileCheck, Sparkles, Clock } from "lucide-react";
 import { AbsencesModal } from "@/components/leaves-container/page";
 import { CertificatesModal } from "@/components/certficados/page";
 import { useAuth } from "@/hooks/useAuth";
@@ -34,14 +34,14 @@ export function FeedQuickActions() {
       onClick: () => setIsAbsencesOpen(true),
     },
     {
-      icon: Gift,
-      label: "Ver Beneficios",
-      onClick: () => router.push("/points"),
+      icon: Clock,
+      label: "Horas Extras",
+      onClick: () => router.push("/overtime"),
     },
     {
       icon: FileCheck,
       label: "Certificados laborales",
-      onClick: () => setIsCertificatesOpen(true),
+      onClick: () => router.push("/certificados"),
     },
   ];
 
@@ -73,7 +73,7 @@ export function FeedQuickActions() {
         </div>
 
         {/* Sesión activa */}
-        <div className="mt-auto pt-4 border-t border-border/50">
+        {/* <div className="mt-auto pt-4 border-t border-border/50">
           <div className="flex items-center gap-2">
             {user?.avatarUrl ? (
               <img
@@ -102,7 +102,7 @@ export function FeedQuickActions() {
           <p className="text-[10px] text-muted-foreground text-center mt-2">
             Sesión activa
           </p>
-        </div>
+        </div> */}
       </div>
 
       {/* Modales */}
@@ -110,13 +110,6 @@ export function FeedQuickActions() {
         isOpen={isAbsencesOpen}
         onClose={() => setIsAbsencesOpen(false)}
       />
-
-
-      {/* esto queda sin uso hasta que se implemente la logica para certificados */}
-      {/* <CertificatesModal
-        // isOpen={isCertificatesOpen}
-        // onClose={() => setIsCertificatesOpen(false)}
-      /> */}
     </>
   );
 }
