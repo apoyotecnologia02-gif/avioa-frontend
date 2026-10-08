@@ -139,6 +139,7 @@ export const NAV_SECTIONS: NavSection[] = [
           // PROXIMAMENTE
           // { href: "/my-documents", label: "Mis documentos" },
           // { href: "/my requests", label: "Mis solicitudes" }
+          { href: "/certificados", label: "Certificados" },
         ],
       },
       {

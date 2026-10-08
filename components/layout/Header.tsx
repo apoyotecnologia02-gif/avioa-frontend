@@ -54,6 +54,7 @@ function getBreadcrumbs(pathname: string): Breadcrumb[] {
     nomina: "Contabilidad",
     "hr-validation": "Vacaciones compensadas",
     solicitudes: "Solicitudes",
+    certificados: "Certificados",
   };
 
   let currentPath = "";
@@ -220,9 +221,9 @@ export function Header() {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="gap-2 px-2 sm:pl-2 sm:pr-3">
               <Avatar className="h-8 w-8">
-                {user?.avatarUrl && (
+                {user?.avatar && (
                   <AvatarImage
-                    src={user.avatarUrl}
+                    src={user.avatar}
                     alt={user.name}
                     className="object-cover"
                   />
