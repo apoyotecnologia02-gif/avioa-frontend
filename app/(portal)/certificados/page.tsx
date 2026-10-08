@@ -48,26 +48,48 @@ export default function CertificadosPage() {
     LegalEntity | ""
   >("");
 
-  console.log("user", user);
-
   const hasLegalEntity = Boolean(user?.legalEntity);
 
-  console.log("hasLegalEntity", hasLegalEntity);
+  const pollJob = async (jobId: string): Promise<{ url: string }> => {
+    const maxAttempts = 30;
+    const delayMs = 1000;
+
+    for (let i = 0; i < maxAttempts; i++) {
+      const { data } = await api.get<{
+        state: "waiting" | "active" | "completed" | "failed" | "delayed";
+        progress?: { percentage?: number; message?: string };
+        result?: { url: string };
+        error?: string;
+      }>(`/certificados/jobs/${jobId}`, { skip401Redirect: true });
+
+      if (data.state === "completed" && data.result?.url) {
+        return data.result;
+      }
+
+      if (data.state === "failed") {
+        throw new Error(data.error ?? "La generación del certificado falló");
+      }
+
+      await new Promise((r) => setTimeout(r, delayMs));
+    }
+
+    throw new Error(
+      "El certificado está tardando más de lo esperado. Intenta nuevamente en unos minutos.",
+    );
+  };
 
   const generateCertificate = async (legalEntity?: LegalEntity) => {
     setIsGenerating(true);
     try {
-      const { data } = await api.post<{ url: string }>(
+      const { data } = await api.post<{ jobId: string }>(
         "/certificados/certificado-laboral",
         legalEntity ? { legalEntity } : {},
         { skip401Redirect: true },
       );
 
-      if (!data?.url) {
-        throw new Error("El servidor no devolvió una URL válida");
-      }
+      const result = await pollJob(data.jobId);
 
-      window.open(data.url, "_blank", "noopener,noreferrer");
+      window.open(result.url, "_blank", "noopener,noreferrer");
 
       toast({
         title: "Certificado generado",
@@ -143,7 +165,7 @@ export default function CertificadosPage() {
               </li>
               <li className="flex items-center gap-2">
                 <ShieldCheck className="h-4 w-4 text-green-600" />
-                Formato Word (.docx)
+                Formato PDF (.pdf)
               </li>
               <li className="flex items-center gap-2">
                 <ShieldCheck className="h-4 w-4 text-green-600" />
