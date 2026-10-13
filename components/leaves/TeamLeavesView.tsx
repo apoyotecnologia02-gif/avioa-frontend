@@ -61,7 +61,7 @@ export function TeamLeavesView({
   onLeaveUpdated,
 }: TeamLeavesViewProps) {
   const { user } = useAuth();
-  const canMarkNotTaken = hasModuleAccess(user, "LEAVES_HR_VALIDATION");
+  const canMarkNotTaken = hasModuleAccess(user, "LEAVE_MARK_NOT_TAKEN");
   const [notTakenTarget, setNotTakenTarget] = useState<LeaveRequest | null>(
     null,
   );

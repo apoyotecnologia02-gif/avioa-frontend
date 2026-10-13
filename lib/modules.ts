@@ -55,6 +55,13 @@ export const APP_MODULES = [
     label: "Validación de vacaciones compensadas",
     description: "Validación de vacaciones compensadas",
   },
+  {
+    key: "LEAVE_MARK_NOT_TAKEN",
+    kind: "capability",
+    category: "HERRAMIENTAS",
+    label: "Marcar y desmarcar ausencias no tomadas",
+    description: "Marcar y desmarcar ausencias no tomadas",
+  },
 
   // ── Herramientas ──────────────────────────────────────
   {
