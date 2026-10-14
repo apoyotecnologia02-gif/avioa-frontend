@@ -184,8 +184,8 @@ export function useEquipmentLoans() {
         });
         toast.success("Solicitud creada exitosamente");
       },
-      onError: (error: any) => {
-        toast.error(error?.message || "Error al crear la solicitud");
+      onError: () => {
+        toast.error("Ya existe un préstamo activo para este equipo");
       },
     });
   };
