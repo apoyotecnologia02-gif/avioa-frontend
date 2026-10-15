@@ -162,16 +162,18 @@ export const NAV_SECTIONS: NavSection[] = [
           // { href: "/equipment-requests", label: "Solicitud Equipos" },
           // { href: "/books-files", label: "Biblioteca" }
           {
-            href: process.env.NEXT_PUBLIC_DIRECTORIO_AVIOA ?? "#",
+            // href: process.env.NEXT_PUBLIC_DIRECTORIO_AVIOA ?? "#",
+            href: "/avioa-directorio",
             label: "Directorio aVioa",
             module: "AVIOA_DIRECTORY",
-            external: true,
+            // external: true,
           },
           {
-            href: process.env.NEXT_PUBLIC_AVIOA_GASTOS ?? "#",
+            // href: process.env.NEXT_PUBLIC_AVIOA_GASTOS ?? "#",
+            href: "/avioa-gastos",
             label: "aVioa Gastos",
             module: "AVIOA_GASTOS",
-            external: true,
+            // external: true,
           },
         ],
       },
