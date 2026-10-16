@@ -8,6 +8,7 @@ import { CreatePostBox } from "./CreatePostBox";
 import { BirthdaysSidebar } from "./BirthdaysSidebar";
 import { FeedSkeleton } from "./FeedSkeleton";
 import { PostCard } from "./PostCard";
+import { FlightDeals } from "./FlightDeals";
 
 export function FeedList() {
   useFeedSocket();
@@ -50,16 +51,45 @@ export function FeedList() {
   }, [handleObserver]);
 
   return (
-    <div className="mx-auto grid max-w-5xl grid-cols-1 items-start gap-6 px-3 pb-8 sm:px-4 lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-8">
-      <div className="order-1 min-w-0 lg:order-none lg:col-start-1 lg:row-start-1">
+    // <div className="mx-auto grid max-w-5xl grid-cols-1 items-start gap-6 px-3 pb-8 sm:px-4 lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-8">
+    //   <div className="order-1 min-w-0 lg:order-none lg:col-start-1 lg:row-start-1">
+    //     <CreatePostBox />
+    //   </div>
+
+    //   <div className="order-2 min-w-0 lg:order-none lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:sticky lg:top-6 lg:self-start">
+    //     <BirthdaysSidebar />
+    //   </div>
+
+    //   <div className="order-3 flex min-w-0 flex-col gap-5 lg:order-none lg:col-start-1 lg:row-start-2">
+    //     <FlightDeals />
+    //     {isLoading ? (
+    //       <FeedSkeleton />
+    //     ) : posts.length === 0 ? (
+    //       <EmptyState />
+    //     ) : (
+    //       <>
+    //         {posts.map((post) => (
+    //           <PostCard key={post.feedPostId} post={post} />
+    //         ))}
+    //         <div ref={observerTarget} className="h-2" />
+    //         {isLoadingMore && <FeedSkeleton count={1} />}
+    //         {!hasMore && posts.length > 3 && (
+    //           <p className="py-4 text-center text-xs text-muted-foreground">
+    //             Has llegado al final del feed ✨
+    //           </p>
+    //         )}
+    //       </>
+    //     )}
+    //   </div>
+    // </div>
+    <div className="mx-auto grid max-w-7xl grid-cols-1 items-start gap-6 px-3 pb-8 sm:px-4 lg:grid-cols-[280px_minmax(0,1fr)_300px] lg:gap-8">
+      <aside className="order-2 min-w-0 lg:order-none lg:sticky lg:top-6 lg:self-start">
+        <FlightDeals />
+      </aside>
+
+      <main className="order-1 flex min-w-0 flex-col gap-5 lg:order-none">
         <CreatePostBox />
-      </div>
 
-      <div className="order-2 min-w-0 lg:order-none lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:sticky lg:top-6 lg:self-start">
-        <BirthdaysSidebar />
-      </div>
-
-      <div className="order-3 flex min-w-0 flex-col gap-5 lg:order-none lg:col-start-1 lg:row-start-2">
         {isLoading ? (
           <FeedSkeleton />
         ) : posts.length === 0 ? (
@@ -78,7 +108,11 @@ export function FeedList() {
             )}
           </>
         )}
-      </div>
+      </main>
+
+      <aside className="order-3 min-w-0 lg:order-none lg:sticky lg:top-6 lg:self-start">
+        <BirthdaysSidebar />
+      </aside>
     </div>
   );
 }
