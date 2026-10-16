@@ -8,6 +8,7 @@ import { CreatePostBox } from "./CreatePostBox";
 import { BirthdaysSidebar } from "./BirthdaysSidebar";
 import { FeedSkeleton } from "./FeedSkeleton";
 import { PostCard } from "./PostCard";
+import { FlightDeals } from "./FlightDeals";
 
 export function FeedList() {
   useFeedSocket();
@@ -60,6 +61,7 @@ export function FeedList() {
       </div>
 
       <div className="order-3 flex min-w-0 flex-col gap-5 lg:order-none lg:col-start-1 lg:row-start-2">
+        <FlightDeals />
         {isLoading ? (
           <FeedSkeleton />
         ) : posts.length === 0 ? (
