@@ -133,7 +133,7 @@ export function FlightDeals() {
                 Mejores vuelos del día
               </h2>
               <p className="text-[11px] text-muted-foreground">
-                Ofertas detectadas hoy desde tu ciudad
+                Ofertas detectadas el día de hoy
               </p>
             </div>
             <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-primary" />
@@ -165,7 +165,7 @@ export function FlightDeals() {
                 Mejores vuelos del día
               </DialogTitle>
               <DialogDescription className="text-xs">
-                Ofertas detectadas hoy desde tu ciudad · {vuelos.length} ofertas
+                Ofertas detectadas hoy · {vuelos.length} ofertas
               </DialogDescription>
             </div>
           </div>
