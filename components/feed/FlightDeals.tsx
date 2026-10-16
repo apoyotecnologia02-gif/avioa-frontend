@@ -4,6 +4,7 @@ import { api } from "@/lib/axios";
 import {
   ArrowRight,
   Calendar,
+  ChevronRight,
   ExternalLink,
   Flame,
   Moon,
@@ -11,6 +12,14 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "../ui/dialog";
 
 type Vuelo = {
   id: number;
@@ -79,33 +88,96 @@ export function FlightDeals() {
   if (isLoading) return <FlightDealsSkeleton />;
   if (error || vuelos.length === 0) return null;
 
-  return (
-    <section className="rounded-2xl border border-border/60 bg-gradient-to-br from-primary/[0.04] via-transparent to-transparent p-4">
-      <header className="mb-3 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <Sparkles className="h-4 w-4" />
-          </div>
-          <div>
-            <h2 className="text-sm font-semibold leading-tight">
-              Mejores vuelos del día
-            </h2>
-            <p className="text-[11px] text-muted-foreground">
-              Ofertas detectadas hoy desde tu ciudad
-            </p>
-          </div>
-        </div>
-        <span className="hidden rounded-full border border-border/60 bg-background px-2 py-0.5 text-[10px] font-medium text-muted-foreground sm:inline">
-          {vuelos.length} ofertas
-        </span>
-      </header>
+  const mejorPrecio = Math.min(...vuelos.map((v) => v.precio));
 
-      <div className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-2">
-        {vuelos.map((v) => (
-          <FlightDealCard key={v.id} vuelo={v} />
-        ))}
-      </div>
-    </section>
+  return (
+    // <section className="rounded-2xl border border-border/60 bg-gradient-to-br from-primary/[0.04] via-transparent to-transparent p-4">
+    //   <header className="mb-3 flex items-center justify-between gap-2">
+    //     <div className="flex items-center gap-2">
+    //       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
+    //         <Sparkles className="h-4 w-4" />
+    //       </div>
+    //       <div>
+    //         <h2 className="text-sm font-semibold leading-tight">
+    //           Mejores vuelos del día
+    //         </h2>
+    //         <p className="text-[11px] text-muted-foreground">
+    //           Ofertas detectadas hoy desde tu ciudad
+    //         </p>
+    //       </div>
+    //     </div>
+    //     <span className="hidden rounded-full border border-border/60 bg-background px-2 py-0.5 text-[10px] font-medium text-muted-foreground sm:inline">
+    //       {vuelos.length} ofertas
+    //     </span>
+    //   </header>
+
+    //   <div className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-2">
+    //     {vuelos.map((v) => (
+    //       <FlightDealCard key={v.id} vuelo={v} />
+    //     ))}
+    //   </div>
+    // </section>
+    <Dialog>
+      {/* Trigger compacto (columna izquierda) */}
+      <DialogTrigger asChild>
+        <button
+          type="button"
+          className="group w-full rounded-2xl border border-border/60 bg-gradient-to-br from-primary/[0.04] via-transparent to-transparent p-4 text-left transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
+        >
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <Sparkles className="h-4 w-4" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-sm font-semibold leading-tight">
+                Mejores vuelos del día
+              </h2>
+              <p className="text-[11px] text-muted-foreground">
+                Ofertas detectadas hoy desde tu ciudad
+              </p>
+            </div>
+            <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-primary" />
+          </div>
+
+          <div className="mt-3 flex items-end justify-between gap-2 border-t border-border/60 pt-3">
+            <div>
+              <p className="text-[11px] text-muted-foreground">Desde</p>
+              <p className="text-lg font-bold leading-tight text-emerald-600 dark:text-emerald-400">
+                {cop.format(mejorPrecio)}
+              </p>
+            </div>
+            <span className="rounded-full border border-border/60 bg-background px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+              {vuelos.length} ofertas
+            </span>
+          </div>
+        </button>
+      </DialogTrigger>
+
+      {/* Modal con todos los vuelos */}
+      <DialogContent className="max-h-[85vh] w-[calc(100%-2rem)] overflow-y-auto sm:max-w-4xl">
+        <DialogHeader>
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <Sparkles className="h-4 w-4" />
+            </div>
+            <div className="text-left">
+              <DialogTitle className="text-base font-semibold leading-tight">
+                Mejores vuelos del día
+              </DialogTitle>
+              <DialogDescription className="text-xs">
+                Ofertas detectadas hoy desde tu ciudad · {vuelos.length} ofertas
+              </DialogDescription>
+            </div>
+          </div>
+        </DialogHeader>
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {vuelos.map((v) => (
+            <FlightDealCard key={v.id} vuelo={v} />
+          ))}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -119,7 +191,7 @@ function FlightDealCard({ vuelo }: { vuelo: Vuelo }) {
       href={vuelo.link}
       target="_blank"
       rel="noopener noreferrer"
-      className="group relative flex w-[260px] shrink-0 snap-start flex-col gap-3 rounded-2xl border border-border/60 bg-card p-4 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md sm:w-auto"
+      className="group relative flex w-full flex-col gap-3 rounded-2xl border border-border/60 bg-card p-4 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
