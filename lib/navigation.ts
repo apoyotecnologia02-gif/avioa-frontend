@@ -16,6 +16,7 @@ import {
   CircleDollarSign,
   Coins,
   ClipboardList,
+  Wrench,
 } from "lucide-react";
 import { isAdminRole, isLeaderOrManagerOrAdminRole } from "@/lib/roles";
 import { AppModuleKey } from "./modules";
@@ -161,6 +162,13 @@ export const NAV_SECTIONS: NavSection[] = [
           },
           // { href: "/equipment-requests", label: "Solicitud Equipos" },
           // { href: "/books-files", label: "Biblioteca" }
+        ],
+      },
+      {
+        key: "herramientas",
+        label: "Herramientas",
+        icon: Wrench,
+        items: [
           {
             // href: process.env.NEXT_PUBLIC_DIRECTORIO_AVIOA ?? "#",
             href: "/avioa-directorio",
@@ -174,6 +182,10 @@ export const NAV_SECTIONS: NavSection[] = [
             label: "aVioa Gastos",
             module: "AVIOA_GASTOS",
             // external: true,
+          },
+          {
+            href: "/avi-click",
+            label: "Avi Click",
           },
         ],
       },
