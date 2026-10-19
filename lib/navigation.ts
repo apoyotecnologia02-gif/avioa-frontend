@@ -185,6 +185,10 @@ export const NAV_SECTIONS: NavSection[] = [
             href: "/avi-click",
             label: "Avi Click",
           },
+          {
+            href: "/vuelos",
+            label: "Ver vuelos",
+          },
         ],
       },
       {
