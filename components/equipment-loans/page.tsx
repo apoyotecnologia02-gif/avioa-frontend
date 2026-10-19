@@ -58,6 +58,7 @@ import {
   Plus,
   Calendar,
   User,
+  PackagePlus,
   Pencil,
   CheckCircle,
   XCircle,
@@ -81,6 +82,7 @@ import {
   LoanStatus,
   EquipmentCategory,
 } from "@/types/equipment-loan.types";
+import { EditEquipmentDialog } from "./edit-equipment";
 
 const statusConfig = {
   [EquipmentStatus.AVAILABLE]: {
@@ -208,6 +210,7 @@ export function EquipmentLoans() {
     user?.isLeader === true || role === "leader" || role === "admin";
   const isSupport = user?.isSupport === true;
   const currentUserId = user?.userId;
+  // console.log("DEBUG currentUserId:", currentUserId);
 
   const canManageLoans = isLeader || isSupport;
 
@@ -217,6 +220,7 @@ export function EquipmentLoans() {
     EquipmentStatus | "ALL"
   >("ALL");
 
+  const [editingEquipment, setEditingEquipment] = useState<any | null>(null);
   const [activeTab, setActiveTab] = useState("equipment");
   const [selectedLoanId, setSelectedLoanId] = useState<string | null>(null);
   const [showLoanDialog, setShowLoanDialog] = useState(false);
@@ -232,7 +236,6 @@ export function EquipmentLoans() {
     null,
   );
   const [showEditEquipmentDialog, setShowEditEquipmentDialog] = useState(false);
-
   const [currentPage, setCurrentPage] = useState(1);
 
   const {
@@ -244,6 +247,7 @@ export function EquipmentLoans() {
     useUpdateLoanStatus,
     useCancelLoan,
     useCreateEquipment,
+    useUpdateEquipment,
   } = useEquipmentLoans();
 
   const {
@@ -270,6 +274,7 @@ export function EquipmentLoans() {
   const createEquipment = useCreateEquipment();
   const updateStatus = useUpdateLoanStatus();
   const cancelLoan = useCancelLoan();
+  const updateEquipment = useUpdateEquipment();
 
   useEffect(() => {
     const handleEquipmentLoanUpdate = () => {
@@ -553,10 +558,24 @@ export function EquipmentLoans() {
   };
 
   const handleEditEquipment = (equipment: any) => {
-  console.log("Editar equipo:", equipment);
-  setEditingEquipmentId(equipment.equipmentId);
-  // TODO: abrir modal de edición
-};
+    setEditingEquipment(equipment);
+    setShowEditEquipmentDialog(true);
+  };
+
+  const handleUpdateEquipment = (data: any) => {
+    if (!editingEquipment) return;
+
+    updateEquipment.mutate(
+      { id: editingEquipment.equipmentId, data },
+      {
+        onSuccess: () => {
+          setShowEditEquipmentDialog(false);
+          setEditingEquipment(null);
+          refetchEquipment();
+        },
+      },
+    );
+  };
 
   const handleReturnLoan = (id: string) => {
     setSelectedLoanId(id);
@@ -701,6 +720,12 @@ export function EquipmentLoans() {
                 Registrar Equipo
               </Button>
             )}
+
+           {/* <Button 
+            >
+              <PackagePlus className="mr-2 h-4 w-4" />
+              Solicitar Equipo
+           </Button> */}
           </div>
         </div>
 
@@ -1464,7 +1489,7 @@ export function EquipmentLoans() {
 
                                       {!hasActions && (
                                         <span className="text-xs text-muted-foreground">
-                                          —
+                                          
                                         </span>
                                       )}
                                     </div>
@@ -2011,6 +2036,15 @@ export function EquipmentLoans() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        <EditEquipmentDialog
+          open={showEditEquipmentDialog}
+          onOpenChange={setShowEditEquipmentDialog}
+          equipment={editingEquipment}
+          locations={locations ?? []}
+          onSubmit={handleUpdateEquipment}
+          isPending={updateEquipment.isPending}
+        />
       </div>
     </TooltipProvider>
   );

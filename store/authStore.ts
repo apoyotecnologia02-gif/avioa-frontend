@@ -171,6 +171,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const fullUser = {
       ...user,
 
+      ...(payload?.userId && { userId: payload.userId }),
+
       ...(payload?.email && {
         email: payload.email,
       }),
@@ -269,6 +271,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             user.area = payload.area;
             userUpdated = true;
           }
+          if (payload.userId && user.userId !== payload.userId) {
+            user.userId = payload.userId;
+            userUpdated = true;
+          }
           if (
             payload.isLeader !== undefined &&
             user.isLeader !== Boolean(payload.isLeader)
@@ -276,7 +282,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             user.isLeader = Boolean(payload.isLeader);
             userUpdated = true;
           }
-          if (payload.isSupport !== undefined && user.isSupport !== Boolean(payload.isSupport)) {
+          if (
+            payload.isSupport !== undefined &&
+            user.isSupport !== Boolean(payload.isSupport)
+          ) {
             user.isSupport = Boolean(payload.isSupport);
             userUpdated = true;
           }

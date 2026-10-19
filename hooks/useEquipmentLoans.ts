@@ -44,6 +44,20 @@ const api = {
       return res.json();
     }),
 
+  updateEquipment: (id: string, data: any) =>
+    fetch(`${API_URL}?path=equipment/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+      credentials: "include",
+    }).then(async (res) => {
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Error al actualizar equipo");
+      }
+      return res.json();
+    }),
+
   // PRÉSTAMOS
   createLoan: (data: any) =>
     fetch(`${API_URL}?path=loans`, {
@@ -154,6 +168,22 @@ export function useEquipmentLoans() {
     });
   };
 
+  const useUpdateEquipment = () => {
+    return useMutation({
+      mutationFn: ({ id, data }: { id: string; data: any }) =>
+        api.updateEquipment(id, data),
+      onSuccess: () => {
+        queryClient.invalidateQueries({
+          queryKey: EQUIPMENT_LOAN_KEYS.equipmentList(),
+        });
+        toast.success("Equipo actualizado exitosamente");
+      },
+      onError: (error: any) => {
+        toast.error(error?.message || "Error al actualizar el equipo");
+      },
+    });
+  };
+
   const useMyLoans = () => {
     return useQuery({
       queryKey: EQUIPMENT_LOAN_KEYS.myLoans(),
@@ -244,5 +274,6 @@ export function useEquipmentLoans() {
     useCancelLoan,
     useLocations,
     useMyLoanedEquipment,
+    useUpdateEquipment,
   };
 }

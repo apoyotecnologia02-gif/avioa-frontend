@@ -152,12 +152,11 @@ export const NAV_SECTIONS: NavSection[] = [
           {
             href: "/loans",
             label: "Solicitudes de equipos",
-            // module: "MAINTENANCE",
           },
           {
             href: "/equipment-maintenance",
             label: "Mantenimiento de equipos",
-            module: "MAINTENANCE",
+            // module: "MAINTENANCE",
           },
           // { href: "/equipment-requests", label: "Solicitud Equipos" },
           // { href: "/books-files", label: "Biblioteca" }

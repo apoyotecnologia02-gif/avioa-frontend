@@ -39,6 +39,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   Wrench,
   Search,
   Plus,
@@ -54,6 +60,9 @@ import {
   Loader2,
   Ban,
   Filter,
+  Eye,
+  MapPin,
+  FileText,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
@@ -115,14 +124,9 @@ export function Maintenance() {
 
   const role = user?.role?.toLowerCase();
   const isAdmin = role === "admin";
-  const isLeader =
-    user?.isLeader === true ||
-    role === "leader" ||
-    role === "manager" ||
-    role === "admin";
   const isSupport = user?.isSupport === true;
 
-  const canManageRequests = isLeader || isSupport;
+  const canManageRequests = isAdmin || isSupport;
 
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("my-requests");
@@ -131,14 +135,15 @@ export function Maintenance() {
     "ALL",
   );
 
+  const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [detailRequest, setDetailRequest] = useState<any>(null);
+
   const { useEquipment, useMyLoanedEquipment, useLocations } =
     useEquipmentLoans();
 
   const { refetch: refetchEquipment } = useEquipment();
-  const {
-    data: myLoanedEquipment,
-    refetch: refetchMyLoaned,
-  } = useMyLoanedEquipment();
+  const { data: myLoanedEquipment, refetch: refetchMyLoaned } =
+    useMyLoanedEquipment();
   const { data: locations } = useLocations();
 
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -407,12 +412,17 @@ export function Maintenance() {
     });
   };
 
+  const handleViewDetail = (request: any) => {
+    setDetailRequest(request);
+    setShowDetailDialog(true);
+  };
+
   const formatDate = (date: string) => {
     return format(new Date(date), "dd/MM/yyyy", { locale: es });
   };
 
-  const formatDateLong = (date: string) => {
-    return format(new Date(date), "dd 'de' MMMM 'de' yyyy", { locale: es });
+  const formatDateTime = (date: string) => {
+    return format(new Date(date), "dd/MM/yyyy HH:mm", { locale: es });
   };
 
   const getStatusBadge = (status: MaintenanceStatus) => {
@@ -466,273 +476,65 @@ export function Maintenance() {
   const availableEquipment = myLoanedEquipment ?? [];
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Mantenimientos</h1>
-          <p className="text-muted-foreground">
-            Solicita y gestiona el mantenimiento de equipos
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button onClick={() => setShowCreateDialog(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Mantenimiento Equipos
-          </Button>
+    <TooltipProvider delayDuration={200}>
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Mantenimientos</h1>
+            <p className="text-muted-foreground">
+              Solicita y gestiona el mantenimiento de equipos
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button onClick={() => setShowCreateDialog(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Mantenimiento Equipos
+            </Button>
 
-          <Button onClick={() => setShowGeneralDialog(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Mantenimiento General
-          </Button>
+            <Button onClick={() => setShowGeneralDialog(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Mantenimiento General
+            </Button>
+          </div>
         </div>
-      </div>
 
-      <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList className="inline-flex h-auto w-auto items-center justify-start gap-2 bg-transparent p-0">
-          <TabsTrigger
-            value="my-requests"
-            className="rounded-md border px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-          >
-            Mis Solicitudes
-          </TabsTrigger>
-          {canManageRequests && (
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
+          <TabsList className="inline-flex h-auto w-auto items-center justify-start gap-2 bg-transparent p-0">
             <TabsTrigger
-              value="all-requests"
+              value="my-requests"
               className="rounded-md border px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
             >
-              <span className="flex items-center gap-2">
-                Todas las Solicitudes
-                {pendingCount > 0 && (
-                  <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-medium text-white">
-                    {pendingCount > 99 ? "99+" : pendingCount}
-                  </span>
-                )}
-              </span>
+              Mis Solicitudes
             </TabsTrigger>
-          )}
-        </TabsList>
+            {canManageRequests && (
+              <TabsTrigger
+                value="all-requests"
+                className="rounded-md border px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              >
+                <span className="flex items-center gap-2">
+                  Todas las Solicitudes
+                  {pendingCount > 0 && (
+                    <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-medium text-white">
+                      {pendingCount > 99 ? "99+" : pendingCount}
+                    </span>
+                  )}
+                </span>
+              </TabsTrigger>
+            )}
+          </TabsList>
 
-        <TabsContent value="my-requests" className="mt-6">
-          <Card>
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-2">
-                <Wrench className="h-5 w-5" />
-                Mis Solicitudes
-                <Badge variant="secondary" className="ml-1">
-                  {filteredMyRequests.length}
-                </Badge>
-              </CardTitle>
-              <CardDescription className="mt-1">
-                Historial de tus solicitudes de mantenimiento
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="mb-4 flex flex-col sm:flex-row gap-2">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar por equipo, ubicación o motivo..."
-                    value={searchTerm}
-                    onChange={(e) => handleSearchChange(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <Select
-                  value={statusFilter}
-                  onValueChange={handleStatusFilterChange}
-                >
-                  <SelectTrigger className="w-full sm:w-[200px]">
-                    <Filter className="mr-2 h-3.5 w-3.5" />
-                    <SelectValue placeholder="Estado" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ALL">Todos los estados</SelectItem>
-                    <SelectItem value={MaintenanceStatus.PENDING}>
-                      Pendiente
-                    </SelectItem>
-                    <SelectItem value={MaintenanceStatus.IN_REVIEW}>
-                      En revisión
-                    </SelectItem>
-                    <SelectItem value={MaintenanceStatus.IN_PROGRESS}>
-                      En proceso
-                    </SelectItem>
-                    <SelectItem value={MaintenanceStatus.RESOLVED}>
-                      Resuelto
-                    </SelectItem>
-                    <SelectItem value={MaintenanceStatus.REJECTED}>
-                      Rechazado
-                    </SelectItem>
-                    <SelectItem value={MaintenanceStatus.CANCELLED}>
-                      Cancelado
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {isLoadingMyRequests ? (
-                <div className="space-y-3">
-                  <Skeleton className="h-14 w-full" />
-                  <Skeleton className="h-14 w-full" />
-                </div>
-              ) : filteredMyRequests.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  <Wrench className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p className="font-medium">No tienes solicitudes</p>
-                  <p className="text-sm mt-1">
-                    Cuando solicites un mantenimiento aparecerá aquí
-                  </p>
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowCreateDialog(true)}
-                    className="mt-4"
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Solicitar mantenimiento
-                  </Button>
-                </div>
-              ) : (
-                <>
-                  <div className="hidden md:block rounded-md border overflow-hidden">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="bg-muted/40 hover:bg-muted/40">
-                          <TableHead className="w-[35%]">
-                            Equipo / Ubicación
-                          </TableHead>
-                          <TableHead className="w-[25%]">Motivo</TableHead>
-                          <TableHead className="w-[15%]">Solicitado</TableHead>
-                          <TableHead className="w-[15%]">Estado</TableHead>
-                          <TableHead className="text-right">Acciones</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {paginate(filteredMyRequests).map((item: any) => {
-                          const subtitle = getRequestSubtitle(item);
-                          return (
-                            <TableRow
-                              key={item.maintenanceRequestId}
-                              className="h-14"
-                            >
-                              <TableCell>
-                                <div className="flex flex-col">
-                                  <span className="font-medium leading-tight">
-                                    {getRequestName(item)}
-                                  </span>
-                                  <span className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
-                                    {item.requestType &&
-                                      getRequestTypeBadge(item.requestType)}
-                                    {subtitle && <span>· {subtitle}</span>}
-                                  </span>
-                                </div>
-                              </TableCell>
-                              <TableCell className="text-sm text-muted-foreground max-w-[220px] truncate">
-                                {item.reason || "—"}
-                              </TableCell>
-                              <TableCell className="text-sm text-muted-foreground">
-                                <span className="inline-flex items-center gap-1">
-                                  <Calendar className="h-3 w-3" />
-                                  {formatDate(item.createdAt)}
-                                </span>
-                              </TableCell>
-                              <TableCell>{getStatusBadge(item.status)}</TableCell>
-                              <TableCell className="text-right">
-                                {item.status ===
-                                  MaintenanceStatus.PENDING && (
-                                  <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    className="h-7 text-xs"
-                                    onClick={() =>
-                                      handleOpenCancelDialog(
-                                        item.maintenanceRequestId,
-                                      )
-                                    }
-                                    disabled={cancelRequest.isPending}
-                                  >
-                                    <Ban className="mr-1 h-3 w-3" />
-                                    Cancelar
-                                  </Button>
-                                )}
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
-                  </div>
-
-                  <div className="md:hidden space-y-3">
-                    {paginate(filteredMyRequests).map((item: any) => (
-                      <Card key={item.maintenanceRequestId}>
-                        <CardContent className="p-4">
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0 flex-1">
-                              <p className="font-medium truncate">
-                                {getRequestName(item)}
-                              </p>
-                              <div className="flex items-center gap-2 mt-1 flex-wrap">
-                                {item.requestType &&
-                                  getRequestTypeBadge(item.requestType)}
-                                {getStatusBadge(item.status)}
-                              </div>
-                              {item.reason && (
-                                <p className="text-xs text-muted-foreground mt-2 truncate">
-                                  Motivo: {item.reason}
-                                </p>
-                              )}
-                              <p className="text-xs text-muted-foreground mt-1">
-                                <Calendar className="inline h-3 w-3 mr-1" />
-                                {formatDate(item.createdAt)}
-                              </p>
-                            </div>
-                            {item.status === MaintenanceStatus.PENDING && (
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                className="h-7 text-xs shrink-0"
-                                onClick={() =>
-                                  handleOpenCancelDialog(
-                                    item.maintenanceRequestId,
-                                  )
-                                }
-                                disabled={cancelRequest.isPending}
-                              >
-                                <Ban className="mr-1 h-3 w-3" />
-                                Cancelar
-                              </Button>
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-
-                  {renderPagination(filteredMyRequests)}
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {canManageRequests && (
-          <TabsContent value="all-requests" className="mt-6">
+          <TabsContent value="my-requests" className="mt-6">
             <Card>
               <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Todas las Solicitudes
+                  <Wrench className="h-5 w-5" />
+                  Mis Solicitudes
                   <Badge variant="secondary" className="ml-1">
-                    {filteredAllRequests.length}
+                    {filteredMyRequests.length}
                   </Badge>
-                  {pendingCount > 0 && (
-                    <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">
-                      {pendingCount} pendientes
-                    </Badge>
-                  )}
                 </CardTitle>
                 <CardDescription className="mt-1">
-                  Gestiona las solicitudes de mantenimiento de los
-                  colaboradores
+                  Historial de tus solicitudes de mantenimiento
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -740,7 +542,7 @@ export function Maintenance() {
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
-                      placeholder="Buscar por equipo, usuario o motivo..."
+                      placeholder="Buscar por equipo, ubicación o motivo..."
                       value={searchTerm}
                       onChange={(e) => handleSearchChange(e.target.value)}
                       className="pl-10"
@@ -778,20 +580,26 @@ export function Maintenance() {
                   </Select>
                 </div>
 
-                {isLoadingAllRequests ? (
+                {isLoadingMyRequests ? (
                   <div className="space-y-3">
                     <Skeleton className="h-14 w-full" />
                     <Skeleton className="h-14 w-full" />
-                    <Skeleton className="h-14 w-full" />
                   </div>
-                ) : filteredAllRequests.length === 0 ? (
+                ) : filteredMyRequests.length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground">
-                    <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p className="font-medium">No hay solicitudes</p>
+                    <Wrench className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p className="font-medium">No tienes solicitudes</p>
                     <p className="text-sm mt-1">
-                      Cuando los colaboradores soliciten mantenimientos
-                      aparecerán aquí
+                      Cuando solicites un mantenimiento aparecerá aquí
                     </p>
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowCreateDialog(true)}
+                      className="mt-4"
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Solicitar mantenimiento
+                    </Button>
                   </div>
                 ) : (
                   <>
@@ -799,21 +607,19 @@ export function Maintenance() {
                       <Table>
                         <TableHeader>
                           <TableRow className="bg-muted/40 hover:bg-muted/40">
-                            <TableHead className="w-[30%]">
+                            <TableHead className="w-[35%]">
                               Equipo / Ubicación
                             </TableHead>
-                            <TableHead className="w-[16%]">
-                              Solicitante
-                            </TableHead>
-                            <TableHead className="w-[18%]">Motivo</TableHead>
-                            <TableHead className="w-[14%]">Estado</TableHead>
-                            <TableHead className="w-[22%] text-right">
+                            <TableHead className="w-[25%]">Motivo</TableHead>
+                            <TableHead className="w-[15%]">Solicitado</TableHead>
+                            <TableHead className="w-[15%]">Estado</TableHead>
+                            <TableHead className="w-[120px] text-right">
                               Acciones
                             </TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {paginate(filteredAllRequests).map((item: any) => {
+                          {paginate(filteredMyRequests).map((item: any) => {
                             const subtitle = getRequestSubtitle(item);
                             return (
                               <TableRow
@@ -825,92 +631,65 @@ export function Maintenance() {
                                     <span className="font-medium leading-tight">
                                       {getRequestName(item)}
                                     </span>
-                                    <span className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1 flex-wrap">
+                                    <span className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
                                       {item.requestType &&
                                         getRequestTypeBadge(item.requestType)}
                                       {subtitle && <span>· {subtitle}</span>}
                                     </span>
                                   </div>
                                 </TableCell>
-                                <TableCell>
-                                  {item.user?.name ? (
-                                    <div className="flex items-center gap-2">
-                                      <UserAvatar name={item.user.name} />
-                                      <span className="text-sm truncate">
-                                        {item.user.name}
-                                      </span>
-                                    </div>
-                                  ) : (
-                                    <span className="text-sm text-muted-foreground">
-                                      —
-                                    </span>
-                                  )}
-                                </TableCell>
                                 <TableCell className="text-sm text-muted-foreground max-w-[220px] truncate">
                                   {item.reason || "—"}
+                                </TableCell>
+                                <TableCell className="text-sm text-muted-foreground">
+                                  <span className="inline-flex items-center gap-1">
+                                    <Calendar className="h-3 w-3" />
+                                    {formatDate(item.createdAt)}
+                                  </span>
                                 </TableCell>
                                 <TableCell>
                                   {getStatusBadge(item.status)}
                                 </TableCell>
                                 <TableCell className="text-right">
-                                  <div className="flex justify-end gap-1.5 flex-wrap">
+                                  <div className="flex items-center justify-end gap-1">
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-8 w-8"
+                                          onClick={() => handleViewDetail(item)}
+                                        >
+                                          <Eye className="h-4 w-4 text-muted-foreground" />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        Ver detalle
+                                      </TooltipContent>
+                                    </Tooltip>
+
                                     {item.status ===
                                       MaintenanceStatus.PENDING && (
-                                      <Button
-                                        size="sm"
-                                        className="h-7 text-xs"
-                                        onClick={() =>
-                                          handleOpenStatusDialog(
-                                            item.maintenanceRequestId,
-                                          )
-                                        }
-                                        disabled={updateStatus.isPending}
-                                      >
-                                        <AlertCircle className="mr-1 h-3 w-3" />
-                                        Gestionar
-                                      </Button>
-                                    )}
-                                    {item.status ===
-                                      MaintenanceStatus.IN_REVIEW && (
-                                      <Button
-                                        size="sm"
-                                        className="h-7 text-xs"
-                                        onClick={() =>
-                                          handleOpenStatusDialog(
-                                            item.maintenanceRequestId,
-                                          )
-                                        }
-                                        disabled={updateStatus.isPending}
-                                      >
-                                        <Loader2 className="mr-1 h-3 w-3" />
-                                        Actualizar
-                                      </Button>
-                                    )}
-                                    {item.status ===
-                                      MaintenanceStatus.IN_PROGRESS && (
-                                      <Button
-                                        size="sm"
-                                        className="h-7 text-xs"
-                                        onClick={() =>
-                                          handleOpenStatusDialog(
-                                            item.maintenanceRequestId,
-                                          )
-                                        }
-                                        disabled={updateStatus.isPending}
-                                      >
-                                        <CheckCircle className="mr-1 h-3 w-3" />
-                                        Resolver
-                                      </Button>
-                                    )}
-                                    {(item.status ===
-                                      MaintenanceStatus.RESOLVED ||
-                                      item.status ===
-                                        MaintenanceStatus.REJECTED ||
-                                      item.status ===
-                                        MaintenanceStatus.CANCELLED) && (
-                                      <span className="text-xs text-muted-foreground self-center">
-                                        —
-                                      </span>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8"
+                                            onClick={() =>
+                                              handleOpenCancelDialog(
+                                                item.maintenanceRequestId,
+                                              )
+                                            }
+                                            disabled={cancelRequest.isPending}
+                                          >
+                                            <Ban className="h-4 w-4 text-red-600" />
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          Cancelar solicitud
+                                        </TooltipContent>
+                                      </Tooltip>
                                     )}
                                   </div>
                                 </TableCell>
@@ -922,7 +701,7 @@ export function Maintenance() {
                     </div>
 
                     <div className="md:hidden space-y-3">
-                      {paginate(filteredAllRequests).map((item: any) => (
+                      {paginate(filteredMyRequests).map((item: any) => (
                         <Card key={item.maintenanceRequestId}>
                           <CardContent className="p-4">
                             <div className="flex items-start justify-between gap-3">
@@ -935,14 +714,6 @@ export function Maintenance() {
                                     getRequestTypeBadge(item.requestType)}
                                   {getStatusBadge(item.status)}
                                 </div>
-                                {item.user?.name && (
-                                  <div className="flex items-center gap-2 mt-2">
-                                    <UserAvatar name={item.user.name} />
-                                    <span className="text-xs text-muted-foreground truncate">
-                                      {item.user.name}
-                                    </span>
-                                  </div>
-                                )}
                                 {item.reason && (
                                   <p className="text-xs text-muted-foreground mt-2 truncate">
                                     Motivo: {item.reason}
@@ -955,328 +726,837 @@ export function Maintenance() {
                               </div>
                             </div>
 
-                            {(item.status === MaintenanceStatus.PENDING ||
-                              item.status ===
-                                MaintenanceStatus.IN_REVIEW ||
-                              item.status ===
-                                MaintenanceStatus.IN_PROGRESS) && (
-                              <div className="flex gap-2 mt-3 pt-3 border-t">
-                                {item.status ===
-                                  MaintenanceStatus.PENDING && (
+                            <div className="flex items-center justify-end gap-1 mt-3 pt-3 border-t">
+                              <Tooltip>
+                                <TooltipTrigger asChild>
                                   <Button
-                                    size="sm"
-                                    className="flex-1 h-8 text-xs"
-                                    onClick={() =>
-                                      handleOpenStatusDialog(
-                                        item.maintenanceRequestId,
-                                      )
-                                    }
-                                    disabled={updateStatus.isPending}
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-9 w-9"
+                                    onClick={() => handleViewDetail(item)}
                                   >
-                                    <AlertCircle className="mr-1 h-3 w-3" />
-                                    Gestionar
+                                    <Eye className="h-4 w-4 text-muted-foreground" />
                                   </Button>
-                                )}
-                                {item.status ===
-                                  MaintenanceStatus.IN_REVIEW && (
-                                  <Button
-                                    size="sm"
-                                    className="flex-1 h-8 text-xs"
-                                    onClick={() =>
-                                      handleOpenStatusDialog(
-                                        item.maintenanceRequestId,
-                                      )
-                                    }
-                                    disabled={updateStatus.isPending}
-                                  >
-                                    <Loader2 className="mr-1 h-3 w-3" />
-                                    Actualizar
-                                  </Button>
-                                )}
-                                {item.status ===
-                                  MaintenanceStatus.IN_PROGRESS && (
-                                  <Button
-                                    size="sm"
-                                    className="flex-1 h-8 text-xs"
-                                    onClick={() =>
-                                      handleOpenStatusDialog(
-                                        item.maintenanceRequestId,
-                                      )
-                                    }
-                                    disabled={updateStatus.isPending}
-                                  >
-                                    <CheckCircle className="mr-1 h-3 w-3" />
-                                    Marcar como resuelto
-                                  </Button>
-                                )}
-                              </div>
-                            )}
+                                </TooltipTrigger>
+                                <TooltipContent>Ver detalle</TooltipContent>
+                              </Tooltip>
+
+                              {item.status === MaintenanceStatus.PENDING && (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-9 w-9"
+                                      onClick={() =>
+                                        handleOpenCancelDialog(
+                                          item.maintenanceRequestId,
+                                        )
+                                      }
+                                      disabled={cancelRequest.isPending}
+                                    >
+                                      <Ban className="h-4 w-4 text-red-600" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    Cancelar solicitud
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
+                            </div>
                           </CardContent>
                         </Card>
                       ))}
                     </div>
 
-                    {renderPagination(filteredAllRequests)}
+                    {renderPagination(filteredMyRequests)}
                   </>
                 )}
               </CardContent>
             </Card>
           </TabsContent>
-        )}
-      </Tabs>
 
-      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="w-[calc(100vw-2rem)] max-w-lg overflow-hidden">
-          <DialogHeader>
-            <DialogTitle>Solicitar Mantenimiento</DialogTitle>
-            <DialogDescription>
-              Completa los datos para solicitar la revisión del equipo
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2 min-w-0">
-              <Label>Equipo *</Label>
-              <Select
-                value={selectedEquipmentId}
-                onValueChange={setSelectedEquipmentId}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecciona un equipo" />
-                </SelectTrigger>
-                <SelectContent className="w-[var(--radix-select-trigger-width)]">
-                  {availableEquipment.length === 0 ? (
-                    <div className="p-2 text-sm text-muted-foreground">
-                      No tienes equipos asignados para generar el reporte de
-                      mantenimiento.
+          {canManageRequests && (
+            <TabsContent value="all-requests" className="mt-6">
+              <Card>
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="h-5 w-5" />
+                    Todas las Solicitudes
+                    <Badge variant="secondary" className="ml-1">
+                      {filteredAllRequests.length}
+                    </Badge>
+                    {pendingCount > 0 && (
+                      <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">
+                        {pendingCount} pendientes
+                      </Badge>
+                    )}
+                  </CardTitle>
+                  <CardDescription className="mt-1">
+                    Gestiona las solicitudes de mantenimiento de los
+                    colaboradores
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="mb-4 flex flex-col sm:flex-row gap-2">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        placeholder="Buscar por equipo, usuario o motivo..."
+                        value={searchTerm}
+                        onChange={(e) => handleSearchChange(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                    <Select
+                      value={statusFilter}
+                      onValueChange={handleStatusFilterChange}
+                    >
+                      <SelectTrigger className="w-full sm:w-[200px]">
+                        <Filter className="mr-2 h-3.5 w-3.5" />
+                        <SelectValue placeholder="Estado" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ALL">Todos los estados</SelectItem>
+                        <SelectItem value={MaintenanceStatus.PENDING}>
+                          Pendiente
+                        </SelectItem>
+                        <SelectItem value={MaintenanceStatus.IN_REVIEW}>
+                          En revisión
+                        </SelectItem>
+                        <SelectItem value={MaintenanceStatus.IN_PROGRESS}>
+                          En proceso
+                        </SelectItem>
+                        <SelectItem value={MaintenanceStatus.RESOLVED}>
+                          Resuelto
+                        </SelectItem>
+                        <SelectItem value={MaintenanceStatus.REJECTED}>
+                          Rechazado
+                        </SelectItem>
+                        <SelectItem value={MaintenanceStatus.CANCELLED}>
+                          Cancelado
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {isLoadingAllRequests ? (
+                    <div className="space-y-3">
+                      <Skeleton className="h-14 w-full" />
+                      <Skeleton className="h-14 w-full" />
+                      <Skeleton className="h-14 w-full" />
+                    </div>
+                  ) : filteredAllRequests.length === 0 ? (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p className="font-medium">No hay solicitudes</p>
+                      <p className="text-sm mt-1">
+                        Cuando los colaboradores soliciten mantenimientos
+                        aparecerán aquí
+                      </p>
                     </div>
                   ) : (
-                    availableEquipment.map((item: any) => (
-                      <SelectItem
-                        key={item.equipmentId}
-                        value={item.equipmentId}
-                      >
-                        {item.name}
-                        {item.serialNumber && ` (${item.serialNumber})`}
-                      </SelectItem>
-                    ))
+                    <>
+                      <div className="hidden md:block rounded-md border overflow-hidden">
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="bg-muted/40 hover:bg-muted/40">
+                              <TableHead className="w-[28%]">
+                                Equipo / Ubicación
+                              </TableHead>
+                              <TableHead className="w-[16%]">
+                                Solicitante
+                              </TableHead>
+                              <TableHead className="w-[18%]">Motivo</TableHead>
+                              <TableHead className="w-[14%]">Estado</TableHead>
+                              <TableHead className="w-[120px] text-right">
+                                Acciones
+                              </TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {paginate(filteredAllRequests).map((item: any) => {
+                              const subtitle = getRequestSubtitle(item);
+                              return (
+                                <TableRow
+                                  key={item.maintenanceRequestId}
+                                  className="h-14"
+                                >
+                                  <TableCell>
+                                    <div className="flex flex-col">
+                                      <span className="font-medium leading-tight">
+                                        {getRequestName(item)}
+                                      </span>
+                                      <span className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1 flex-wrap">
+                                        {item.requestType &&
+                                          getRequestTypeBadge(
+                                            item.requestType,
+                                          )}
+                                        {subtitle && <span>· {subtitle}</span>}
+                                      </span>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>
+                                    {item.user?.name ? (
+                                      <div className="flex items-center gap-2">
+                                        <UserAvatar name={item.user.name} />
+                                        <span className="text-sm truncate">
+                                          {item.user.name}
+                                        </span>
+                                      </div>
+                                    ) : (
+                                      <span className="text-sm text-muted-foreground">
+                                        —
+                                      </span>
+                                    )}
+                                  </TableCell>
+                                  <TableCell className="text-sm text-muted-foreground max-w-[220px] truncate">
+                                    {item.reason || "—"}
+                                  </TableCell>
+                                  <TableCell>
+                                    {getStatusBadge(item.status)}
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    <div className="flex items-center justify-end gap-1">
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8"
+                                            onClick={() =>
+                                              handleViewDetail(item)
+                                            }
+                                          >
+                                            <Eye className="h-4 w-4 text-muted-foreground" />
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          Ver detalle
+                                        </TooltipContent>
+                                      </Tooltip>
+
+                                      {item.status ===
+                                        MaintenanceStatus.PENDING && (
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <Button
+                                              variant="ghost"
+                                              size="icon"
+                                              className="h-8 w-8"
+                                              onClick={() =>
+                                                handleOpenStatusDialog(
+                                                  item.maintenanceRequestId,
+                                                )
+                                              }
+                                              disabled={
+                                                updateStatus.isPending
+                                              }
+                                            >
+                                              <AlertCircle className="h-4 w-4 text-blue-600" />
+                                            </Button>
+                                          </TooltipTrigger>
+                                          <TooltipContent>
+                                            Gestionar solicitud
+                                          </TooltipContent>
+                                        </Tooltip>
+                                      )}
+
+                                      {item.status ===
+                                        MaintenanceStatus.IN_REVIEW && (
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <Button
+                                              variant="ghost"
+                                              size="icon"
+                                              className="h-8 w-8"
+                                              onClick={() =>
+                                                handleOpenStatusDialog(
+                                                  item.maintenanceRequestId,
+                                                )
+                                              }
+                                              disabled={
+                                                updateStatus.isPending
+                                              }
+                                            >
+                                              <Loader2 className="h-4 w-4 text-yellow-600" />
+                                            </Button>
+                                          </TooltipTrigger>
+                                          <TooltipContent>
+                                            Actualizar estado
+                                          </TooltipContent>
+                                        </Tooltip>
+                                      )}
+
+                                      {item.status ===
+                                        MaintenanceStatus.IN_PROGRESS && (
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <Button
+                                              variant="ghost"
+                                              size="icon"
+                                              className="h-8 w-8"
+                                              onClick={() =>
+                                                handleOpenStatusDialog(
+                                                  item.maintenanceRequestId,
+                                                )
+                                              }
+                                              disabled={
+                                                updateStatus.isPending
+                                              }
+                                            >
+                                              <CheckCircle className="h-4 w-4 text-green-600" />
+                                            </Button>
+                                          </TooltipTrigger>
+                                          <TooltipContent>
+                                            Marcar como resuelto
+                                          </TooltipContent>
+                                        </Tooltip>
+                                      )}
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      </div>
+
+                      <div className="md:hidden space-y-3">
+                        {paginate(filteredAllRequests).map((item: any) => (
+                          <Card key={item.maintenanceRequestId}>
+                            <CardContent className="p-4">
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0 flex-1">
+                                  <p className="font-medium truncate">
+                                    {getRequestName(item)}
+                                  </p>
+                                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                    {item.requestType &&
+                                      getRequestTypeBadge(item.requestType)}
+                                    {getStatusBadge(item.status)}
+                                  </div>
+                                  {item.user?.name && (
+                                    <div className="flex items-center gap-2 mt-2">
+                                      <UserAvatar name={item.user.name} />
+                                      <span className="text-xs text-muted-foreground truncate">
+                                        {item.user.name}
+                                      </span>
+                                    </div>
+                                  )}
+                                  {item.reason && (
+                                    <p className="text-xs text-muted-foreground mt-2 truncate">
+                                      Motivo: {item.reason}
+                                    </p>
+                                  )}
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    <Calendar className="inline h-3 w-3 mr-1" />
+                                    {formatDate(item.createdAt)}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center justify-end gap-1 mt-3 pt-3 border-t">
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-9 w-9"
+                                      onClick={() => handleViewDetail(item)}
+                                    >
+                                      <Eye className="h-4 w-4 text-muted-foreground" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Ver detalle</TooltipContent>
+                                </Tooltip>
+
+                                {item.status ===
+                                  MaintenanceStatus.PENDING && (
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-9 w-9"
+                                        onClick={() =>
+                                          handleOpenStatusDialog(
+                                            item.maintenanceRequestId,
+                                          )
+                                        }
+                                        disabled={updateStatus.isPending}
+                                      >
+                                        <AlertCircle className="h-4 w-4 text-blue-600" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      Gestionar solicitud
+                                    </TooltipContent>
+                                  </Tooltip>
+                                )}
+
+                                {item.status ===
+                                  MaintenanceStatus.IN_REVIEW && (
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-9 w-9"
+                                        onClick={() =>
+                                          handleOpenStatusDialog(
+                                            item.maintenanceRequestId,
+                                          )
+                                        }
+                                        disabled={updateStatus.isPending}
+                                      >
+                                        <Loader2 className="h-4 w-4 text-yellow-600" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      Actualizar estado
+                                    </TooltipContent>
+                                  </Tooltip>
+                                )}
+
+                                {item.status ===
+                                  MaintenanceStatus.IN_PROGRESS && (
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-9 w-9"
+                                        onClick={() =>
+                                          handleOpenStatusDialog(
+                                            item.maintenanceRequestId,
+                                          )
+                                        }
+                                        disabled={updateStatus.isPending}
+                                      >
+                                        <CheckCircle className="h-4 w-4 text-green-600" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      Marcar como resuelto
+                                    </TooltipContent>
+                                  </Tooltip>
+                                )}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+
+                      {renderPagination(filteredAllRequests)}
+                    </>
                   )}
-                </SelectContent>
-              </Select>
-            </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
+        </Tabs>
 
-            <div className="space-y-2">
-              <Label htmlFor="reason">Motivo *</Label>
-              <Input
-                id="reason"
-                placeholder="Ej: El mouse no responde bien"
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">Descripción adicional</Label>
-              <Textarea
-                id="description"
-                placeholder="Detalles adicionales sobre el problema"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowCreateDialog(false)}
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleCreateRequest}
-              disabled={
-                createRequest.isPending ||
-                !selectedEquipmentId ||
-                !reason.trim()
-              }
-            >
-              {createRequest.isPending ? "Enviando..." : "Solicitar"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={showGeneralDialog} onOpenChange={setShowGeneralDialog}>
-        <DialogContent className="w-[calc(100vw-2rem)] max-w-lg overflow-hidden">
-          <DialogHeader>
-            <DialogTitle>Mantenimiento General</DialogTitle>
-            <DialogDescription>
-              Reporta problemas de internet, impresoras, cafetera u otras
-              instalaciones
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2 min-w-0">
-              <Label>Ubicación *</Label>
-              <Select
-                value={generalLocationId}
-                onValueChange={setGeneralLocationId}
-                required
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecciona una ubicación" />
-                </SelectTrigger>
-                <SelectContent className="w-[var(--radix-select-trigger-width)]">
-                  {locations?.map((loc: any) => (
-                    <SelectItem key={loc.locationId} value={loc.locationId}>
-                      {loc.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="generalDescription">
-                Descripción del problema *
-              </Label>
-              <Textarea
-                id="generalDescription"
-                placeholder="Ej: El internet está muy lento desde ayer. No se puede trabajar en reuniones virtuales."
-                value={generalDescription}
-                onChange={(e) => setGeneralDescription(e.target.value)}
-                rows={5}
-                required
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowGeneralDialog(false)}
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleCreateGeneralRequest}
-              disabled={
-                createRequest.isPending ||
-                !generalLocationId ||
-                !generalDescription.trim()
-              }
-            >
-              {createRequest.isPending ? "Enviando..." : "Enviar reporte"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={showStatusDialog} onOpenChange={setShowStatusDialog}>
-        <DialogContent className="w-[calc(100vw-2rem)] max-w-md overflow-hidden">
-          <DialogHeader>
-            <DialogTitle>Gestionar Solicitud</DialogTitle>
-            <DialogDescription>
-              Actualiza el estado de la solicitud de mantenimiento
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2 min-w-0">
-              <Label>Nuevo estado</Label>
-              <Select
-                onValueChange={(v) => setNewStatus(v as MaintenanceStatus)}
-                value={newStatus}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecciona un estado" />
-                </SelectTrigger>
-                <SelectContent className="w-[var(--radix-select-trigger-width)]">
-                  <SelectItem value={MaintenanceStatus.IN_REVIEW}>
-                    En revisión
-                  </SelectItem>
-                  <SelectItem value={MaintenanceStatus.IN_PROGRESS}>
-                    En proceso
-                  </SelectItem>
-                  <SelectItem value={MaintenanceStatus.RESOLVED}>
-                    Resuelto
-                  </SelectItem>
-                  <SelectItem value={MaintenanceStatus.REJECTED}>
-                    Rechazado
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {newStatus === MaintenanceStatus.RESOLVED && (
-              <div className="space-y-2">
-                <Label>Notas de resolución</Label>
-                <Textarea
-                  placeholder="¿Cómo se resolvió el problema?"
-                  value={resolutionNotes}
-                  onChange={(e) => setResolutionNotes(e.target.value)}
-                />
+        <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+          <DialogContent className="w-[calc(100vw-2rem)] max-w-lg overflow-hidden">
+            <DialogHeader>
+              <DialogTitle>Solicitar Mantenimiento</DialogTitle>
+              <DialogDescription>
+                Completa los datos para solicitar la revisión del equipo
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2 min-w-0">
+                <Label>Equipo *</Label>
+                <Select
+                  value={selectedEquipmentId}
+                  onValueChange={setSelectedEquipmentId}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecciona un equipo" />
+                  </SelectTrigger>
+                  <SelectContent className="w-[var(--radix-select-trigger-width)]">
+                    {availableEquipment.length === 0 ? (
+                      <div className="p-2 text-sm text-muted-foreground">
+                        No tienes equipos asignados para generar el reporte de
+                        mantenimiento.
+                      </div>
+                    ) : (
+                      availableEquipment.map((item: any) => (
+                        <SelectItem
+                          key={item.equipmentId}
+                          value={item.equipmentId}
+                        >
+                          {item.name}
+                          {item.serialNumber && ` (${item.serialNumber})`}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
-            )}
 
-            {newStatus === MaintenanceStatus.REJECTED && (
               <div className="space-y-2">
-                <Label>Motivo del rechazo *</Label>
-                <Textarea
-                  placeholder="Explica por qué se rechaza la solicitud"
-                  value={rejectedReason}
-                  onChange={(e) => setRejectedReason(e.target.value)}
+                <Label htmlFor="reason">Motivo *</Label>
+                <Input
+                  id="reason"
+                  placeholder="Ej: El mouse no responde bien"
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
                   required
                 />
               </div>
-            )}
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowStatusDialog(false)}
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleUpdateStatus}
-              disabled={
-                updateStatus.isPending ||
-                !newStatus ||
-                (newStatus === MaintenanceStatus.REJECTED &&
-                  !rejectedReason.trim())
-              }
-            >
-              {updateStatus.isPending ? "Actualizando..." : "Actualizar"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
-      <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
-        <DialogContent className="w-[calc(100vw-2rem)] max-w-md overflow-hidden">
-          <DialogHeader>
-            <DialogTitle>Cancelar Solicitud</DialogTitle>
-            <DialogDescription>
-              ¿Estás seguro de que deseas cancelar esta solicitud de
-              mantenimiento? Esta acción no se puede deshacer.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowCancelDialog(false)}
-            >
-              Volver
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleConfirmCancel}
-              disabled={cancelRequest.isPending}
-            >
-              {cancelRequest.isPending ? "Cancelando..." : "Confirmar"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+              <div className="space-y-2">
+                <Label htmlFor="description">Descripción adicional</Label>
+                <Textarea
+                  id="description"
+                  placeholder="Detalles adicionales sobre el problema"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowCreateDialog(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleCreateRequest}
+                disabled={
+                  createRequest.isPending ||
+                  !selectedEquipmentId ||
+                  !reason.trim()
+                }
+              >
+                {createRequest.isPending ? "Enviando..." : "Solicitar"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={showGeneralDialog} onOpenChange={setShowGeneralDialog}>
+          <DialogContent className="w-[calc(100vw-2rem)] max-w-lg overflow-hidden">
+            <DialogHeader>
+              <DialogTitle>Mantenimiento General</DialogTitle>
+              <DialogDescription>
+                Reporta problemas de internet, impresoras, cafetera u otras
+                instalaciones
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2 min-w-0">
+                <Label>Ubicación *</Label>
+                <Select
+                  value={generalLocationId}
+                  onValueChange={setGeneralLocationId}
+                  required
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecciona una ubicación" />
+                  </SelectTrigger>
+                  <SelectContent className="w-[var(--radix-select-trigger-width)]">
+                    {locations?.map((loc: any) => (
+                      <SelectItem key={loc.locationId} value={loc.locationId}>
+                        {loc.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="generalDescription">
+                  Descripción del problema *
+                </Label>
+                <Textarea
+                  id="generalDescription"
+                  placeholder="Ej: El internet está muy lento desde ayer. No se puede trabajar en reuniones virtuales."
+                  value={generalDescription}
+                  onChange={(e) => setGeneralDescription(e.target.value)}
+                  rows={5}
+                  required
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowGeneralDialog(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleCreateGeneralRequest}
+                disabled={
+                  createRequest.isPending ||
+                  !generalLocationId ||
+                  !generalDescription.trim()
+                }
+              >
+                {createRequest.isPending ? "Enviando..." : "Enviar reporte"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={showStatusDialog} onOpenChange={setShowStatusDialog}>
+          <DialogContent className="w-[calc(100vw-2rem)] max-w-md overflow-hidden">
+            <DialogHeader>
+              <DialogTitle>Gestionar Solicitud</DialogTitle>
+              <DialogDescription>
+                Actualiza el estado de la solicitud de mantenimiento
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2 min-w-0">
+                <Label>Nuevo estado</Label>
+                <Select
+                  onValueChange={(v) => setNewStatus(v as MaintenanceStatus)}
+                  value={newStatus}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecciona un estado" />
+                  </SelectTrigger>
+                  <SelectContent className="w-[var(--radix-select-trigger-width)]">
+                    <SelectItem value={MaintenanceStatus.IN_REVIEW}>
+                      En revisión
+                    </SelectItem>
+                    <SelectItem value={MaintenanceStatus.IN_PROGRESS}>
+                      En proceso
+                    </SelectItem>
+                    <SelectItem value={MaintenanceStatus.RESOLVED}>
+                      Resuelto
+                    </SelectItem>
+                    <SelectItem value={MaintenanceStatus.REJECTED}>
+                      Rechazado
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {newStatus === MaintenanceStatus.RESOLVED && (
+                <div className="space-y-2">
+                  <Label>Notas de resolución</Label>
+                  <Textarea
+                    placeholder="¿Cómo se resolvió el problema?"
+                    value={resolutionNotes}
+                    onChange={(e) => setResolutionNotes(e.target.value)}
+                  />
+                </div>
+              )}
+
+              {newStatus === MaintenanceStatus.REJECTED && (
+                <div className="space-y-2">
+                  <Label>Motivo del rechazo *</Label>
+                  <Textarea
+                    placeholder="Explica por qué se rechaza la solicitud"
+                    value={rejectedReason}
+                    onChange={(e) => setRejectedReason(e.target.value)}
+                    required
+                  />
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowStatusDialog(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleUpdateStatus}
+                disabled={
+                  updateStatus.isPending ||
+                  !newStatus ||
+                  (newStatus === MaintenanceStatus.REJECTED &&
+                    !rejectedReason.trim())
+                }
+              >
+                {updateStatus.isPending ? "Actualizando..." : "Actualizar"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+          <DialogContent className="w-[calc(100vw-2rem)] max-w-md overflow-hidden">
+            <DialogHeader>
+              <DialogTitle>Cancelar Solicitud</DialogTitle>
+              <DialogDescription>
+                ¿Estás seguro de que deseas cancelar esta solicitud de
+                mantenimiento? Esta acción no se puede deshacer.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowCancelDialog(false)}
+              >
+                Volver
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleConfirmCancel}
+                disabled={cancelRequest.isPending}
+              >
+                {cancelRequest.isPending ? "Cancelando..." : "Confirmar"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={showDetailDialog} onOpenChange={setShowDetailDialog}>
+          <DialogContent className="w-[calc(100vw-2rem)] max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Detalle de la solicitud</DialogTitle>
+              <DialogDescription>
+                Información completa del mantenimiento
+              </DialogDescription>
+            </DialogHeader>
+            {detailRequest && (
+              <div className="space-y-4 py-2">
+                <div className="rounded-lg border p-4 space-y-3">
+                  <div className="flex items-start gap-3">
+                    {detailRequest.requestType ===
+                    MaintenanceRequestType.EQUIPMENT ? (
+                      <Wrench className="h-5 w-5 text-muted-foreground mt-0.5" />
+                    ) : (
+                      <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium">
+                        {getRequestName(detailRequest)}
+                      </p>
+                      {getRequestSubtitle(detailRequest) && (
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {getRequestSubtitle(detailRequest)}
+                        </p>
+                      )}
+                      <div className="mt-2 flex items-center gap-2 flex-wrap">
+                        {detailRequest.requestType &&
+                          getRequestTypeBadge(detailRequest.requestType)}
+                        {getStatusBadge(detailRequest.status)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {detailRequest.user?.name && (
+                  <div className="rounded-lg border p-4 space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground uppercase">
+                      Solicitante
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <UserAvatar name={detailRequest.user.name} />
+                      <span className="text-sm">
+                        {detailRequest.user.name}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {detailRequest.reason && (
+                  <div className="rounded-lg border p-4 space-y-1">
+                    <p className="text-xs font-medium text-muted-foreground uppercase">
+                      Motivo
+                    </p>
+                    <p className="text-sm">{detailRequest.reason}</p>
+                  </div>
+                )}
+
+                {detailRequest.description && (
+                  <div className="rounded-lg border p-4 space-y-1">
+                    <p className="text-xs font-medium text-muted-foreground uppercase">
+                      Descripción
+                    </p>
+                    <p className="text-sm whitespace-pre-wrap">
+                      {detailRequest.description}
+                    </p>
+                  </div>
+                )}
+
+                {detailRequest.resolutionNotes && (
+                  <div className="rounded-lg border p-4 space-y-1 bg-green-50/50 dark:bg-green-950/20 border-green-200 dark:border-green-900">
+                    <p className="text-xs font-medium text-green-700 dark:text-green-300 uppercase flex items-center gap-1">
+                      <CheckCircle className="h-3 w-3" />
+                      Notas de resolución
+                    </p>
+                    <p className="text-sm whitespace-pre-wrap">
+                      {detailRequest.resolutionNotes}
+                    </p>
+                  </div>
+                )}
+
+                {detailRequest.rejectedReason && (
+                  <div className="rounded-lg border p-4 space-y-1 bg-red-50/50 dark:bg-red-950/20 border-red-200 dark:border-red-900">
+                    <p className="text-xs font-medium text-red-700 dark:text-red-300 uppercase flex items-center gap-1">
+                      <XCircle className="h-3 w-3" />
+                      Motivo del rechazo
+                    </p>
+                    <p className="text-sm whitespace-pre-wrap">
+                      {detailRequest.rejectedReason}
+                    </p>
+                  </div>
+                )}
+
+                <div className="rounded-lg border p-4 space-y-3">
+                  <p className="text-xs font-medium text-muted-foreground uppercase">
+                    Historial
+                  </p>
+
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-muted-foreground">
+                        Solicitado
+                      </span>
+                      <span>
+                        {detailRequest.createdAt
+                          ? formatDateTime(detailRequest.createdAt)
+                          : "—"}
+                      </span>
+                    </div>
+
+                    {detailRequest.assignedTo && (
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-muted-foreground">
+                          Atendido por
+                        </span>
+                        <span className="truncate">
+                          {detailRequest.assignedTo.name}
+                        </span>
+                      </div>
+                    )}
+
+                    {detailRequest.resolvedAt && (
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-muted-foreground">
+                          Resuelto el
+                        </span>
+                        <span>
+                          {formatDateTime(detailRequest.resolvedAt)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowDetailDialog(false)}
+              >
+                Cerrar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </TooltipProvider>
   );
 }
