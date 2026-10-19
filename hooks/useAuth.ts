@@ -44,6 +44,7 @@ export function useAuth() {
 
   return {
     user,
+    userId: user?.userId,
     token,
     isAuthenticated,
     isLoading,
