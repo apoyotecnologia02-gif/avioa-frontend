@@ -1,22 +1,33 @@
 // app/api/leaves/active/route.ts
-import { NextRequest, NextResponse } from "next/server";
+import { parseResponseData } from "@/utils/parse-response-data.util";
+import { NextResponse } from "next/server";
 
-const BACKEND_URL =
-  process.env.BACKEND_URL || "http://localhost:3001/api/v1";
+const BACKEND = process.env.NEXT_PUBLIC_API_URL;
 
-export async function GET(req: NextRequest) {
-  const authHeader = req.headers.get("authorization");
+/** GET /api/leaves/active -> ausencias vigentes hoy (público para todos) */
+export async function GET(request: Request) {
+  try {
+    const authorization = request.headers.get("authorization");
+    const { searchParams } = new URL(request.url);
+    const query = searchParams.toString();
 
-  const backendRes = await fetch(`${BACKEND_URL}/leaves/active`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      ...(authHeader ? { Authorization: authHeader } : {}),
-    },
-    cache: "no-store",
-  });
+    const response = await fetch(
+      `${BACKEND}/leaves/active${query ? `?${query}` : ""}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          ...(authorization ? { Authorization: authorization } : {}),
+        },
+      },
+    );
 
-  const data = await backendRes.json().catch(() => null);
-
-  return NextResponse.json(data, { status: backendRes.status });
+    const data = await parseResponseData(response);
+    return NextResponse.json(data, { status: response.status });
+  } catch {
+    return NextResponse.json(
+      { error: "No fue posible obtener las ausencias activas" },
+      { status: 500 },
+    );
+  }
 }
