@@ -17,6 +17,9 @@ export const EQUIPMENT_LOAN_KEYS = {
 
   locations: ["locations"] as const,
   locationsList: () => [...EQUIPMENT_LOAN_KEYS.locations, "list"] as const,
+
+  myLoanedEquipment: () =>
+    [...EQUIPMENT_LOAN_KEYS.equipment, "my-loaned"] as const,
 };
 
 // ===== FUNCIONES DE API =====
@@ -38,6 +41,20 @@ const api = {
       credentials: "include",
     }).then((res) => {
       if (!res.ok) throw new Error("Error al crear equipo");
+      return res.json();
+    }),
+
+  updateEquipment: (id: string, data: any) =>
+    fetch(`${API_URL}?path=equipment/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+      credentials: "include",
+    }).then(async (res) => {
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Error al actualizar equipo");
+      }
       return res.json();
     }),
 
@@ -108,11 +125,26 @@ const api = {
       if (!res.ok) throw new Error("Error al obtener ubicaciones");
       return res.json();
     }),
+
+  getMyLoanedEquipment: (): Promise<any[]> =>
+    fetch(`${API_URL}?path=equipment/my-loaned`, {
+      credentials: "include",
+    }).then((res) => {
+      if (!res.ok) throw new Error("Error al obtener mis equipos");
+      return res.json();
+    }),
 };
 
 // ===== HOOKS =====
 export function useEquipmentLoans() {
   const queryClient = useQueryClient();
+
+  const useMyLoanedEquipment = () => {
+    return useQuery({
+      queryKey: EQUIPMENT_LOAN_KEYS.myLoanedEquipment(),
+      queryFn: api.getMyLoanedEquipment,
+    });
+  };
 
   const useEquipment = () => {
     return useQuery({
@@ -132,6 +164,22 @@ export function useEquipmentLoans() {
       },
       onError: (error: any) => {
         toast.error(error?.message || "Error al crear el equipo");
+      },
+    });
+  };
+
+  const useUpdateEquipment = () => {
+    return useMutation({
+      mutationFn: ({ id, data }: { id: string; data: any }) =>
+        api.updateEquipment(id, data),
+      onSuccess: () => {
+        queryClient.invalidateQueries({
+          queryKey: EQUIPMENT_LOAN_KEYS.equipmentList(),
+        });
+        toast.success("Equipo actualizado exitosamente");
+      },
+      onError: (error: any) => {
+        toast.error(error?.message || "Error al actualizar el equipo");
       },
     });
   };
@@ -166,8 +214,8 @@ export function useEquipmentLoans() {
         });
         toast.success("Solicitud creada exitosamente");
       },
-      onError: (error: any) => {
-        toast.error(error?.message || "Error al crear la solicitud");
+      onError: () => {
+        toast.error("Ya existe un préstamo activo para este equipo");
       },
     });
   };
@@ -225,5 +273,7 @@ export function useEquipmentLoans() {
     useUpdateLoanStatus,
     useCancelLoan,
     useLocations,
+    useMyLoanedEquipment,
+    useUpdateEquipment,
   };
 }

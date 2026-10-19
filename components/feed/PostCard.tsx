@@ -27,6 +27,7 @@ import { useFeedStore } from "@/store/feedStore";
 import { POST_TYPE_BADGE } from "@/lib/feed-reactions";
 import { useModulePermission } from "@/hooks/useModulePermission";
 import { cn } from "@/lib/utils";
+import DOMPurify from "dompurify";
 
 export function PostCard({ post }: { post: FeedPost }) {
   const user = useAuthStore((s) => s.user);
@@ -176,9 +177,28 @@ export function PostCard({ post }: { post: FeedPost }) {
         )}
 
         {post.content && (
-          <p className="mt-4 whitespace-pre-wrap break-words text-sm leading-relaxed text-foreground/90">
-            {post.content}
-          </p>
+          <div
+            className="rich-content mt-4 whitespace-pre-wrap break-words text-sm leading-relaxed text-foreground/90"
+            dangerouslySetInnerHTML={{
+              __html: DOMPurify.sanitize(post.content, {
+                ALLOWED_TAGS: [
+                  "p",
+                  "br",
+                  "b",
+                  "strong",
+                  "i",
+                  "em",
+                  "s",
+                  "u",
+                  "ul",
+                  "ol",
+                  "li",
+                  "a",
+                ],
+                ALLOWED_ATTR: ["href", "target", "rel"],
+              }),
+            }}
+          />
         )}
 
         {post.images?.length > 0 && <ImageGrid images={post.images} />}

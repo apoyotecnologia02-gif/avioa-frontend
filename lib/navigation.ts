@@ -16,6 +16,7 @@ import {
   CircleDollarSign,
   Coins,
   ClipboardList,
+  Wrench,
 } from "lucide-react";
 import { isAdminRole, isLeaderOrManagerOrAdminRole } from "@/lib/roles";
 import { AppModuleKey } from "./modules";
@@ -139,6 +140,7 @@ export const NAV_SECTIONS: NavSection[] = [
           // PROXIMAMENTE
           // { href: "/my-documents", label: "Mis documentos" },
           // { href: "/my requests", label: "Mis solicitudes" }
+          { href: "/certificados", label: "Certificados" },
         ],
       },
       {
@@ -148,10 +150,25 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: Users,
         items: [
           { href: "/colaboradores", label: "Colaboradores" },
-          { href: "/loans", label: "Solicitudes de equipos" },
-          { href: "/equipment-maintenance", label: "Mantenimiento de equipos" },
+          {
+            href: "/loans",
+            label: "Solicitudes de equipos",
+            module: "EQUIPMENT_LOANS",
+          },
+          {
+            href: "/equipment-maintenance",
+            label: "Mantenimiento de equipos",
+            module: "MAINTENANCE",
+          },
           // { href: "/equipment-requests", label: "Solicitud Equipos" },
           // { href: "/books-files", label: "Biblioteca" }
+        ],
+      },
+      {
+        key: "herramientas",
+        label: "Herramientas",
+        icon: Wrench,
+        items: [
           {
             href: process.env.NEXT_PUBLIC_DIRECTORIO_AVIOA ?? "#",
             label: "Directorio aVioa",
@@ -163,6 +180,14 @@ export const NAV_SECTIONS: NavSection[] = [
             label: "aVioa Gastos",
             module: "AVIOA_GASTOS",
             external: true,
+          },
+          {
+            href: "/avi-click",
+            label: "Avi Click",
+          },
+          {
+            href: "/vuelos",
+            label: "Ver vuelos",
           },
         ],
       },

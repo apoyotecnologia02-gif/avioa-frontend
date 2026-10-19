@@ -7,14 +7,7 @@ import type {
   User,
   LoginResponse,
 } from "@/types/auth.types";
-import {
-  api,
-  setSession,
-  // ACCESS_KEY,
-  // REFRESH_KEY,
-  // USER_KEY,
-} from "@/lib/axios";
-import router from "next/router";
+import { api, setSession } from "@/lib/axios";
 import { REFRESH_KEY, USER_KEY } from "@/utils/constants";
 
 export const TOKEN_KEY = "portal_access_token";
@@ -178,6 +171,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const fullUser = {
       ...user,
 
+      ...(payload?.userId && { userId: payload.userId }),
+
+      ...(payload?.email && {
+        email: payload.email,
+      }),
+
+      ...(payload?.documentNumber && {
+        documentNumber: payload.documentNumber,
+      }),
+
       ...(payload?.area && {
         area: payload.area,
       }),
@@ -204,6 +207,25 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       ...(payload?.modulePermissions && {
         modulePermissions: payload.modulePermissions,
+      }),
+
+      ...(payload?.isSupport !== undefined && {
+        isSupport: Boolean(payload.isSupport),
+      }),
+      ...(payload?.office && {
+        office: payload.office,
+      }),
+
+      ...(payload?.birthDate && {
+        birthDate: payload.birthDate,
+      }),
+
+      ...(payload?.phone && {
+        phone: payload.phone,
+      }),
+
+      ...(payload?.legalEntity && {
+        legalEntity: payload.legalEntity,
       }),
     };
 
@@ -249,11 +271,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             user.area = payload.area;
             userUpdated = true;
           }
+          if (payload.userId && user.userId !== payload.userId) {
+            user.userId = payload.userId;
+            userUpdated = true;
+          }
           if (
             payload.isLeader !== undefined &&
             user.isLeader !== Boolean(payload.isLeader)
           ) {
             user.isLeader = Boolean(payload.isLeader);
+            userUpdated = true;
+          }
+          if (
+            payload.isSupport !== undefined &&
+            user.isSupport !== Boolean(payload.isSupport)
+          ) {
+            user.isSupport = Boolean(payload.isSupport);
             userUpdated = true;
           }
           if (payload.role && user.role !== payload.role) {
