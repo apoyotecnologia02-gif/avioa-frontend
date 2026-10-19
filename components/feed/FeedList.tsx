@@ -11,6 +11,7 @@ import { PostCard } from "./PostCard";
 import { FeedQuickActions } from "./FeedQuickActions";
 import { FeedQuickActionsMobile } from "./FeedQuickActionsMobile";
 import { cn } from "@/lib/utils";
+import { FlightDeals } from "./FlightDeals";
 
 const scrollbarStyles = `
   [&::-webkit-scrollbar]:w-1.5
@@ -70,9 +71,21 @@ export function FeedList() {
   return (
     <div className="w-full h-full overflow-hidden">
       <div className="h-full w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px] gap-4 lg:gap-6 h-full min-h-0">
+        <div className="grid grid-cols-1 lg:grid-cols-[300px_minmax(0,1fr)_300px] gap-4 lg:gap-6 h-full min-h-0">
 
-          {/* ===== COLUMNA IZQUIERDA — FEED ===== */}
+          {/* ===== COLUMNA IZQUIERDA — FlightDeals ===== */}
+          <aside className="hidden lg:flex min-w-0 min-h-0 h-full flex-col">
+            <div
+              className={cn(
+                "h-full w-full bg-card rounded-2xl border border-border/50 shadow-sm overflow-y-auto",
+                scrollbarStyles,
+              )}
+            >
+              <FlightDeals />
+            </div>
+          </aside>
+
+          {/* ===== COLUMNA CENTRAL — FEED ===== */}
           <main
             className={cn(
               "min-w-0 min-h-0 h-full flex flex-col gap-4 overflow-y-auto pr-1 pb-4",
@@ -101,7 +114,7 @@ export function FeedList() {
             )}
           </main>
 
-          {/* ===== COLUMNA DERECHA — Cumpleaños (top) + Acciones (bottom) ===== */}
+          {/* ===== COLUMNA DERECHA — Cumpleaños + Acciones ===== */}
           <aside className="hidden lg:grid min-w-0 min-h-0 h-full grid-rows-2 gap-4 lg:gap-6">
             <div className="min-h-0 overflow-hidden">
               <BirthdaysSidebar />
