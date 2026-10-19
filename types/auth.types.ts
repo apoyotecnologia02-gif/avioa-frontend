@@ -24,6 +24,7 @@ export interface User {
   avatar?: string;
   twoFactorEnabled: boolean;
   isLeader?: boolean;
+  isSupport?: boolean;
   modulePermissions?: ModulePermission[];
   office?: string;
   birthDate?: string;

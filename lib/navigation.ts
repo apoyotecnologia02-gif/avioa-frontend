@@ -153,7 +153,7 @@ export const NAV_SECTIONS: NavSection[] = [
           {
             href: "/loans",
             label: "Solicitudes de equipos",
-            module: "MAINTENANCE",
+            module: "EQUIPMENT_LOANS",
           },
           {
             href: "/equipment-maintenance",

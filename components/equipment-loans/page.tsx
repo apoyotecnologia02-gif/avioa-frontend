@@ -1,6 +1,20 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
+import { useState, useEffect, useMemo } from "react";
 import {
   Card,
   CardContent,
@@ -44,13 +58,19 @@ import {
   Plus,
   Calendar,
   User,
+  PackagePlus,
+  Pencil,
   CheckCircle,
   XCircle,
   Clock,
   RotateCcw,
   Users,
   ChevronLeft,
+  MoreHorizontal,
   ChevronRight,
+  Filter,
+  Eye,
+  Truck,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
@@ -62,6 +82,7 @@ import {
   LoanStatus,
   EquipmentCategory,
 } from "@/types/equipment-loan.types";
+import { EditEquipmentDialog } from "./edit-equipment";
 
 const statusConfig = {
   [EquipmentStatus.AVAILABLE]: {
@@ -84,16 +105,16 @@ const statusConfig = {
 
 const loanStatusConfig = {
   [LoanStatus.PENDING]: {
-    label: "Pendiente",
+    label: "Pendiente aprobación",
     className: "bg-yellow-100 text-yellow-800 hover:bg-yellow-100",
   },
   [LoanStatus.APPROVED]: {
-    label: "Aprobado",
-    className: "bg-green-100 text-green-800 hover:bg-green-100",
+    label: "Pendiente entrega",
+    className: "bg-blue-100 text-blue-800 hover:bg-blue-100",
   },
   [LoanStatus.LOANED]: {
     label: "En préstamo",
-    className: "bg-blue-100 text-blue-800 hover:bg-blue-100",
+    className: "bg-indigo-100 text-indigo-800 hover:bg-indigo-100",
   },
   [LoanStatus.RETURNED]: {
     label: "Devuelto",
@@ -109,7 +130,7 @@ const loanStatusConfig = {
   },
 };
 
-const categoryLabels = {
+const categoryLabels: Record<EquipmentCategory, string> = {
   [EquipmentCategory.LAPTOP]: "Laptop",
   [EquipmentCategory.CELLPHONE]: "Teléfono",
   [EquipmentCategory.KEYBOARD]: "Teclado",
@@ -121,7 +142,64 @@ const categoryLabels = {
   [EquipmentCategory.OTHER]: "Otro",
 };
 
-const ITEMS_PER_PAGE = 6;
+const AVATAR_COLORS = [
+  "bg-red-500/15 text-red-700 dark:text-red-300",
+  "bg-blue-500/15 text-blue-700 dark:text-blue-300",
+  "bg-green-500/15 text-green-700 dark:text-green-300",
+  "bg-purple-500/15 text-purple-700 dark:text-purple-300",
+  "bg-amber-500/15 text-amber-700 dark:text-amber-300",
+  "bg-pink-500/15 text-pink-700 dark:text-pink-300",
+  "bg-teal-500/15 text-teal-700 dark:text-teal-300",
+];
+
+function getInitials(name: string): string {
+  if (!name) return "?";
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+function getAvatarColor(name: string): string {
+  if (!name) return AVATAR_COLORS[0];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+
+function UserAvatar({
+  name,
+  size = "sm",
+}: {
+  name: string;
+  size?: "sm" | "md";
+}) {
+  const initials = getInitials(name);
+  const color = getAvatarColor(name);
+  const dim = size === "sm" ? "h-7 w-7 text-[10px]" : "h-8 w-8 text-xs";
+  return (
+    <div
+      className={`${dim} ${color} shrink-0 rounded-full flex items-center justify-center font-semibold`}
+      title={name}
+    >
+      {initials}
+    </div>
+  );
+}
+
+const ITEMS_PER_PAGE = 8;
+
+type LoanFilterStatus = LoanStatus | "ALL";
+
+type LoanAction = {
+  key: string;
+  label: string;
+  shortLabel: string;
+  icon: React.ReactNode;
+  onClick: () => void;
+  variant?: "default" | "destructive";
+};
 
 export function EquipmentLoans() {
   const { user } = useAuth();
@@ -130,17 +208,34 @@ export function EquipmentLoans() {
   const isAdmin = role === "admin";
   const isLeader =
     user?.isLeader === true || role === "leader" || role === "admin";
+  const isSupport = user?.isSupport === true;
+  const currentUserId = user?.userId;
+  // console.log("DEBUG currentUserId:", currentUserId);
+
+  const canManageLoans = isLeader || isSupport;
 
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<LoanFilterStatus>("ALL");
+  const [equipmentStatusFilter, setEquipmentStatusFilter] = useState<
+    EquipmentStatus | "ALL"
+  >("ALL");
+
+  const [editingEquipment, setEditingEquipment] = useState<any | null>(null);
   const [activeTab, setActiveTab] = useState("equipment");
   const [selectedLoanId, setSelectedLoanId] = useState<string | null>(null);
   const [showLoanDialog, setShowLoanDialog] = useState(false);
   const [showEquipmentDialog, setShowEquipmentDialog] = useState(false);
   const [showReturnDialog, setShowReturnDialog] = useState(false);
+  const [showDeliverDialog, setShowDeliverDialog] = useState(false);
+  const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [detailLoan, setDetailLoan] = useState<any>(null);
   const [selectedEquipmentId, setSelectedEquipmentId] = useState("");
   const [loanReason, setLoanReason] = useState("");
   const [loanObservation, setLoanObservation] = useState("");
-
+  const [editingEquipmentId, setEditingEquipmentId] = useState<string | null>(
+    null,
+  );
+  const [showEditEquipmentDialog, setShowEditEquipmentDialog] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
   const {
@@ -152,6 +247,7 @@ export function EquipmentLoans() {
     useUpdateLoanStatus,
     useCancelLoan,
     useCreateEquipment,
+    useUpdateEquipment,
   } = useEquipmentLoans();
 
   const {
@@ -170,7 +266,7 @@ export function EquipmentLoans() {
     data: allLoans,
     isLoading: isLoadingAllLoans,
     refetch: refetchAllLoans,
-  } = useAllLoans(undefined, { enabled: isLeader });
+  } = useAllLoans(undefined, { enabled: canManageLoans });
 
   const { data: locations } = useLocations();
 
@@ -178,14 +274,13 @@ export function EquipmentLoans() {
   const createEquipment = useCreateEquipment();
   const updateStatus = useUpdateLoanStatus();
   const cancelLoan = useCancelLoan();
+  const updateEquipment = useUpdateEquipment();
 
-  // Refetch automático cuando lleguen eventos de equipment loans por websocket
   useEffect(() => {
     const handleEquipmentLoanUpdate = () => {
-      console.log("🔄 Refetcheando equipment loans...");
       refetchEquipment();
       refetchMyLoans();
-      if (isLeader) refetchAllLoans();
+      if (canManageLoans) refetchAllLoans();
     };
 
     window.addEventListener("equipment-loan-update", handleEquipmentLoanUpdate);
@@ -196,46 +291,58 @@ export function EquipmentLoans() {
         handleEquipmentLoanUpdate,
       );
     };
-  }, [isLeader, refetchEquipment, refetchMyLoans, refetchAllLoans]);
+  }, [canManageLoans, refetchEquipment, refetchMyLoans, refetchAllLoans]);
 
   const pendingCount = (allLoans ?? []).filter(
     (l: any) => l.status === LoanStatus.PENDING,
   ).length;
 
-  const filteredEquipment = (equipment ?? []).filter((item: any) => {
+  const filteredEquipment = useMemo(() => {
     const searchLower = searchTerm.toLowerCase();
+    return (equipment ?? []).filter((item: any) => {
+      if (
+        equipmentStatusFilter !== "ALL" &&
+        item.status !== equipmentStatusFilter
+      ) {
+        return false;
+      }
+      const activeLoan = item.loans?.find((l: any) => l.status === "LOANED");
+      const holderName = (activeLoan?.user?.name ?? "").toLowerCase();
+      return (
+        item.name.toLowerCase().includes(searchLower) ||
+        item.category.toLowerCase().includes(searchLower) ||
+        (item.serialNumber &&
+          item.serialNumber.toLowerCase().includes(searchLower)) ||
+        (item.location?.name &&
+          item.location.name.toLowerCase().includes(searchLower)) ||
+        holderName.includes(searchLower)
+      );
+    });
+  }, [equipment, searchTerm, equipmentStatusFilter]);
 
-    const activeLoan = item.loans?.find((l: any) => l.status === "APPROVED");
-    const holderName = (activeLoan?.user?.name ?? "").toLowerCase();
-
-    return (
-      item.name.toLowerCase().includes(searchLower) ||
-      item.category.toLowerCase().includes(searchLower) ||
-      (item.serialNumber &&
-        item.serialNumber.toLowerCase().includes(searchLower)) ||
-      (item.location?.name &&
-        item.location.name.toLowerCase().includes(searchLower)) ||
-      holderName.includes(searchLower)
-    );
-  });
-
-  const filteredMyLoans = (myLoans ?? []).filter((loan: any) => {
+  const filteredMyLoans = useMemo(() => {
     const searchLower = searchTerm.toLowerCase();
-    return (
-      (loan.equipment?.name ?? "").toLowerCase().includes(searchLower) ||
-      loan.status.toLowerCase().includes(searchLower) ||
-      (loan.reason && loan.reason.toLowerCase().includes(searchLower))
-    );
-  });
+    return (myLoans ?? []).filter((loan: any) => {
+      if (statusFilter !== "ALL" && loan.status !== statusFilter) return false;
+      return (
+        (loan.equipment?.name ?? "").toLowerCase().includes(searchLower) ||
+        loan.status.toLowerCase().includes(searchLower) ||
+        (loan.reason && loan.reason.toLowerCase().includes(searchLower))
+      );
+    });
+  }, [myLoans, searchTerm, statusFilter]);
 
-  const filteredAllLoans = (allLoans ?? []).filter((loan: any) => {
+  const filteredAllLoans = useMemo(() => {
     const searchLower = searchTerm.toLowerCase();
-    return (
-      (loan.equipment?.name ?? "").toLowerCase().includes(searchLower) ||
-      (loan.user?.name ?? "").toLowerCase().includes(searchLower) ||
-      loan.status.toLowerCase().includes(searchLower)
-    );
-  });
+    return (allLoans ?? []).filter((loan: any) => {
+      if (statusFilter !== "ALL" && loan.status !== statusFilter) return false;
+      return (
+        (loan.equipment?.name ?? "").toLowerCase().includes(searchLower) ||
+        (loan.user?.name ?? "").toLowerCase().includes(searchLower) ||
+        loan.status.toLowerCase().includes(searchLower)
+      );
+    });
+  }, [allLoans, searchTerm, statusFilter]);
 
   const totalPages = (items: any[]) => Math.ceil(items.length / ITEMS_PER_PAGE);
   const paginate = (items: any[]) => {
@@ -247,6 +354,8 @@ export function EquipmentLoans() {
   const handleTabChange = (value: string) => {
     setActiveTab(value);
     setCurrentPage(1);
+    setStatusFilter("ALL");
+    setEquipmentStatusFilter("ALL");
   };
 
   const handleSearchChange = (value: string) => {
@@ -259,32 +368,121 @@ export function EquipmentLoans() {
     if (total <= 1) return null;
 
     return (
-      <div className="flex items-center justify-center gap-2 mt-4">
-        <Button
-          variant="outline"
-          size="icon"
-          className="h-8 w-8"
-          onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-          disabled={currentPage === 1}
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-
-        <span className="text-sm font-medium min-w-[40px] text-center">
-          {currentPage}
-        </span>
-
-        <Button
-          variant="outline"
-          size="icon"
-          className="h-8 w-8"
-          onClick={() => setCurrentPage((p) => Math.min(total, p + 1))}
-          disabled={currentPage === total}
-        >
-          <ChevronRight className="h-4 w-4" />
-        </Button>
+      <div className="flex items-center justify-between gap-2 mt-4">
+        <p className="text-xs text-muted-foreground">
+          Página {currentPage} de {total}
+        </p>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 gap-1"
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+            Anterior
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 gap-1"
+            onClick={() => setCurrentPage((p) => Math.min(total, p + 1))}
+            disabled={currentPage === total}
+          >
+            Siguiente
+            <ChevronRight className="h-3.5 w-3.5" />
+          </Button>
+        </div>
       </div>
     );
+  };
+
+  const getAvailableActions = (loan: any) => {
+    const status = loan.status as LoanStatus;
+    const empleadoTieneLider = loan.user?.leaderId != null;
+    const esMiSubordinado = loan.user?.leaderId === currentUserId;
+
+    const actions = {
+      canApprove: false,
+      canReject: false,
+      canDeliver: false,
+      canReturn: false,
+    };
+
+    if (status === LoanStatus.PENDING) {
+      if (isAdmin) {
+        actions.canApprove = true;
+        actions.canReject = true;
+      } else if (isSupport && !empleadoTieneLider) {
+        actions.canApprove = true;
+        actions.canReject = true;
+      } else if (isLeader && esMiSubordinado) {
+        actions.canApprove = true;
+        actions.canReject = true;
+      }
+    }
+
+    if (status === LoanStatus.APPROVED) {
+      if (isAdmin || isSupport) {
+        actions.canDeliver = true;
+        actions.canReject = true;
+      }
+    }
+
+    if (status === LoanStatus.LOANED) {
+      if (isAdmin || isSupport) {
+        actions.canReturn = true;
+      }
+    }
+
+    return actions;
+  };
+
+  const buildActions = (loan: any, actions: any): LoanAction[] => {
+    const list: LoanAction[] = [];
+
+    if (actions.canApprove) {
+      list.push({
+        key: "approve",
+        label: "Aprobar solicitud",
+        shortLabel: "Aprobar",
+        icon: <CheckCircle className="h-4 w-4 text-green-600" />,
+        onClick: () => handleApproveLoan(loan.equipmentLoanId),
+      });
+    }
+
+    if (actions.canDeliver) {
+      list.push({
+        key: "deliver",
+        label: "Registrar entrega del equipo",
+        shortLabel: "Entrega",
+        icon: <Truck className="h-4 w-4 text-blue-600" />,
+        onClick: () => handleDeliverLoan(loan.equipmentLoanId),
+      });
+    }
+
+    if (actions.canReturn) {
+      list.push({
+        key: "return",
+        label: "Registrar devolución del equipo",
+        shortLabel: "Devolución",
+        icon: <RotateCcw className="h-4 w-4 text-indigo-600" />,
+        onClick: () => handleReturnLoan(loan.equipmentLoanId),
+      });
+    }
+
+    if (actions.canReject) {
+      list.push({
+        key: "reject",
+        label: "Rechazar solicitud",
+        shortLabel: "Rechazar",
+        icon: <XCircle className="h-4 w-4 text-red-600" />,
+        onClick: () => handleRejectLoan(loan.equipmentLoanId),
+        variant: "destructive",
+      });
+    }
+    return list;
   };
 
   const handleCreateLoan = () => {
@@ -304,7 +502,7 @@ export function EquipmentLoans() {
           setLoanObservation("");
           refetchMyLoans();
           refetchEquipment();
-          if (isLeader) refetchAllLoans();
+          if (canManageLoans) refetchAllLoans();
         },
       },
     );
@@ -333,9 +531,50 @@ export function EquipmentLoans() {
     );
   };
 
+  const handleDeliverLoan = (id: string) => {
+    setSelectedLoanId(id);
+    setShowDeliverDialog(true);
+  };
+
+  const confirmDeliver = () => {
+    if (selectedLoanId) {
+      updateStatus.mutate(
+        { id: selectedLoanId, status: LoanStatus.LOANED },
+        {
+          onSuccess: () => {
+            setShowDeliverDialog(false);
+            setSelectedLoanId(null);
+            refetchAllLoans();
+            refetchEquipment();
+          },
+        },
+      );
+    }
+  };
+
   const handleRequestLoanFor = (equipmentId: string) => {
     setSelectedEquipmentId(equipmentId);
     setShowLoanDialog(true);
+  };
+
+  const handleEditEquipment = (equipment: any) => {
+    setEditingEquipment(equipment);
+    setShowEditEquipmentDialog(true);
+  };
+
+  const handleUpdateEquipment = (data: any) => {
+    if (!editingEquipment) return;
+
+    updateEquipment.mutate(
+      { id: editingEquipment.equipmentId, data },
+      {
+        onSuccess: () => {
+          setShowEditEquipmentDialog(false);
+          setEditingEquipment(null);
+          refetchEquipment();
+        },
+      },
+    );
   };
 
   const handleReturnLoan = (id: string) => {
@@ -364,7 +603,7 @@ export function EquipmentLoans() {
       onSuccess: () => {
         refetchMyLoans();
         refetchEquipment();
-        if (isLeader) refetchAllLoans();
+        if (canManageLoans) refetchAllLoans();
       },
     });
   };
@@ -391,16 +630,22 @@ export function EquipmentLoans() {
     );
   };
 
+  const handleViewDetail = (loan: any) => {
+    setDetailLoan(loan);
+    setShowDetailDialog(true);
+  };
+
   const formatDate = (date: string) => {
     return format(new Date(date), "dd/MM/yyyy", { locale: es });
   };
 
-  const formatDateLong = (date: string) => {
-    return format(new Date(date), "dd 'de' MMMM 'de' yyyy", { locale: es });
+  const formatDateTime = (date: string) => {
+    return format(new Date(date), "dd/MM/yyyy HH:mm", { locale: es });
   };
 
   const getEquipmentStatusBadge = (status: EquipmentStatus) => {
     const config = statusConfig[status];
+    if (!config) return null;
     return (
       <Badge className={config.className} variant="secondary">
         {config.label}
@@ -410,6 +655,7 @@ export function EquipmentLoans() {
 
   const getLoanStatusBadge = (status: LoanStatus) => {
     const config = loanStatusConfig[status];
+    if (!config) return null;
     return (
       <Badge className={config.className} variant="secondary">
         {config.label}
@@ -449,701 +695,1357 @@ export function EquipmentLoans() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            Préstamos de Equipos
-          </h1>
-          <p className="text-muted-foreground">
-            Gestiona los préstamos de equipos y dispositivos
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button onClick={() => setShowLoanDialog(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Solicitar Préstamo
-          </Button>
-          {(isAdmin || isLeader) && (
-            <Button
-              variant="outline"
-              onClick={() => setShowEquipmentDialog(true)}
-            >
-              <Package className="mr-2 h-4 w-4" />
-              Registrar Equipo
+    <TooltipProvider delayDuration={200}>
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">
+              Préstamos de Equipos
+            </h1>
+            <p className="text-muted-foreground">
+              Gestiona los préstamos de equipos y dispositivos
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button onClick={() => setShowLoanDialog(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Solicitar Préstamo
             </Button>
-          )}
-        </div>
-      </div>
+            {(isAdmin || isLeader) && (
+              <Button
+                variant="outline"
+                onClick={() => setShowEquipmentDialog(true)}
+              >
+                <Package className="mr-2 h-4 w-4" />
+                Registrar Equipo
+              </Button>
+            )}
 
-      <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList className="inline-flex h-auto w-auto items-center justify-start gap-2 bg-transparent p-0">
-          <TabsTrigger
-            value="equipment"
-            className="rounded-md border px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-          >
-            Equipos
-          </TabsTrigger>
-          <TabsTrigger
-            value="my-loans"
-            className="rounded-md border px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-          >
-            Mis Préstamos
-          </TabsTrigger>
-          {isLeader && (
+           {/* <Button 
+            >
+              <PackagePlus className="mr-2 h-4 w-4" />
+              Solicitar Equipo
+           </Button> */}
+          </div>
+        </div>
+
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
+          <TabsList className="inline-flex h-auto w-auto items-center justify-start gap-2 bg-transparent p-0">
             <TabsTrigger
-              value="all-loans"
+              value="equipment"
               className="rounded-md border px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
             >
-              <span className="flex items-center gap-2">
-                Todos los Préstamos
-                {pendingCount > 0 && (
-                  <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-medium text-white">
-                    {pendingCount > 99 ? "99+" : pendingCount}
-                  </span>
-                )}
-              </span>
+              Equipos
             </TabsTrigger>
-          )}
-        </TabsList>
+            <TabsTrigger
+              value="my-loans"
+              className="rounded-md border px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+            >
+              Mis Préstamos
+            </TabsTrigger>
+            {canManageLoans && (
+              <TabsTrigger
+                value="all-loans"
+                className="rounded-md border px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              >
+                <span className="flex items-center gap-2">
+                  Todos los Préstamos
+                  {pendingCount > 0 && (
+                    <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-medium text-white">
+                      {pendingCount > 99 ? "99+" : pendingCount}
+                    </span>
+                  )}
+                </span>
+              </TabsTrigger>
+            )}
+          </TabsList>
 
-        <TabsContent value="equipment" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Package className="h-5 w-5" />
-                Inventario de Equipos
-              </CardTitle>
-              <CardDescription>
-                Lista de todos los equipos disponibles
-              </CardDescription>
-              <div className="relative mt-4">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar por nombre, categoría, serial o ubicación..."
-                  value={searchTerm}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </CardHeader>
-            <CardContent>
-              {isLoadingEquipment ? (
-                <div className="space-y-3">
-                  <Skeleton className="h-12 w-full" />
-                  <Skeleton className="h-12 w-full" />
-                  <Skeleton className="h-12 w-full" />
-                </div>
-              ) : filteredEquipment.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No se encontraron equipos</p>
-                </div>
-              ) : (
-                <>
-                  <div className="hidden md:block rounded-md border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Equipo</TableHead>
-                          <TableHead>Categoría</TableHead>
-                          <TableHead>Serial</TableHead>
-                          <TableHead>Ubicación</TableHead>
-                          <TableHead>En posesión de</TableHead>
-                          <TableHead className="text-right">Estado</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {paginate(filteredEquipment).map((item: any) => (
-                          <TableRow key={item.equipmentId}>
-                            <TableCell className="font-medium">
-                              {item.name}
-                            </TableCell>
-                            <TableCell>
-                              {
-                                categoryLabels[
-                                  item.category as EquipmentCategory
-                                ]
-                              }
-                            </TableCell>
-                            <TableCell>{item.serialNumber || "—"}</TableCell>
-                            <TableCell>
-                              {item.location?.name || "Sin ubicación"}
-                            </TableCell>
-                            <TableCell>
-                              {(() => {
-                                const activeLoan = item.loans?.find(
-                                  (l: any) => l.status === "APPROVED",
-                                );
-                                return activeLoan?.user?.name || "—";
-                              })()}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex items-center justify-end gap-2">
-                                {item.status === EquipmentStatus.AVAILABLE && (
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7 rounded-full hover:bg-primary/10"
-                                    title="Solicitar este equipo"
-                                    onClick={() =>
-                                      handleRequestLoanFor(item.equipmentId)
-                                    }
-                                  >
-                                    <Plus className="h-4 w-4" />
-                                  </Button>
-                                )}
-                                {getEquipmentStatusBadge(item.status)}
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-
-                  <div className="md:hidden space-y-3">
-                    {paginate(filteredEquipment).map((item: any) => (
-                      <Card key={item.equipmentId}>
-                        <CardContent className="pt-6">
-                          <div className="flex items-start justify-between">
-                            <div>
-                              <p className="font-medium">{item.name}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {
-                                  categoryLabels[
-                                    item.category as EquipmentCategory
-                                  ]
-                                }
-                              </p>
-                              {item.serialNumber && (
-                                <p className="text-sm text-muted-foreground">
-                                  Serial: {item.serialNumber}
-                                </p>
-                              )}
-                              <p className="text-sm text-muted-foreground">
-                                {item.location?.name || "Sin ubicación"}
-                              </p>
-                              {(() => {
-                                const activeLoan = item.loans?.find(
-                                  (l: any) => l.status === "APPROVED",
-                                );
-                                return activeLoan?.user?.name ? (
-                                  <p className="text-sm text-muted-foreground">
-                                    <User className="inline h-3 w-3 mr-1" />
-                                    En posesión de: {activeLoan.user.name}
-                                  </p>
-                                ) : null;
-                              })()}
-                            </div>
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="flex-1">
-                                <p className="font-medium">{item.name}</p>
-                                <p className="text-sm text-muted-foreground">
-                                  {
-                                    categoryLabels[
-                                      item.category as EquipmentCategory
-                                    ]
-                                  }
-                                </p>
-                                {item.serialNumber && (
-                                  <p className="text-sm text-muted-foreground">
-                                    Serial: {item.serialNumber}
-                                  </p>
-                                )}
-                                <p className="text-sm text-muted-foreground">
-                                  {item.location?.name || "Sin ubicación"}
-                                </p>
-                                {(() => {
-                                  const activeLoan = item.loans?.find(
-                                    (l: any) => l.status === "APPROVED",
-                                  );
-                                  return activeLoan?.user?.name ? (
-                                    <p className="text-sm text-muted-foreground">
-                                      <User className="inline h-3 w-3 mr-1" />
-                                      En posesión de: {activeLoan.user.name}
-                                    </p>
-                                  ) : null;
-                                })()}
-                              </div>
-                              <div className="flex items-center gap-2 shrink-0">
-                                {item.status === EquipmentStatus.AVAILABLE && (
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7 rounded-full hover:bg-primary/10"
-                                    title="Solicitar este equipo"
-                                    onClick={() =>
-                                      handleRequestLoanFor(item.equipmentId)
-                                    }
-                                  >
-                                    <Plus className="h-4 w-4" />
-                                  </Button>
-                                )}
-                                {getEquipmentStatusBadge(item.status)}
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-
-                  <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
-                    <p>
-                      Mostrando {paginate(filteredEquipment).length} de{" "}
-                      {filteredEquipment.length} equipos
-                    </p>
-                  </div>
-
-                  {renderPagination(filteredEquipment)}
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="my-loans" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5" />
-                Mis Préstamos
-              </CardTitle>
-              <CardDescription>
-                Historial de tus solicitudes de préstamo
-              </CardDescription>
-              <div className="relative mt-4">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar por equipo o estado..."
-                  value={searchTerm}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </CardHeader>
-            <CardContent>
-              {isLoadingMyLoans ? (
-                <div className="space-y-3">
-                  <Skeleton className="h-12 w-full" />
-                  <Skeleton className="h-12 w-full" />
-                </div>
-              ) : filteredMyLoans.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No tienes solicitudes de préstamo</p>
-                  <Button
-                    variant="link"
-                    onClick={() => setShowLoanDialog(true)}
-                    className="mt-2"
-                  >
-                    Solicitar un préstamo
-                  </Button>
-                </div>
-              ) : (
-                <>
-                  <div className="space-y-4">
-                    {paginate(filteredMyLoans).map((loan: any) => (
-                      <Card key={loan.equipmentLoanId}>
-                        <CardContent className="pt-6">
-                          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2">
-                                <p className="font-medium">
-                                  {loan.equipment?.name || "Equipo"}
-                                </p>
-                                {getLoanStatusBadge(loan.status)}
-                              </div>
-                              {loan.reason && (
-                                <p className="text-sm text-muted-foreground">
-                                  Motivo: {loan.reason}
-                                </p>
-                              )}
-                              {loan.expectedReturnDate && (
-                                <p className="text-sm text-muted-foreground">
-                                  <Calendar className="inline h-3 w-3 mr-1" />
-                                  Devolución esperada:{" "}
-                                  {formatDate(loan.expectedReturnDate)}
-                                </p>
-                              )}
-                              {loan.actualReturnDate && (
-                                <p className="text-sm text-muted-foreground">
-                                  <RotateCcw className="inline h-3 w-3 mr-1" />
-                                  Devuelto: {formatDate(loan.actualReturnDate)}
-                                </p>
-                              )}
-                              {loan.approvedBy && (
-                                <p className="text-sm text-muted-foreground">
-                                  <User className="inline h-3 w-3 mr-1" />
-                                  Aprobado por: {loan.approvedBy.name}
-                                </p>
-                              )}
-                            </div>
-                            {loan.status === LoanStatus.PENDING && (
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() =>
-                                  handleCancelLoan(loan.equipmentLoanId)
-                                }
-                                disabled={cancelLoan.isPending}
-                              >
-                                Cancelar
-                              </Button>
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-
-                  <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
-                    <p>
-                      Mostrando {paginate(filteredMyLoans).length} de{" "}
-                      {filteredMyLoans.length} solicitudes
-                    </p>
-                  </div>
-
-                  {renderPagination(filteredMyLoans)}
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {isLeader && (
-          <TabsContent value="all-loans" className="mt-6">
+          <TabsContent value="equipment" className="mt-6">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Todas las Solicitudes
-                </CardTitle>
-                <CardDescription>
-                  Gestiona las solicitudes de préstamo de los colaboradores
-                </CardDescription>
-                <div className="relative mt-4">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar por equipo, usuario o estado..."
-                    value={searchTerm}
-                    onChange={(e) => handleSearchChange(e.target.value)}
-                    className="pl-10"
-                  />
+              <CardHeader className="pb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Package className="h-5 w-5" />
+                      Inventario de Equipos
+                      <Badge variant="secondary" className="ml-1">
+                        {filteredEquipment.length}
+                      </Badge>
+                    </CardTitle>
+                    <CardDescription className="mt-1">
+                      Lista de todos los equipos registrados
+                    </CardDescription>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
-                {isLoadingAllLoans ? (
-                  <div className="space-y-3">
-                    <Skeleton className="h-12 w-full" />
-                    <Skeleton className="h-12 w-full" />
-                    <Skeleton className="h-12 w-full" />
+                <div className="mb-4 flex flex-col sm:flex-row gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      placeholder="Buscar por nombre, categoría, serial o ubicación..."
+                      value={searchTerm}
+                      onChange={(e) => handleSearchChange(e.target.value)}
+                      className="pl-10"
+                    />
                   </div>
-                ) : filteredAllLoans.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>No hay solicitudes de préstamo</p>
+                  <Select
+                    value={equipmentStatusFilter}
+                    onValueChange={(v) => {
+                      setEquipmentStatusFilter(v as EquipmentStatus | "ALL");
+                      setCurrentPage(1);
+                    }}
+                  >
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                      <Filter className="mr-2 h-3.5 w-3.5" />
+                      <SelectValue placeholder="Estado" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ALL">Todos los estados</SelectItem>
+                      <SelectItem value={EquipmentStatus.AVAILABLE}>
+                        Disponible
+                      </SelectItem>
+                      <SelectItem value={EquipmentStatus.LOANED}>
+                        En préstamo
+                      </SelectItem>
+                      <SelectItem value={EquipmentStatus.MAINTENANCE}>
+                        Mantenimiento
+                      </SelectItem>
+                      <SelectItem value={EquipmentStatus.DAMAGED}>
+                        Dañado
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {isLoadingEquipment ? (
+                  <div className="space-y-3">
+                    <Skeleton className="h-14 w-full" />
+                    <Skeleton className="h-14 w-full" />
+                    <Skeleton className="h-14 w-full" />
+                  </div>
+                ) : filteredEquipment.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p className="font-medium">No se encontraron equipos</p>
+                    <p className="text-sm mt-1">
+                      Intenta ajustar los filtros de búsqueda
+                    </p>
                   </div>
                 ) : (
                   <>
-                    <div className="space-y-4">
-                      {paginate(filteredAllLoans).map((loan: any) => (
-                        <Card key={loan.equipmentLoanId}>
-                          <CardContent className="pt-6">
-                            <div className="flex flex-col gap-3">
-                              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                                <div className="space-y-1">
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    <p className="font-medium">
-                                      {loan.equipment?.name || "Equipo"}
-                                    </p>
-                                    {getLoanStatusBadge(loan.status)}
-                                    <Badge variant="outline">
-                                      {loan.user?.name || "Usuario"}
-                                    </Badge>
+                    <div className="hidden md:block rounded-md border overflow-hidden">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-muted/40 hover:bg-muted/40">
+                            <TableHead className="w-[35%]">Equipo</TableHead>
+                            <TableHead className="w-[20%]">Ubicación</TableHead>
+                            <TableHead className="w-[25%]">
+                              En posesión de
+                            </TableHead>
+                            <TableHead className="text-right">Estado</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {paginate(filteredEquipment).map((item: any) => {
+                            const activeLoan = item.loans?.find(
+                              (l: any) => l.status === "LOANED",
+                            );
+                            const holderName = activeLoan?.user?.name;
+                            return (
+                              <TableRow key={item.equipmentId} className="h-14">
+                                <TableCell>
+                                  <div className="flex flex-col">
+                                    <span className="font-medium leading-tight">
+                                      {item.name}
+                                    </span>
+                                    <span className="text-xs text-muted-foreground mt-0.5">
+                                      {
+                                        categoryLabels[
+                                          item.category as EquipmentCategory
+                                        ]
+                                      }
+                                      {item.serialNumber &&
+                                        ` · ${item.serialNumber}`}
+                                    </span>
                                   </div>
-                                  {loan.reason && (
-                                    <p className="text-sm text-muted-foreground">
-                                      Motivo: {loan.reason}
-                                    </p>
+                                </TableCell>
+                                <TableCell className="text-sm text-muted-foreground">
+                                  {item.location?.name || "—"}
+                                </TableCell>
+                                <TableCell>
+                                  {holderName ? (
+                                    <div className="flex items-center gap-2">
+                                      <UserAvatar name={holderName} />
+                                      <span className="text-sm truncate">
+                                        {holderName}
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <span className="text-sm text-muted-foreground">
+                                      —
+                                    </span>
                                   )}
-                                  {loan.observation && (
-                                    <p className="text-sm text-muted-foreground">
-                                      Observación: {loan.observation}
-                                    </p>
-                                  )}
-                                  {loan.expectedReturnDate && (
-                                    <p className="text-sm text-muted-foreground">
-                                      <Calendar className="inline h-3 w-3 mr-1" />
-                                      Devolución esperada:{" "}
-                                      {formatDateLong(loan.expectedReturnDate)}
-                                    </p>
-                                  )}
-                                  {loan.approvedBy && (
-                                    <p className="text-sm text-muted-foreground">
-                                      <CheckCircle className="inline h-3 w-3 mr-1 text-green-500" />
-                                      Aprobado por: {loan.approvedBy.name}
-                                    </p>
-                                  )}
-                                  {loan.actualReturnDate && (
-                                    <p className="text-sm text-muted-foreground">
-                                      <RotateCcw className="inline h-3 w-3 mr-1" />
-                                      Devuelto:{" "}
-                                      {formatDateLong(loan.actualReturnDate)}
-                                    </p>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex items-center justify-end gap-2">
+                                    {(isAdmin || isSupport) && (
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7 rounded-full hover:bg-primary/10"
+                                        title="Editar equipo"
+                                        onClick={() =>
+                                          handleEditEquipment(item)
+                                        }
+                                      >
+                                        <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                                      </Button>
+                                    )}
+                                    {item.status ===
+                                      EquipmentStatus.AVAILABLE && (
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7 rounded-full hover:bg-primary/10"
+                                        title="Solicitar este equipo"
+                                        onClick={() =>
+                                          handleRequestLoanFor(item.equipmentId)
+                                        }
+                                      >
+                                        <Plus className="h-4 w-4" />
+                                      </Button>
+                                    )}
+                                    {getEquipmentStatusBadge(item.status)}
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </div>
+
+                    <div className="md:hidden space-y-3">
+                      {paginate(filteredEquipment).map((item: any) => {
+                        const activeLoan = item.loans?.find(
+                          (l: any) => l.status === "LOANED",
+                        );
+                        const holderName = activeLoan?.user?.name;
+                        return (
+                          <Card key={item.equipmentId}>
+                            <CardContent className="p-4">
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0 flex-1">
+                                  <p className="font-medium truncate">
+                                    {item.name}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground mt-0.5">
+                                    {
+                                      categoryLabels[
+                                        item.category as EquipmentCategory
+                                      ]
+                                    }
+                                    {item.serialNumber &&
+                                      ` · ${item.serialNumber}`}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    {item.location?.name || "Sin ubicación"}
+                                  </p>
+                                  {holderName && (
+                                    <div className="flex items-center gap-2 mt-2">
+                                      <UserAvatar name={holderName} />
+                                      <span className="text-xs text-muted-foreground truncate">
+                                        {holderName}
+                                      </span>
+                                    </div>
                                   )}
                                 </div>
+                                <div className="flex flex-col items-end gap-2 shrink-0">
+                                  {getEquipmentStatusBadge(item.status)}
+                                  <div className="flex items-center gap-1">
+                                    {(isAdmin || isSupport) && (
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7 rounded-full hover:bg-primary/10"
+                                        title="Editar equipo"
+                                        onClick={() =>
+                                          handleEditEquipment(item)
+                                        }
+                                      >
+                                        <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                                      </Button>
+                                    )}
+                                    {item.status ===
+                                      EquipmentStatus.AVAILABLE && (
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7 rounded-full hover:bg-primary/10"
+                                        title="Solicitar este equipo"
+                                        onClick={() =>
+                                          handleRequestLoanFor(item.equipmentId)
+                                        }
+                                      >
+                                        <Plus className="h-4 w-4" />
+                                      </Button>
+                                    )}
+                                  </div>
+                                </div>
                               </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
 
-                              <div className="flex gap-2 flex-wrap">
-                                {loan.status === LoanStatus.PENDING && (
-                                  <>
-                                    <Button
-                                      size="sm"
-                                      onClick={() =>
-                                        handleApproveLoan(loan.equipmentLoanId)
+                    {renderPagination(filteredEquipment)}
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="my-loans" className="mt-6">
+            <Card>
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="h-5 w-5" />
+                  Mis Préstamos
+                  <Badge variant="secondary" className="ml-1">
+                    {filteredMyLoans.length}
+                  </Badge>
+                </CardTitle>
+                <CardDescription className="mt-1">
+                  Historial de tus solicitudes de préstamo
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="mb-4 flex flex-col sm:flex-row gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      placeholder="Buscar por equipo o estado..."
+                      value={searchTerm}
+                      onChange={(e) => handleSearchChange(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  <Select
+                    value={statusFilter}
+                    onValueChange={(v) => {
+                      setStatusFilter(v as LoanFilterStatus);
+                      setCurrentPage(1);
+                    }}
+                  >
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                      <Filter className="mr-2 h-3.5 w-3.5" />
+                      <SelectValue placeholder="Estado" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ALL">Todos los estados</SelectItem>
+                      <SelectItem value={LoanStatus.PENDING}>
+                        Pendiente aprobación
+                      </SelectItem>
+                      <SelectItem value={LoanStatus.APPROVED}>
+                        Pendiente entrega
+                      </SelectItem>
+                      <SelectItem value={LoanStatus.LOANED}>
+                        En préstamo
+                      </SelectItem>
+                      <SelectItem value={LoanStatus.RETURNED}>
+                        Devuelto
+                      </SelectItem>
+                      <SelectItem value={LoanStatus.REJECTED}>
+                        Rechazado
+                      </SelectItem>
+                      <SelectItem value={LoanStatus.CANCELLED}>
+                        Cancelado
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {isLoadingMyLoans ? (
+                  <div className="space-y-3">
+                    <Skeleton className="h-14 w-full" />
+                    <Skeleton className="h-14 w-full" />
+                  </div>
+                ) : filteredMyLoans.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p className="font-medium">No tienes solicitudes</p>
+                    <p className="text-sm mt-1">
+                      Cuando solicites un préstamo aparecerá aquí
+                    </p>
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowLoanDialog(true)}
+                      className="mt-4"
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Solicitar un préstamo
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="hidden md:block rounded-md border overflow-hidden">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-muted/40 hover:bg-muted/40">
+                            <TableHead className="w-[45%]">Equipo</TableHead>
+                            <TableHead className="w-[25%]">Estado</TableHead>
+                            <TableHead className="w-[140px] text-right">
+                              Acciones
+                            </TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {paginate(filteredMyLoans).map((loan: any) => (
+                            <TableRow
+                              key={loan.equipmentLoanId}
+                              className="h-14"
+                            >
+                              <TableCell>
+                                <div className="flex flex-col">
+                                  <span className="font-medium leading-tight">
+                                    {loan.equipment?.name || "Equipo"}
+                                  </span>
+                                  {loan.equipment?.category && (
+                                    <span className="text-xs text-muted-foreground mt-0.5">
+                                      {
+                                        categoryLabels[
+                                          loan.equipment
+                                            .category as EquipmentCategory
+                                        ]
                                       }
-                                      disabled={updateStatus.isPending}
-                                    >
-                                      <CheckCircle className="mr-1 h-4 w-4" />
-                                      Aprobar
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="destructive"
-                                      onClick={() =>
-                                        handleRejectLoan(loan.equipmentLoanId)
-                                      }
-                                      disabled={updateStatus.isPending}
-                                    >
-                                      <XCircle className="mr-1 h-4 w-4" />
-                                      Rechazar
-                                    </Button>
-                                  </>
-                                )}
-                                {loan.status === LoanStatus.APPROVED && (
-                                  <Button
-                                    size="sm"
-                                    onClick={() =>
-                                      handleReturnLoan(loan.equipmentLoanId)
+                                    </span>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                {getLoanStatusBadge(loan.status)}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex items-center justify-end gap-1">
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8"
+                                        onClick={() => handleViewDetail(loan)}
+                                      >
+                                        <Eye className="h-4 w-4 text-muted-foreground" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Ver detalle</TooltipContent>
+                                  </Tooltip>
+
+                                  {loan.status === LoanStatus.PENDING && (
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-8 w-8"
+                                          onClick={() =>
+                                            handleCancelLoan(
+                                              loan.equipmentLoanId,
+                                            )
+                                          }
+                                          disabled={cancelLoan.isPending}
+                                        >
+                                          <XCircle className="h-4 w-4 text-red-600" />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        Cancelar solicitud
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  )}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+
+                    <div className="md:hidden space-y-3">
+                      {paginate(filteredMyLoans).map((loan: any) => (
+                        <Card key={loan.equipmentLoanId}>
+                          <CardContent className="p-4">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0 flex-1">
+                                <p className="font-medium truncate">
+                                  {loan.equipment?.name || "Equipo"}
+                                </p>
+                                {loan.equipment?.category && (
+                                  <p className="text-xs text-muted-foreground mt-0.5">
+                                    {
+                                      categoryLabels[
+                                        loan.equipment
+                                          .category as EquipmentCategory
+                                      ]
                                     }
-                                    disabled={updateStatus.isPending}
-                                  >
-                                    <RotateCcw className="mr-1 h-4 w-4" />
-                                    Registrar Devolución
-                                  </Button>
+                                  </p>
                                 )}
                               </div>
+                              <div className="shrink-0">
+                                {getLoanStatusBadge(loan.status)}
+                              </div>
+                            </div>
+                            <div className="flex gap-2 mt-3 pt-3 border-t">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex-1 h-8 text-xs"
+                                onClick={() => handleViewDetail(loan)}
+                              >
+                                <Eye className="mr-1 h-3 w-3" />
+                                Ver detalle
+                              </Button>
+                              {loan.status === LoanStatus.PENDING && (
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  className="flex-1 h-8 text-xs"
+                                  onClick={() =>
+                                    handleCancelLoan(loan.equipmentLoanId)
+                                  }
+                                  disabled={cancelLoan.isPending}
+                                >
+                                  Cancelar
+                                </Button>
+                              )}
                             </div>
                           </CardContent>
                         </Card>
                       ))}
                     </div>
 
-                    <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
-                      <p>
-                        Mostrando {paginate(filteredAllLoans).length} de{" "}
-                        {filteredAllLoans.length} solicitudes
-                      </p>
-                    </div>
-
-                    {renderPagination(filteredAllLoans)}
+                    {renderPagination(filteredMyLoans)}
                   </>
                 )}
               </CardContent>
             </Card>
           </TabsContent>
-        )}
-      </Tabs>
 
-      <Dialog open={showLoanDialog} onOpenChange={setShowLoanDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Solicitar Préstamo</DialogTitle>
-            <DialogDescription>
-              Completa los datos para solicitar el equipo
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="equipment">Equipo</Label>
-              <Select 
-              value={selectedEquipmentId}
-              onValueChange={setSelectedEquipmentId} 
-              required
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecciona un equipo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {equipment
-                    ?.filter((e: any) => e.status === EquipmentStatus.AVAILABLE)
-                    .map((item: any) => (
-                      <SelectItem
-                        key={item.equipmentId}
-                        value={item.equipmentId}
-                      >
-                        {item.name}{" "}
-                        {item.serialNumber && `(${item.serialNumber})`}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-            </div>
+          {canManageLoans && (
+            <TabsContent value="all-loans" className="mt-6">
+              <Card>
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="h-5 w-5" />
+                    Todas las Solicitudes
+                    <Badge variant="secondary" className="ml-1">
+                      {filteredAllLoans.length}
+                    </Badge>
+                    {pendingCount > 0 && (
+                      <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">
+                        {pendingCount} pendientes
+                      </Badge>
+                    )}
+                  </CardTitle>
+                  <CardDescription className="mt-1">
+                    Gestiona las solicitudes de préstamo de los colaboradores
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="mb-4 flex flex-col sm:flex-row gap-2">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        placeholder="Buscar por equipo, usuario o estado..."
+                        value={searchTerm}
+                        onChange={(e) => handleSearchChange(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                    <Select
+                      value={statusFilter}
+                      onValueChange={(v) => {
+                        setStatusFilter(v as LoanFilterStatus);
+                        setCurrentPage(1);
+                      }}
+                    >
+                      <SelectTrigger className="w-full sm:w-[180px]">
+                        <Filter className="mr-2 h-3.5 w-3.5" />
+                        <SelectValue placeholder="Estado" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ALL">Todos los estados</SelectItem>
+                        <SelectItem value={LoanStatus.PENDING}>
+                          Pendiente aprobación
+                        </SelectItem>
+                        <SelectItem value={LoanStatus.APPROVED}>
+                          Pendiente entrega
+                        </SelectItem>
+                        <SelectItem value={LoanStatus.LOANED}>
+                          En préstamo
+                        </SelectItem>
+                        <SelectItem value={LoanStatus.RETURNED}>
+                          Devuelto
+                        </SelectItem>
+                        <SelectItem value={LoanStatus.REJECTED}>
+                          Rechazado
+                        </SelectItem>
+                        <SelectItem value={LoanStatus.CANCELLED}>
+                          Cancelado
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="reason">Motivo</Label>
-              <Input
-                id="reason"
-                placeholder="¿Para qué necesitas el equipo?"
-                value={loanReason}
-                onChange={(e) => setLoanReason(e.target.value)}
-              />
-            </div>
+                  {isLoadingAllLoans ? (
+                    <div className="space-y-3">
+                      <Skeleton className="h-14 w-full" />
+                      <Skeleton className="h-14 w-full" />
+                      <Skeleton className="h-14 w-full" />
+                    </div>
+                  ) : filteredAllLoans.length === 0 ? (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p className="font-medium">No hay solicitudes</p>
+                      <p className="text-sm mt-1">
+                        Cuando los colaboradores soliciten préstamos aparecerán
+                        aquí
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="hidden md:block rounded-md border overflow-hidden">
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="bg-muted/40 hover:bg-muted/40">
+                              <TableHead className="w-[24%]">Equipo</TableHead>
+                              <TableHead className="w-[18%]">
+                                Solicitante
+                              </TableHead>
+                              <TableHead className="w-[16%]">Estado</TableHead>
+                              <TableHead className="w-[22%]">
+                                Aprobado por
+                              </TableHead>
+                              <TableHead className="w-[140px] text-right">
+                                Acciones
+                              </TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {paginate(filteredAllLoans).map((loan: any) => {
+                              const actions = getAvailableActions(loan);
+                              const accionesDelLoan = buildActions(
+                                loan,
+                                actions,
+                              );
+                              const hasActions = accionesDelLoan.length > 0;
 
-            <div className="space-y-2">
-              <Label htmlFor="observation">Observaciones</Label>
-              <Textarea
-                id="observation"
-                placeholder="Observaciones adicionales"
-                value={loanObservation}
-                onChange={(e) => setLoanObservation(e.target.value)}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowLoanDialog(false)}>
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleCreateLoan}
-              disabled={createLoan.isPending || !selectedEquipmentId}
-            >
-              {createLoan.isPending ? "Enviando..." : "Solicitar"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+                              return (
+                                <TableRow
+                                  key={loan.equipmentLoanId}
+                                  className="h-14"
+                                >
+                                  <TableCell>
+                                    <div className="flex flex-col">
+                                      <span className="font-medium leading-tight">
+                                        {loan.equipment?.name || "Equipo"}
+                                      </span>
+                                      {loan.equipment?.category && (
+                                        <span className="text-xs text-muted-foreground mt-0.5">
+                                          {
+                                            categoryLabels[
+                                              loan.equipment
+                                                .category as EquipmentCategory
+                                            ]
+                                          }
+                                        </span>
+                                      )}
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>
+                                    {loan.user?.name ? (
+                                      <div className="flex items-center gap-2">
+                                        <UserAvatar name={loan.user.name} />
+                                        <span className="text-sm truncate">
+                                          {loan.user.name}
+                                        </span>
+                                      </div>
+                                    ) : (
+                                      <span className="text-sm text-muted-foreground">
+                                        —
+                                      </span>
+                                    )}
+                                  </TableCell>
+                                  <TableCell>
+                                    {getLoanStatusBadge(loan.status)}
+                                  </TableCell>
+                                  <TableCell>
+                                    {loan.leaderApprovedBy ||
+                                    loan.approvedBy ? (
+                                      <div className="flex items-center gap-2">
+                                        <UserAvatar
+                                          name={
+                                            (
+                                              loan.leaderApprovedBy ||
+                                              loan.approvedBy
+                                            ).name
+                                          }
+                                        />
+                                        <span className="text-sm truncate">
+                                          {
+                                            (
+                                              loan.leaderApprovedBy ||
+                                              loan.approvedBy
+                                            ).name
+                                          }
+                                        </span>
+                                      </div>
+                                    ) : (
+                                      <span className="text-sm text-muted-foreground">
+                                        —
+                                      </span>
+                                    )}
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    <div className="flex items-center justify-end gap-1">
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8"
+                                            onClick={() =>
+                                              handleViewDetail(loan)
+                                            }
+                                          >
+                                            <Eye className="h-4 w-4 text-muted-foreground" />
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          Ver detalle
+                                        </TooltipContent>
+                                      </Tooltip>
 
-      {(isAdmin || isLeader) && (
-        <Dialog
-          open={showEquipmentDialog}
-          onOpenChange={setShowEquipmentDialog}
-        >
-          <DialogContent className="sm:max-w-md">
+                                      {accionesDelLoan.length > 0 &&
+                                        accionesDelLoan.length <= 2 && (
+                                          <>
+                                            {accionesDelLoan.map((action) => (
+                                              <Tooltip key={action.key}>
+                                                <TooltipTrigger asChild>
+                                                  <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8"
+                                                    onClick={action.onClick}
+                                                    disabled={
+                                                      updateStatus.isPending
+                                                    }
+                                                  >
+                                                    {action.icon}
+                                                  </Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                  {action.label}
+                                                </TooltipContent>
+                                              </Tooltip>
+                                            ))}
+                                          </>
+                                        )}
+
+                                      {accionesDelLoan.length >= 3 && (
+                                        <DropdownMenu>
+                                          <DropdownMenuTrigger asChild>
+                                            <Button
+                                              variant="ghost"
+                                              size="icon"
+                                              className="h-8 w-8"
+                                            >
+                                              <MoreHorizontal className="h-4 w-4" />
+                                            </Button>
+                                          </DropdownMenuTrigger>
+                                          <DropdownMenuContent align="end">
+                                            {accionesDelLoan.map((action) => (
+                                              <DropdownMenuItem
+                                                key={action.key}
+                                                onClick={action.onClick}
+                                                className={
+                                                  action.variant ===
+                                                  "destructive"
+                                                    ? "text-red-600"
+                                                    : ""
+                                                }
+                                              >
+                                                {action.icon}
+                                                <span className="ml-2">
+                                                  {action.label}
+                                                </span>
+                                              </DropdownMenuItem>
+                                            ))}
+                                          </DropdownMenuContent>
+                                        </DropdownMenu>
+                                      )}
+
+                                      {!hasActions && (
+                                        <span className="text-xs text-muted-foreground">
+                                          
+                                        </span>
+                                      )}
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      </div>
+
+                      <div className="md:hidden space-y-3">
+                        {paginate(filteredAllLoans).map((loan: any) => {
+                          const actions = getAvailableActions(loan);
+                          const accionesDelLoan = buildActions(loan, actions);
+                          const hasActions = accionesDelLoan.length > 0;
+
+                          return (
+                            <Card key={loan.equipmentLoanId}>
+                              <CardContent className="p-4">
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="min-w-0 flex-1">
+                                    <p className="font-medium truncate">
+                                      {loan.equipment?.name || "Equipo"}
+                                    </p>
+                                    {loan.equipment?.category && (
+                                      <p className="text-xs text-muted-foreground mt-0.5">
+                                        {
+                                          categoryLabels[
+                                            loan.equipment
+                                              .category as EquipmentCategory
+                                          ]
+                                        }
+                                      </p>
+                                    )}
+                                    {loan.user?.name && (
+                                      <div className="flex items-center gap-2 mt-2">
+                                        <UserAvatar name={loan.user.name} />
+                                        <span className="text-xs text-muted-foreground truncate">
+                                          {loan.user.name}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="shrink-0">
+                                    {getLoanStatusBadge(loan.status)}
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center justify-end gap-1 mt-3 pt-3 border-t">
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-9 w-9"
+                                        onClick={() => handleViewDetail(loan)}
+                                      >
+                                        <Eye className="h-4 w-4 text-muted-foreground" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Ver detalle</TooltipContent>
+                                  </Tooltip>
+
+                                  {accionesDelLoan.length > 0 &&
+                                    accionesDelLoan.length <= 2 && (
+                                      <>
+                                        {accionesDelLoan.map((action) => (
+                                          <Tooltip key={action.key}>
+                                            <TooltipTrigger asChild>
+                                              <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-9 w-9"
+                                                onClick={action.onClick}
+                                                disabled={
+                                                  updateStatus.isPending
+                                                }
+                                              >
+                                                {action.icon}
+                                              </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                              {action.label}
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        ))}
+                                      </>
+                                    )}
+
+                                  {accionesDelLoan.length >= 3 && (
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-9 w-9"
+                                        >
+                                          <MoreHorizontal className="h-4 w-4" />
+                                        </Button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent align="end">
+                                        {accionesDelLoan.map((action) => (
+                                          <DropdownMenuItem
+                                            key={action.key}
+                                            onClick={action.onClick}
+                                            className={
+                                              action.variant === "destructive"
+                                                ? "text-red-600"
+                                                : ""
+                                            }
+                                          >
+                                            {action.icon}
+                                            <span className="ml-2">
+                                              {action.label}
+                                            </span>
+                                          </DropdownMenuItem>
+                                        ))}
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
+                                  )}
+
+                                  {!hasActions && (
+                                    <span className="text-xs text-muted-foreground">
+                                      —
+                                    </span>
+                                  )}
+                                </div>
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
+                      </div>
+
+                      {renderPagination(filteredAllLoans)}
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
+        </Tabs>
+
+        <Dialog open={showLoanDialog} onOpenChange={setShowLoanDialog}>
+          <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-md overflow-hidden">
             <DialogHeader>
-              <DialogTitle>Registrar Nuevo Equipo</DialogTitle>
+              <DialogTitle>Solicitar Préstamo</DialogTitle>
               <DialogDescription>
-                Ingresa los datos del equipo a registrar
+                Completa los datos para solicitar el equipo
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleCreateEquipment}>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Nombre del Equipo *</Label>
-                  <Input
-                    id="name"
-                    name="name"
-                    placeholder="Ej: Laptop HP"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="serialNumber">Número de Serie</Label>
-                  <Input
-                    id="serialNumber"
-                    name="serialNumber"
-                    placeholder="Número de serie del equipo"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="category">Categoría *</Label>
-                  <Select name="category" required>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona una categoría" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(categoryLabels).map(([value, label]) => (
-                        <SelectItem key={value} value={value}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="locationId">Ubicación</Label>
-                  <Select name="locationId">
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona una ubicación" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {locations?.map((location: any) => (
-                        <SelectItem
-                          key={location.locationId}
-                          value={location.locationId}
-                        >
-                          {location.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="description">Descripción</Label>
-                  <Textarea
-                    id="description"
-                    name="description"
-                    placeholder="Descripción adicional del equipo"
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowEquipmentDialog(false)}
+            <div className="space-y-4 py-4">
+              <div className="space-y-2 min-w-0">
+                <Label htmlFor="equipment">Equipo</Label>
+                <Select
+                  value={selectedEquipmentId}
+                  onValueChange={setSelectedEquipmentId}
+                  required
                 >
-                  Cancelar
-                </Button>
-                <Button type="submit" disabled={createEquipment.isPending}>
-                  {createEquipment.isPending ? "Registrando..." : "Registrar"}
-                </Button>
-              </DialogFooter>
-            </form>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecciona un equipo" />
+                  </SelectTrigger>
+                  <SelectContent className="w-[var(--radix-select-trigger-width)]">
+                    {equipment
+                      ?.filter(
+                        (e: any) => e.status === EquipmentStatus.AVAILABLE,
+                      )
+                      .map((item: any) => (
+                        <SelectItem
+                          key={item.equipmentId}
+                          value={item.equipmentId}
+                        >
+                          <div className="flex flex-col">
+                            <span className="text-sm">{item.name}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+
+                {selectedEquipmentId &&
+                  (() => {
+                    const selectedEquipment = equipment?.find(
+                      (e: any) => e.equipmentId === selectedEquipmentId,
+                    );
+                    return selectedEquipment?.serialNumber ? (
+                      <p className="text-xs text-muted-foreground">
+                        Serial: {selectedEquipment.serialNumber}
+                      </p>
+                    ) : null;
+                  })()}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="reason">Motivo</Label>
+                <Input
+                  id="reason"
+                  placeholder="¿Para qué necesitas el equipo?"
+                  value={loanReason}
+                  onChange={(e) => setLoanReason(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="observation">Observaciones</Label>
+                <Textarea
+                  id="observation"
+                  placeholder="Observaciones adicionales"
+                  value={loanObservation}
+                  onChange={(e) => setLoanObservation(e.target.value)}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowLoanDialog(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleCreateLoan}
+                disabled={createLoan.isPending || !selectedEquipmentId}
+              >
+                {createLoan.isPending ? "Enviando..." : "Solicitar"}
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
-      )}
 
-      <Dialog open={showReturnDialog} onOpenChange={setShowReturnDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirmar Devolución</DialogTitle>
-            <DialogDescription>
-              ¿Estás seguro de que deseas registrar la devolución de este
-              equipo?
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowReturnDialog(false)}
-            >
-              Cancelar
-            </Button>
-            <Button onClick={confirmReturn} disabled={updateStatus.isPending}>
-              {updateStatus.isPending
-                ? "Procesando..."
-                : "Confirmar Devolución"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+        {(isAdmin || isLeader) && (
+          <Dialog
+            open={showEquipmentDialog}
+            onOpenChange={setShowEquipmentDialog}
+          >
+            <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-md overflow-hidden">
+              <DialogHeader>
+                <DialogTitle>Registrar Nuevo Equipo</DialogTitle>
+                <DialogDescription>
+                  Ingresa los datos del equipo a registrar
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleCreateEquipment}>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Nombre del Equipo *</Label>
+                    <Input
+                      id="name"
+                      name="name"
+                      placeholder="Ej: Laptop HP"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="serialNumber">Número de Serie</Label>
+                    <Input
+                      id="serialNumber"
+                      name="serialNumber"
+                      placeholder="Número de serie del equipo"
+                    />
+                  </div>
+
+                  <div className="space-y-2 min-w-0">
+                    <Label htmlFor="category">Categoría *</Label>
+                    <Select name="category" required>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Selecciona una categoría" />
+                      </SelectTrigger>
+                      <SelectContent className="w-[var(--radix-select-trigger-width)]">
+                        {Object.entries(categoryLabels).map(
+                          ([value, label]) => (
+                            <SelectItem key={value} value={value}>
+                              {label}
+                            </SelectItem>
+                          ),
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2 min-w-0">
+                    <Label htmlFor="locationId">Ubicación</Label>
+                    <Select name="locationId">
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Selecciona una ubicación" />
+                      </SelectTrigger>
+                      <SelectContent className="w-[var(--radix-select-trigger-width)]">
+                        {locations?.map((location: any) => (
+                          <SelectItem
+                            key={location.locationId}
+                            value={location.locationId}
+                          >
+                            {location.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="description">Descripción</Label>
+                    <Textarea
+                      id="description"
+                      name="description"
+                      placeholder="Descripción adicional del equipo"
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowEquipmentDialog(false)}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button type="submit" disabled={createEquipment.isPending}>
+                    {createEquipment.isPending ? "Registrando..." : "Registrar"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        )}
+
+        <Dialog open={showReturnDialog} onOpenChange={setShowReturnDialog}>
+          <DialogContent className="w-[calc(100vw-2rem)] max-w-md overflow-hidden">
+            <DialogHeader>
+              <DialogTitle>Confirmar Devolución</DialogTitle>
+              <DialogDescription>
+                ¿Estás seguro de que deseas registrar la devolución de este
+                equipo? El equipo volverá a estar disponible.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowReturnDialog(false)}
+              >
+                Cancelar
+              </Button>
+              <Button onClick={confirmReturn} disabled={updateStatus.isPending}>
+                {updateStatus.isPending
+                  ? "Procesando..."
+                  : "Confirmar Devolución"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={showDeliverDialog} onOpenChange={setShowDeliverDialog}>
+          <DialogContent className="w-[calc(100vw-2rem)] max-w-md overflow-hidden">
+            <DialogHeader>
+              <DialogTitle>Confirmar Entrega</DialogTitle>
+              <DialogDescription>
+                ¿Confirmas que el equipo fue entregado al colaborador? El equipo
+                pasará a estado "En préstamo".
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowDeliverDialog(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={confirmDeliver}
+                disabled={updateStatus.isPending}
+              >
+                {updateStatus.isPending ? "Procesando..." : "Confirmar Entrega"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={showDetailDialog} onOpenChange={setShowDetailDialog}>
+          <DialogContent className="w-[calc(100vw-2rem)] max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Detalle del préstamo</DialogTitle>
+              <DialogDescription>
+                Información completa de la solicitud
+              </DialogDescription>
+            </DialogHeader>
+            {detailLoan && (
+              <div className="space-y-4 py-2">
+                <div className="rounded-lg border p-4 space-y-3">
+                  <div className="flex items-start gap-3">
+                    <Package className="h-5 w-5 text-muted-foreground mt-0.5" />
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium">
+                        {detailLoan.equipment?.name || "Equipo"}
+                      </p>
+                      {detailLoan.equipment?.category && (
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {
+                            categoryLabels[
+                              detailLoan.equipment.category as EquipmentCategory
+                            ]
+                          }
+                          {detailLoan.equipment?.serialNumber &&
+                            ` · ${detailLoan.equipment.serialNumber}`}
+                        </p>
+                      )}
+                    </div>
+                    <div>{getLoanStatusBadge(detailLoan.status)}</div>
+                  </div>
+                </div>
+
+                {detailLoan.user?.name && (
+                  <div className="rounded-lg border p-4 space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground uppercase">
+                      Solicitante
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <UserAvatar name={detailLoan.user.name} size="md" />
+                      <span className="text-sm">{detailLoan.user.name}</span>
+                    </div>
+                  </div>
+                )}
+
+                {detailLoan.reason && (
+                  <div className="rounded-lg border p-4 space-y-1">
+                    <p className="text-xs font-medium text-muted-foreground uppercase">
+                      Motivo
+                    </p>
+                    <p className="text-sm">{detailLoan.reason}</p>
+                  </div>
+                )}
+
+                {detailLoan.observation && (
+                  <div className="rounded-lg border p-4 space-y-1">
+                    <p className="text-xs font-medium text-muted-foreground uppercase">
+                      Observaciones
+                    </p>
+                    <p className="text-sm">{detailLoan.observation}</p>
+                  </div>
+                )}
+
+                <div className="rounded-lg border p-4 space-y-3">
+                  <p className="text-xs font-medium text-muted-foreground uppercase">
+                    Historial
+                  </p>
+
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-muted-foreground">Solicitado</span>
+                      <span>
+                        {detailLoan.createdAt
+                          ? formatDateTime(detailLoan.createdAt)
+                          : "—"}
+                      </span>
+                    </div>
+
+                    {(detailLoan.leaderApprovedBy || detailLoan.approvedBy) && (
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-muted-foreground">
+                          Aprobado por
+                        </span>
+                        <span className="truncate">
+                          {
+                            (
+                              detailLoan.leaderApprovedBy ||
+                              detailLoan.approvedBy
+                            ).name
+                          }
+                        </span>
+                      </div>
+                    )}
+
+                    {detailLoan.leaderApprovedAt && (
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-muted-foreground">
+                          Aprobado el
+                        </span>
+                        <span>
+                          {formatDateTime(detailLoan.leaderApprovedAt)}
+                        </span>
+                      </div>
+                    )}
+
+                    {detailLoan.deliveredBy && (
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-muted-foreground">
+                          Entregado por
+                        </span>
+                        <span className="truncate">
+                          {detailLoan.deliveredBy.name}
+                        </span>
+                      </div>
+                    )}
+
+                    {detailLoan.deliveredAt && (
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-muted-foreground">
+                          Entregado el
+                        </span>
+                        <span>{formatDateTime(detailLoan.deliveredAt)}</span>
+                      </div>
+                    )}
+
+                    {detailLoan.returnedBy && (
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-muted-foreground">
+                          Devuelto por
+                        </span>
+                        <span className="truncate">
+                          {detailLoan.returnedBy.name}
+                        </span>
+                      </div>
+                    )}
+
+                    {detailLoan.actualReturnDate && (
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-muted-foreground">
+                          Devuelto el
+                        </span>
+                        <span>
+                          {formatDateTime(detailLoan.actualReturnDate)}
+                        </span>
+                      </div>
+                    )}
+
+                    {detailLoan.expectedReturnDate && (
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-muted-foreground">
+                          Devolución esperada
+                        </span>
+                        <span>{formatDate(detailLoan.expectedReturnDate)}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setShowDetailDialog(false)}
+              >
+                Cerrar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <EditEquipmentDialog
+          open={showEditEquipmentDialog}
+          onOpenChange={setShowEditEquipmentDialog}
+          equipment={editingEquipment}
+          locations={locations ?? []}
+          onSubmit={handleUpdateEquipment}
+          isPending={updateEquipment.isPending}
+        />
+      </div>
+    </TooltipProvider>
   );
 }
