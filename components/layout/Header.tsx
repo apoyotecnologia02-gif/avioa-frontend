@@ -55,6 +55,7 @@ function getBreadcrumbs(pathname: string): Breadcrumb[] {
     "hr-validation": "Vacaciones compensadas",
     solicitudes: "Solicitudes",
     certificados: "Certificados",
+    "avi-click": "Avi Click",
   };
 
   let currentPath = "";
