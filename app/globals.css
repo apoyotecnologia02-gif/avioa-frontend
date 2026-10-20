@@ -225,7 +225,17 @@
 
 .rich-content p,
 .ProseMirror p {
-  margin: 0.25rem 0;
+  margin: 0.65rem 0;
+}
+
+.rich-content p + p,
+.ProseMirror p + p {
+  margin-top: 0.85rem;
+}
+
+.rich-content p:empty,
+.ProseMirror p:empty {
+  min-height: 1em;
 }
 
 .rich-content a,
