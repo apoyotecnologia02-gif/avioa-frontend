@@ -5,13 +5,13 @@ import { useAssistant } from "./AssistantProvider";
 import { cn } from "@/lib/utils";
 import { Loader2, MessageCircle, Send, Sparkles, X } from "lucide-react";
 import { Button } from "../ui/button";
-import { AssistantChatMessage } from "@/hooks/useAssistantChat";
+import { AssistantChatMessage, PendingAssistantAction } from "@/hooks/useAssistantChat";
 import { MarkdownMessage } from "./MarkdownMessage";
 
 export function AssistantChatBubble({ className }: { className?: string }) {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
-  const { messages, isStreaming, send, reset } = useAssistant();
+  const { messages, isStreaming, isActionLoading, pendingActions, send, reset, confirmAction } = useAssistant();
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -131,6 +131,10 @@ export function AssistantChatBubble({ className }: { className?: string }) {
             <MessageBubble key={m.id} message={m} />
           ))}
 
+          {pendingActions.map((action) => (
+            <PendingActionCard key={action.actionId} action={action} loading={isActionLoading === action.actionId} onConfirm={() => void confirmAction(action.actionId, true)} onCancel={() => void confirmAction(action.actionId, false)} />
+          ))}
+
           {showThinking && (
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <Loader2 className="h-3 w-3 animate-spin" />
@@ -201,6 +205,7 @@ function EmptyState({ onPick }: { onPick: (text: string) => void }) {
     "¿Cuántos días de vacaciones tengo?",
     "¿Cuál es mi próxima ausencia?",
     "¿Tengo solicitudes pendientes?",
+    "Consulta de nómina para el período de enero de 2026",
   ];
   return (
     <div className="space-y-3 pt-2">
@@ -220,5 +225,18 @@ function EmptyState({ onPick }: { onPick: (text: string) => void }) {
         ))}
       </div>
     </div>
+  );
+}
+
+function PendingActionCard({ action, loading, onConfirm, onCancel }: { action: PendingAssistantAction; loading: boolean; onConfirm: () => void; onCancel: () => void }) {
+  const expired = new Date(action.expiresAt).getTime() <= Date.now() || action.status === "EXPIRED";
+  const status = expired ? "Vencida" : action.status === "CONFIRMED" ? "Confirmada" : action.status === "CANCELLED" ? "Cancelada" : action.status === "ERROR" ? "Error al actualizar" : "Pendiente de confirmación";
+  return (
+    <section className="rounded-xl border bg-background p-3 text-sm" aria-label="Acción pendiente">
+      <p className="font-medium">{action.summary}</p>
+      <p className="mt-1 text-xs text-muted-foreground">{status} · Vence {new Date(action.expiresAt).toLocaleString()}</p>
+      {action.result !== undefined && <pre className="mt-2 max-h-24 overflow-auto whitespace-pre-wrap text-xs text-muted-foreground">{JSON.stringify(action.result, null, 2)}</pre>}
+      {!expired && (!action.status || action.status === "ERROR") && <div className="mt-3 flex gap-2"><Button size="sm" onClick={onConfirm} disabled={loading}>{loading ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : null}Confirmar</Button><Button size="sm" variant="outline" onClick={onCancel} disabled={loading}>Cancelar</Button></div>}
+    </section>
   );
 }
