@@ -24,6 +24,7 @@ export enum EquipmentCategory {
   MONITOR = "MONITOR",
   PRINTER = "PRINTER",
   PROJECTOR = "PROJECTOR",
+  PC = "PC",
   OTHER = "OTHER",
 }
 

@@ -1,4 +1,3 @@
-// app/api/leaves/active/route.ts
 import { parseResponseData } from "@/utils/parse-response-data.util";
 import { NextResponse } from "next/server";
 

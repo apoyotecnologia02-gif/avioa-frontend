@@ -18,7 +18,9 @@ interface FeedQuickActionsProps {
   onFlightDealsClick?: () => void;
 }
 
-export function FeedQuickActions({ onFlightDealsClick }: FeedQuickActionsProps = {}) {
+export function FeedQuickActions({
+  onFlightDealsClick,
+}: FeedQuickActionsProps = {}) {
   const router = useRouter();
   const [isAbsencesOpen, setIsAbsencesOpen] = useState(false);
   const [isCertificatesOpen, setIsCertificatesOpen] = useState(false);
@@ -34,15 +36,15 @@ export function FeedQuickActions({ onFlightDealsClick }: FeedQuickActionsProps =
       label: "Ausencias",
       onClick: () => setIsAbsencesOpen(true),
     },
-    {
-      icon: Gift,
-      label: "Ver Beneficios",
-      onClick: () => router.push("/points"),
-    },
+    // {
+    //   icon: Gift,
+    //   label: "Ver Beneficios",
+    //   onClick: () => router.push("/points"),
+    // },
     {
       icon: FileCheck,
       label: "Certificados laborales",
-      onClick: () => setIsCertificatesOpen(true),
+      onClick: () => router.push("/certificados"),
     },
   ];
 

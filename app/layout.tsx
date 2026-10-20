@@ -3,7 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { Providers } from "@/components/providers";
 import { AuthProvider } from "@/components/context/AuthContext";
-import { useEquipmentLoanSocket } from '@/hooks/useEquipmentLoanSocket';
+import { useEquipmentLoanSocket } from "@/hooks/useEquipmentLoanSocket";
 import { DebugAuth } from "@/components/DebugAuth";
 import "./globals.css";
 import {
@@ -41,7 +41,6 @@ export default function RootLayout({
     <html lang="es" suppressHydrationWarning>
       <body className="bg-background font-sans antialiased">
         <AuthProvider>
-          
           <Providers>{children}</Providers>
           <BirthdayCelebrationModal />
         </AuthProvider>
