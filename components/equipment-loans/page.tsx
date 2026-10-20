@@ -139,6 +139,7 @@ const categoryLabels: Record<EquipmentCategory, string> = {
   [EquipmentCategory.MONITOR]: "Monitor",
   [EquipmentCategory.PRINTER]: "Impresora",
   [EquipmentCategory.PROJECTOR]: "Proyector",
+  [EquipmentCategory.PC]: "PC de escritorio",
   [EquipmentCategory.OTHER]: "Otro",
 };
 
