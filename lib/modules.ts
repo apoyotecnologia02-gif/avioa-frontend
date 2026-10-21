@@ -156,6 +156,21 @@ export const APP_MODULES = [
     label: "Gestionar saldos de vacaciones",
     description: "Editar y aprobar saldos de vacaciones",
   },
+  {
+    key: "TRANSFERS_PROVIDERS",
+    kind: "capability",
+    category: "ADMIN",
+    label: "Gestionar proveedores de traslados",
+    description: "Crear, editar y activar proveedores de traslados",
+    action: ["create", "update"],
+  },
+  {
+    key: "TRANSFERS_CONNECTIONS",
+    kind: "capability",
+    category: "ADMIN",
+    label: "Gestionar conexiones de traslados",
+    description: "Administrar conexiones del módulo de traslados",
+  },
 ] as const;
 
 export type AppModuleKey = (typeof APP_MODULES)[number]["key"];
