@@ -229,6 +229,7 @@ export function EquipmentLoans() {
   const [showReturnDialog, setShowReturnDialog] = useState(false);
   const [showDeliverDialog, setShowDeliverDialog] = useState(false);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [selectedTargetUserId, setSelectedTargetUserId] = useState("");
   const [detailLoan, setDetailLoan] = useState<any>(null);
   const [selectedEquipmentId, setSelectedEquipmentId] = useState("");
   const [loanReason, setLoanReason] = useState("");
@@ -247,6 +248,7 @@ export function EquipmentLoans() {
     useCreateLoan,
     useUpdateLoanStatus,
     useCancelLoan,
+    useMyTeam,
     useCreateEquipment,
     useUpdateEquipment,
   } = useEquipmentLoans();
@@ -276,6 +278,8 @@ export function EquipmentLoans() {
   const updateStatus = useUpdateLoanStatus();
   const cancelLoan = useCancelLoan();
   const updateEquipment = useUpdateEquipment();
+  const canCreateForOthers = isLeader || isAdmin;
+  const { data: myTeam } = useMyTeam({ enabled: canCreateForOthers });
 
   useEffect(() => {
     const handleEquipmentLoanUpdate = () => {
@@ -489,24 +493,28 @@ export function EquipmentLoans() {
   const handleCreateLoan = () => {
     if (!selectedEquipmentId) return;
 
-    createLoan.mutate(
-      {
-        equipmentId: selectedEquipmentId,
-        reason: loanReason,
-        observation: loanObservation,
+    const payload: any = {
+      equipmentId: selectedEquipmentId,
+      reason: loanReason,
+      observation: loanObservation,
+    };
+
+    if (selectedTargetUserId) {
+      payload.targetUserId = selectedTargetUserId;
+    }
+
+    createLoan.mutate(payload, {
+      onSuccess: () => {
+        setShowLoanDialog(false);
+        setSelectedEquipmentId("");
+        setSelectedTargetUserId("");
+        setLoanReason("");
+        setLoanObservation("");
+        refetchMyLoans();
+        refetchEquipment();
+        if (canManageLoans) refetchAllLoans();
       },
-      {
-        onSuccess: () => {
-          setShowLoanDialog(false);
-          setSelectedEquipmentId("");
-          setLoanReason("");
-          setLoanObservation("");
-          refetchMyLoans();
-          refetchEquipment();
-          if (canManageLoans) refetchAllLoans();
-        },
-      },
-    );
+    });
   };
 
   const handleApproveLoan = (id: string) => {
@@ -722,7 +730,7 @@ export function EquipmentLoans() {
               </Button>
             )}
 
-           {/* <Button 
+            {/* <Button 
             >
               <PackagePlus className="mr-2 h-4 w-4" />
               Solicitar Equipo
@@ -1489,9 +1497,7 @@ export function EquipmentLoans() {
                                       )}
 
                                       {!hasActions && (
-                                        <span className="text-xs text-muted-foreground">
-                                          
-                                        </span>
+                                        <span className="text-xs text-muted-foreground"></span>
                                       )}
                                     </div>
                                   </TableCell>
@@ -1644,6 +1650,33 @@ export function EquipmentLoans() {
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2 min-w-0">
+                {canCreateForOthers && (
+                  <div className="space-y-2 min-w-0">
+                    <Label>Solicitar para</Label>
+                    <Select
+                      value={selectedTargetUserId || "__myself__"}
+                      onValueChange={(v) =>
+                        setSelectedTargetUserId(v === "__myself__" ? "" : v)
+                      }
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Para mí" />
+                      </SelectTrigger>
+                      <SelectContent className="w-[var(--radix-select-trigger-width)]">
+                        <SelectItem value="__myself__">Para mí</SelectItem>
+                        {myTeam?.map((member: any) => (
+                          <SelectItem key={member.userId} value={member.userId}>
+                            {member.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Si seleccionas un colaborador, la solicitud se creará a su
+                      nombre y te aparecerá a ti para aprobarla.
+                    </p>
+                  </div>
+                )}
                 <Label htmlFor="equipment">Equipo</Label>
                 <Select
                   value={selectedEquipmentId}

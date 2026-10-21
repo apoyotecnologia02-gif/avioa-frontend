@@ -133,6 +133,14 @@ const api = {
       if (!res.ok) throw new Error("Error al obtener mis equipos");
       return res.json();
     }),
+
+  getMyTeam: (): Promise<any[]> =>
+    fetch(`${API_URL}?path=my-team`, {
+      credentials: "include",
+    }).then((res) => {
+      if (!res.ok) throw new Error("Error al obtener mi equipo");
+      return res.json();
+    }),
 };
 
 // ===== HOOKS =====
@@ -257,6 +265,14 @@ export function useEquipmentLoans() {
     });
   };
 
+  const useMyTeam = (options?: { enabled?: boolean }) => {
+    return useQuery({
+      queryKey: ["equipment-loans", "my-team"],
+      queryFn: api.getMyTeam,
+      enabled: options?.enabled ?? true,
+    });
+  };
+
   const useLocations = () => {
     return useQuery({
       queryKey: EQUIPMENT_LOAN_KEYS.locationsList(),
@@ -273,6 +289,7 @@ export function useEquipmentLoans() {
     useUpdateLoanStatus,
     useCancelLoan,
     useLocations,
+    useMyTeam,
     useMyLoanedEquipment,
     useUpdateEquipment,
   };
