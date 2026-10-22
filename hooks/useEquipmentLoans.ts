@@ -97,14 +97,20 @@ const api = {
     });
   },
 
-  updateLoanStatus: (id: string, status: string) =>
+  updateLoanStatus: (
+    id: string,
+    data: { status: string; rejectionReason?: string },
+  ) =>
     fetch(`${API_URL}?path=loans/${id}/status`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
+      body: JSON.stringify(data),
       credentials: "include",
-    }).then((res) => {
-      if (!res.ok) throw new Error("Error al actualizar estado");
+    }).then(async (res) => {
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Error al actualizar estado");
+      }
       return res.json();
     }),
 
@@ -230,8 +236,15 @@ export function useEquipmentLoans() {
 
   const useUpdateLoanStatus = () => {
     return useMutation({
-      mutationFn: ({ id, status }: { id: string; status: string }) =>
-        api.updateLoanStatus(id, status),
+      mutationFn: ({
+        id,
+        status,
+        rejectionReason,
+      }: {
+        id: string;
+        status: string;
+        rejectionReason?: string;
+      }) => api.updateLoanStatus(id, { status, rejectionReason }),
       onSuccess: () => {
         queryClient.invalidateQueries({
           queryKey: EQUIPMENT_LOAN_KEYS.loansList(),
