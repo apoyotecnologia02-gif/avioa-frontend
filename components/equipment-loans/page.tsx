@@ -404,6 +404,7 @@ export function EquipmentLoans() {
   };
 
   const getAvailableActions = (loan: any) => {
+    console.log("DEBUG status del loan:", JSON.stringify(loan.status), "type:", typeof loan.status);
     const status = loan.status as LoanStatus;
     const empleadoTieneLider = loan.user?.leaderId != null;
     const esMiSubordinado = loan.user?.leaderId === currentUserId;
@@ -416,16 +417,21 @@ export function EquipmentLoans() {
     };
 
     if (status === LoanStatus.PENDING) {
-      if (isAdmin) {
-        actions.canApprove = true;
-        actions.canReject = true;
-      } else if (isSupport && !empleadoTieneLider) {
-        actions.canApprove = true;
-        actions.canReject = true;
-      } else if (isLeader && esMiSubordinado) {
+      console.log("DEBUG entró al if de PENDING");
+      // Admin siempre puede
+      // Tech puede si el empleado no tiene líder
+      // Líder puede si es el líder del solicitante (sin importar si también es tech)
+      const puedeAprobar =
+        isAdmin ||
+        (isSupport && !empleadoTieneLider) ||
+        (isLeader && esMiSubordinado);
+
+      if (puedeAprobar) {
         actions.canApprove = true;
         actions.canReject = true;
       }
+    }else {
+      console.log("DEBUG NO entró al if de PENDING, status es:", status);
     }
 
     if (status === LoanStatus.APPROVED) {
@@ -440,9 +446,10 @@ export function EquipmentLoans() {
         actions.canReturn = true;
       }
     }
-
+    console.log("DEBUG", { isAdmin, isSupport, isLeader, currentUserId, leaderId: loan.user?.leaderId });
     return actions;
   };
+  
 
   const buildActions = (loan: any, actions: any): LoanAction[] => {
     const list: LoanAction[] = [];
@@ -1350,6 +1357,7 @@ export function EquipmentLoans() {
                                 actions,
                               );
                               const hasActions = accionesDelLoan.length > 0;
+                               console.log("DEBUG actions para loan:", loan.equipmentLoanId, actions);
 
                               return (
                                 <TableRow
