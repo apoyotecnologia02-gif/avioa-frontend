@@ -56,6 +56,7 @@ function getBreadcrumbs(pathname: string): Breadcrumb[] {
     solicitudes: "Solicitudes",
     certificados: "Certificados",
     "avi-click": "Avi Click",
+    transfers: "Traslados",
   };
 
   let currentPath = "";

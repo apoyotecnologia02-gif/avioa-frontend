@@ -189,7 +189,7 @@ export const NAV_SECTIONS: NavSection[] = [
             href: "/vuelos",
             label: "Ver vuelos",
           },
-          { href: "/transfers", label: "Traslados" },
+          // { href: "/transfers", label: "Traslados" },
         ],
       },
       {

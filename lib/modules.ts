@@ -133,6 +133,13 @@ export const APP_MODULES = [
     label: "Gastos aVioa",
     description: "Acceso al link para registrar gastos",
   },
+  {
+    key: "AUXILIARY",
+    kind: "module",
+    category: "HERRAMIENTAS",
+    label: "Modulo de Auxiliares",
+    description: "Otorgar acceso al area de auxiliares para acceder al modulo",
+  },
 
   // ── Administración (capacidades) ──────────────────────
   {
