@@ -133,6 +133,13 @@ export const APP_MODULES = [
     label: "Gastos aVioa",
     description: "Acceso al link para registrar gastos",
   },
+  {
+    key: "AUXILIARY",
+    kind: "module",
+    category: "HERRAMIENTAS",
+    label: "Modulo de Auxiliares",
+    description: "Otorgar acceso al area de auxiliares para acceder al modulo",
+  },
 
   // ── Administración (capacidades) ──────────────────────
   {
@@ -155,6 +162,21 @@ export const APP_MODULES = [
     category: "ADMIN",
     label: "Gestionar saldos de vacaciones",
     description: "Editar y aprobar saldos de vacaciones",
+  },
+  {
+    key: "TRANSFERS_PROVIDERS",
+    kind: "capability",
+    category: "ADMIN",
+    label: "Gestionar proveedores de traslados",
+    description: "Crear, editar y activar proveedores de traslados",
+    action: ["create", "update"],
+  },
+  {
+    key: "TRANSFERS_CONNECTIONS",
+    kind: "capability",
+    category: "ADMIN",
+    label: "Gestionar conexiones de traslados",
+    description: "Administrar conexiones del módulo de traslados",
   },
 ] as const;
 
