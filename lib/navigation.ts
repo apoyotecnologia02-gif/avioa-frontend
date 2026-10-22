@@ -153,12 +153,12 @@ export const NAV_SECTIONS: NavSection[] = [
           {
             href: "/loans",
             label: "Solicitudes de equipos",
-            module: "EQUIPMENT_LOANS",
+            // module: "EQUIPMENT_LOANS",
           },
           {
             href: "/equipment-maintenance",
             label: "Mantenimiento de equipos",
-            module: "MAINTENANCE",
+            // module: "MAINTENANCE",
           },
           // { href: "/equipment-requests", label: "Solicitud Equipos" },
           // { href: "/books-files", label: "Biblioteca" }
@@ -189,6 +189,7 @@ export const NAV_SECTIONS: NavSection[] = [
             href: "/vuelos",
             label: "Ver vuelos",
           },
+          // { href: "/transfers", label: "Traslados" },
         ],
       },
       {

@@ -17,6 +17,8 @@ const MODULE_GATES: Record<string, string[]> = {
   "/admin/users": ["USERS_ADMIN"],
   "/admin/rewards": ["USERS_ADMIN_REWARDS"],
   "/admin/vacations": ["USERS_ADMIN_VACATIONS"],
+  "/admin/transfers/providers": ["TRANSFERS_PROVIDERS"],
+  "/admin/transfers/connections": ["TRANSFERS_CONNECTIONS"],
   "/admin/permissions": ["USERS_ADMIN"],
   "/nomina": ["NOMINA"],
   "/nomina/solicitudes": ["NOMINA_SOLICITUDES"],
@@ -152,6 +154,8 @@ export function middleware(request: NextRequest) {
       "USERS_ADMIN",
       "USERS_ADMIN_REWARDS",
       "USERS_ADMIN_VACATIONS",
+      "TRANSFERS_PROVIDERS",
+      "TRANSFERS_CONNECTIONS",
     ];
     if (!hasModuleAccessFromToken(token, adminModules)) {
       return NextResponse.redirect(new URL("/dashboard", request.url));
