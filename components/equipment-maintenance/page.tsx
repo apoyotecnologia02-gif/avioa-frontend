@@ -1331,7 +1331,7 @@ export function Maintenance() {
                     <SelectItem value={MaintenanceStatus.RESOLVED}>
                       Resuelto
                     </SelectItem>
-                    <SelectItem value={MaintenanceStatus.REJECTED}>
+                      <SelectItem value={MaintenanceStatus.REJECTED}>
                       Rechazado
                     </SelectItem>
                   </SelectContent>
@@ -1345,6 +1345,7 @@ export function Maintenance() {
                     placeholder="¿Cómo se resolvió el problema?"
                     value={resolutionNotes}
                     onChange={(e) => setResolutionNotes(e.target.value)}
+                    maxLength={500}
                   />
                 </div>
               )}
@@ -1356,8 +1357,14 @@ export function Maintenance() {
                     placeholder="Explica por qué se rechaza la solicitud"
                     value={rejectedReason}
                     onChange={(e) => setRejectedReason(e.target.value)}
+                    maxLength={500}
                     required
                   />
+                  <p>
+                    <span className="text-xs text-muted-foreground text-right">
+                      {rejectedReason.length}/500
+                    </span>
+                  </p>
                 </div>
               )}
             </div>

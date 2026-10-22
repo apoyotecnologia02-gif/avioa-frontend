@@ -229,6 +229,7 @@ export function EquipmentLoans() {
   const [showReturnDialog, setShowReturnDialog] = useState(false);
   const [showDeliverDialog, setShowDeliverDialog] = useState(false);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [selectedTargetUserId, setSelectedTargetUserId] = useState("");
   const [detailLoan, setDetailLoan] = useState<any>(null);
   const [selectedEquipmentId, setSelectedEquipmentId] = useState("");
   const [loanReason, setLoanReason] = useState("");
@@ -236,6 +237,9 @@ export function EquipmentLoans() {
   const [editingEquipmentId, setEditingEquipmentId] = useState<string | null>(
     null,
   );
+  const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
+  const [rejectLoanId, setRejectLoanId] = useState<string | null>(null);
   const [showEditEquipmentDialog, setShowEditEquipmentDialog] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -247,6 +251,7 @@ export function EquipmentLoans() {
     useCreateLoan,
     useUpdateLoanStatus,
     useCancelLoan,
+    useMyTeam,
     useCreateEquipment,
     useUpdateEquipment,
   } = useEquipmentLoans();
@@ -276,6 +281,8 @@ export function EquipmentLoans() {
   const updateStatus = useUpdateLoanStatus();
   const cancelLoan = useCancelLoan();
   const updateEquipment = useUpdateEquipment();
+  const canCreateForOthers = isLeader || isAdmin;
+  const { data: myTeam } = useMyTeam({ enabled: canCreateForOthers });
 
   useEffect(() => {
     const handleEquipmentLoanUpdate = () => {
@@ -400,6 +407,12 @@ export function EquipmentLoans() {
   };
 
   const getAvailableActions = (loan: any) => {
+    console.log(
+      "DEBUG status del loan:",
+      JSON.stringify(loan.status),
+      "type:",
+      typeof loan.status,
+    );
     const status = loan.status as LoanStatus;
     const empleadoTieneLider = loan.user?.leaderId != null;
     const esMiSubordinado = loan.user?.leaderId === currentUserId;
@@ -412,16 +425,21 @@ export function EquipmentLoans() {
     };
 
     if (status === LoanStatus.PENDING) {
-      if (isAdmin) {
-        actions.canApprove = true;
-        actions.canReject = true;
-      } else if (isSupport && !empleadoTieneLider) {
-        actions.canApprove = true;
-        actions.canReject = true;
-      } else if (isLeader && esMiSubordinado) {
+      console.log("DEBUG entró al if de PENDING");
+      // Admin siempre puede
+      // Tech puede si el empleado no tiene líder
+      // Líder puede si es el líder del solicitante (sin importar si también es tech)
+      const puedeAprobar =
+        isAdmin ||
+        (isSupport && !empleadoTieneLider) ||
+        (isLeader && esMiSubordinado);
+
+      if (puedeAprobar) {
         actions.canApprove = true;
         actions.canReject = true;
       }
+    } else {
+      console.log("DEBUG NO entró al if de PENDING, status es:", status);
     }
 
     if (status === LoanStatus.APPROVED) {
@@ -436,7 +454,13 @@ export function EquipmentLoans() {
         actions.canReturn = true;
       }
     }
-
+    console.log("DEBUG", {
+      isAdmin,
+      isSupport,
+      isLeader,
+      currentUserId,
+      leaderId: loan.user?.leaderId,
+    });
     return actions;
   };
 
@@ -489,24 +513,28 @@ export function EquipmentLoans() {
   const handleCreateLoan = () => {
     if (!selectedEquipmentId) return;
 
-    createLoan.mutate(
-      {
-        equipmentId: selectedEquipmentId,
-        reason: loanReason,
-        observation: loanObservation,
+    const payload: any = {
+      equipmentId: selectedEquipmentId,
+      reason: loanReason,
+      observation: loanObservation,
+    };
+
+    if (selectedTargetUserId) {
+      payload.targetUserId = selectedTargetUserId;
+    }
+
+    createLoan.mutate(payload, {
+      onSuccess: () => {
+        setShowLoanDialog(false);
+        setSelectedEquipmentId("");
+        setSelectedTargetUserId("");
+        setLoanReason("");
+        setLoanObservation("");
+        refetchMyLoans();
+        refetchEquipment();
+        if (canManageLoans) refetchAllLoans();
       },
-      {
-        onSuccess: () => {
-          setShowLoanDialog(false);
-          setSelectedEquipmentId("");
-          setLoanReason("");
-          setLoanObservation("");
-          refetchMyLoans();
-          refetchEquipment();
-          if (canManageLoans) refetchAllLoans();
-        },
-      },
-    );
+    });
   };
 
   const handleApproveLoan = (id: string) => {
@@ -522,10 +550,25 @@ export function EquipmentLoans() {
   };
 
   const handleRejectLoan = (id: string) => {
+    setRejectLoanId(id);
+    setRejectReason("");
+    setShowRejectDialog(true);
+  };
+
+  const confirmReject = () => {
+    if (!rejectLoanId || !rejectReason.trim()) return;
+
     updateStatus.mutate(
-      { id, status: LoanStatus.REJECTED },
+      {
+        id: rejectLoanId,
+        status: LoanStatus.REJECTED,
+        rejectionReason: rejectReason.trim(),
+      },
       {
         onSuccess: () => {
+          setShowRejectDialog(false);
+          setRejectLoanId(null);
+          setRejectReason("");
           refetchAllLoans();
         },
       },
@@ -722,7 +765,7 @@ export function EquipmentLoans() {
               </Button>
             )}
 
-           {/* <Button 
+            {/* <Button 
             >
               <PackagePlus className="mr-2 h-4 w-4" />
               Solicitar Equipo
@@ -1342,6 +1385,11 @@ export function EquipmentLoans() {
                                 actions,
                               );
                               const hasActions = accionesDelLoan.length > 0;
+                              console.log(
+                                "DEBUG actions para loan:",
+                                loan.equipmentLoanId,
+                                actions,
+                              );
 
                               return (
                                 <TableRow
@@ -1489,9 +1537,7 @@ export function EquipmentLoans() {
                                       )}
 
                                       {!hasActions && (
-                                        <span className="text-xs text-muted-foreground">
-                                          
-                                        </span>
+                                        <span className="text-xs text-muted-foreground"></span>
                                       )}
                                     </div>
                                   </TableCell>
@@ -1644,6 +1690,33 @@ export function EquipmentLoans() {
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2 min-w-0">
+                {canCreateForOthers && (
+                  <div className="space-y-2 min-w-0">
+                    <Label>Solicitar para</Label>
+                    <Select
+                      value={selectedTargetUserId || "__myself__"}
+                      onValueChange={(v) =>
+                        setSelectedTargetUserId(v === "__myself__" ? "" : v)
+                      }
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Para mí" />
+                      </SelectTrigger>
+                      <SelectContent className="w-[var(--radix-select-trigger-width)]">
+                        <SelectItem value="__myself__">Para mí</SelectItem>
+                        {myTeam?.map((member: any) => (
+                          <SelectItem key={member.userId} value={member.userId}>
+                            {member.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Si seleccionas un colaborador, la solicitud se creará a su
+                      nombre y te aparecerá a ti para aprobarla.
+                    </p>
+                  </div>
+                )}
                 <Label htmlFor="equipment">Equipo</Label>
                 <Select
                   value={selectedEquipmentId}
@@ -1868,6 +1941,54 @@ export function EquipmentLoans() {
           </DialogContent>
         </Dialog>
 
+        <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
+          <DialogContent className="w-[calc(100vw-2rem)] max-w-md overflow-hidden">
+            <DialogHeader>
+              <DialogTitle>Rechazar solicitud</DialogTitle>
+              <DialogDescription>
+                Indica el motivo del rechazo. El solicitante y su líder verán
+                este mensaje.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-2 py-4">
+              <Label htmlFor="reject-reason">Motivo del rechazo *</Label>
+              <Textarea
+                id="reject-reason"
+                placeholder="Ej: El equipo no está disponible en la fecha solicitada"
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                rows={4}
+                maxLength={500}
+                required
+              />
+
+              <p className="text-xs text-muted-foreground text-right">
+                {rejectReason.length}/500
+              </p>
+              
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowRejectDialog(false);
+                  setRejectLoanId(null);
+                  setRejectReason("");
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={confirmReject}
+                disabled={updateStatus.isPending || !rejectReason.trim()}
+              >
+                {updateStatus.isPending ? "Rechazando..." : "Confirmar rechazo"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         <Dialog open={showDetailDialog} onOpenChange={setShowDetailDialog}>
           <DialogContent className="w-[calc(100vw-2rem)] max-w-lg">
             <DialogHeader>
@@ -1928,6 +2049,21 @@ export function EquipmentLoans() {
                       Observaciones
                     </p>
                     <p className="text-sm">{detailLoan.observation}</p>
+                  </div>
+                )}
+
+                {detailLoan.rejectionReason && (
+                  <div className="rounded-lg border p-4 space-y-1 bg-red-50/50 dark:bg-red-950/20 border-red-200 dark:border-red-900">
+                    <p className="text-xs font-medium text-red-700 dark:text-red-300 uppercase flex items-center gap-1">
+                      <XCircle className="h-3 w-3" />
+                      Motivo del rechazo
+                    </p>
+
+                    <div className="max-h-[150px] overflow-y-auto pr-2">
+                      <p className="text-sm whitespace-pre-wrap break-words">
+                        {detailLoan.rejectionReason}
+                      </p>
+                    </div>
                   </div>
                 )}
 
