@@ -200,13 +200,13 @@ export const NAV_SECTIONS: NavSection[] = [
           {
             href: "/overtime",
             label: "Horas extra",
-            module: "OVERTIME"
+            // module: "OVERTIME"
           },
           // PROXIMAMENTE
           {
             href: "/leaves",
             label: "Vacaciones y ausencias",
-            module: "LEAVES",
+            // module: "LEAVES",
           },
           {
             href: "/leaves/hr-validation",
