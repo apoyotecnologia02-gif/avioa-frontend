@@ -140,6 +140,14 @@ export const APP_MODULES = [
     label: "Modulo de Auxiliares",
     description: "Otorgar acceso al area de auxiliares para acceder al modulo",
   },
+  {
+    key: "COMMERCIAL",
+    kind: "module",
+    category: "HERRAMIENTAS",
+    label: "Comercial",
+    description: "Espacio de trabajo del equipo comercial",
+    action: ["create", "update", "delete"],
+  },
 
   // ── Administración (capacidades) ──────────────────────
   {

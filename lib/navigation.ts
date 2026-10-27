@@ -17,6 +17,7 @@ import {
   Coins,
   ClipboardList,
   Wrench,
+  Compass,
 } from "lucide-react";
 import { isAdminRole, isLeaderOrManagerOrAdminRole } from "@/lib/roles";
 import { AppModuleKey } from "./modules";
@@ -284,6 +285,28 @@ export const NAV_SECTIONS: NavSection[] = [
       //       { href: "/org-chart", label: "Organigrama" },
       //     ],
       //   },
+
+      {
+        key: "comercial",
+        label: "Comercial",
+        icon: Compass,
+        module: "COMMERCIAL",
+        items: [
+          { href: "/comercial", label: "Resumen", exact: true },
+          { href: "/comercial/ofertas", label: "Ofertas y destinos" },
+          { href: "/comercial/cotizaciones", label: "Cotizaciones" },
+          { href: "/comercial/documentos", label: "Documentos y datos" },
+          { href: "/comercial/videos", label: "Videos de hoteles" },
+          { href: "/comercial/protocolo", label: "Protocolo de atención" },
+          { href: "/comercial/respuestas", label: "Respuestas rápidas" },
+          { href: "/comercial/tarifas", label: "Tarifas y planes" },
+          { href: "/comercial/operadores", label: "Links de operadores" },
+          {
+            href: "/comercial/asistente-correos",
+            label: "Asistente de correos",
+          },
+        ],
+      },
     ],
   },
   {
@@ -308,6 +331,7 @@ export const NAV_SECTIONS: NavSection[] = [
       // },
     ],
   },
+
   {
     label: "Administración",
     groups: [
