@@ -25,6 +25,14 @@ export interface OfertaVuelo {
   veredicto: string;
   pct_vs_piso?: number;
   rango?: [number, number] | null;
+  visto_en: string;
+  nivel: string | null;
+  piso: string | null;
+  techo: number | null;
+  vuelo_regreso: string | null;
+  salida_regreso: string | null;
+  llegada_regreso: string | null;
+  separate_tickets: boolean;
 }
 
 export interface FiltrosVuelos {
