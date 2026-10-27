@@ -1,6 +1,7 @@
 import { fmtFecha, fmtPrecio } from "@/lib/format";
 import { OfertaVuelo } from "@/types/vuelos.types";
-import { CalendarDays, Clock, MapPin, Plane } from "lucide-react";
+import { CalendarDays, Clock, Info, MapPin, Plane } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
 const formatHora = (fechaHora?: string) => {
   if (!fechaHora) return "--:--";
@@ -125,15 +126,31 @@ export function FlightDealCard({ deal }: { deal: OfertaVuelo }) {
           <span className="text-[11px] text-muted-foreground">
             {deal.vendedor}
           </span>
-          <a
-            href={deal.link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm font-medium text-primary hover:underline"
-          >
-            Ver oferta →
-          </a>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <a
+                href={deal.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm font-medium text-primary hover:underline"
+              >
+                Ver oferta →
+              </a>
+            </TooltipTrigger>
+            <TooltipContent side="top" align="end" className="max-w-[220px]">
+              <p className="text-xs">
+                ¿Buscas otro horario? Haz clic en <b>Ver oferta</b> para ver más
+                opciones y fechas disponibles.
+              </p>
+            </TooltipContent>
+          </Tooltip>
         </div>
+
+        <p className="flex items-center justify-end gap-1 text-[10px] leading-tight text-muted-foreground">
+          <Info className="h-3 w-3 shrink-0" />
+          <span>Más horarios y fechas en «Ver oferta»</span>
+        </p>
       </div>
     </article>
   );
