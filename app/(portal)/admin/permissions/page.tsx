@@ -11,7 +11,6 @@ import {
   Search,
   Shield,
   ShieldAlert,
-  UsersIcon,
   X,
 } from "lucide-react";
 
@@ -76,7 +75,6 @@ type UsersResponse = {
 
 type ModulePerms = Set<AppModuleAction>;
 
-/** Respuesta del endpoint bulk del backend */
 type BulkUpdateResponse = {
   updated: number;
   skippedAdmins: number;
@@ -89,9 +87,18 @@ type SelectionMode =
   | { type: "multi"; users: User[] }
   | { type: "area"; area: string };
 
-// ─────────────────────────────────────────────────────────────────
-// Página
-// ─────────────────────────────────────────────────────────────────
+function areaKey(s: string) {
+  return s
+    .trim()
+    .replace(/\s+/g, " ")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+function areaDisplay(s: string) {
+  return s.trim().replace(/\s+/g, " ");
+}
 
 export default function AdminsPage() {
   const { toast } = useToast();
@@ -119,7 +126,6 @@ export default function AdminsPage() {
     Map<AppModuleKey, ModulePerms>
   >(new Map());
 
-  // ── Usuarios ────────────────────────────────────────────────────
   const { data: users = [], isLoading } = useQuery({
     queryKey: ["admin-users"],
     queryFn: async () => {
@@ -128,20 +134,36 @@ export default function AdminsPage() {
     },
   });
 
-  // ── Poblar áreas disponibles desde los usuarios ─────────────────
-  // Ajusta si tienes otra fuente (p. ej. un endpoint /admin/areas)
   useEffect(() => {
-    const unique = Array.from(
-      new Set(
-        users
-          .map((u) => (u as unknown as { area?: string }).area)
-          .filter((a): a is string => Boolean(a && a.trim())),
-      ),
-    ).sort();
-    setAreas(unique);
+    const groups = new Map<string, Map<string, number>>();
+
+    for (const u of users) {
+      const raw = (u as { area?: string }).area;
+
+      if (!raw || !raw.trim()) continue;
+
+      const display = areaDisplay(raw);
+      const key = areaKey(raw);
+
+      const variants = groups.get(key) ?? new Map<string, number>();
+      variants.set(display, (variants.get(display) ?? 0) + 1);
+      groups.set(key, variants);
+    }
+
+    const result = Array.from(groups.values()).map((variants) => {
+      return [...variants.entries()].sort(([a, ca], [b, cb]) => {
+        if (cb !== ca) return cb - ca;
+        const aUpper = a === a.toUpperCase();
+        const bUpper = b === b.toUpperCase();
+        if (aUpper !== bUpper) return aUpper ? -1 : 1;
+        return a.localeCompare(b);
+      })[0][0];
+    });
+
+    result.sort((a, b) => a.localeCompare(b));
+    setAreas(result);
   }, [users]);
 
-  // ── Modo de selección derivado ──────────────────────────────────
   const selection: SelectionMode = useMemo(() => {
     if (areaInput.trim()) return { type: "area", area: areaInput.trim() };
     const ids = Array.from(selectedUserIds);
@@ -155,7 +177,6 @@ export default function AdminsPage() {
   const singleUserId =
     selection.type === "single" ? selection.user.userId : null;
 
-  // ── Permisos (solo modo 1 usuario) ──────────────────────────────
   const { data: userPerms, isFetching: loadingPerms } = useQuery({
     queryKey: ["user-permissions", singleUserId],
     enabled: !!singleUserId && dialogOpen,
@@ -168,7 +189,6 @@ export default function AdminsPage() {
     },
   });
 
-  // Hidratar estado: single → server; bulk → reset
   useEffect(() => {
     if (!dialogOpen) return;
     if (singleUserId && userPerms) {
@@ -186,7 +206,6 @@ export default function AdminsPage() {
     }
   }, [dialogOpen, singleUserId, userPerms, isBulkMode]);
 
-  // ── Mutation (siempre usa endpoint bulk) ────────────────────────
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (selection.type === "none") return;
@@ -215,7 +234,7 @@ export default function AdminsPage() {
       }
 
       const { data } = await api.put<BulkUpdateResponse>(
-        "/admin/users/permissions/bulk", // ← ajusta a tu @Put real
+        "/admin/users/permissions/bulk",
         payload,
       );
       return data;
@@ -256,7 +275,6 @@ export default function AdminsPage() {
     },
   });
 
-  // ── Dirty check (solo relevante en modo single) ─────────────────
   const hasChanges = useMemo(() => {
     if (!singleUserId || !userPerms) return isBulkMode;
 
@@ -285,7 +303,6 @@ export default function AdminsPage() {
     return norm(currentActions) !== norm(initialActions);
   }, [singleUserId, userPerms, selectedModules, selectedActions, isBulkMode]);
 
-  // ── Handlers ────────────────────────────────────────────────────
   function openDialogForSelection() {
     if (selection.type === "none") return;
     setDialogOpen(true);
@@ -385,7 +402,6 @@ export default function AdminsPage() {
     setSelectedActions(new Map());
   }
 
-  // ── Selección de usuarios ───────────────────────────────────────
   function toggleUser(userId: string, role: Role) {
     if (role === Role.ADMIN) return;
     if (areaInput) setAreaInput("");
@@ -402,7 +418,6 @@ export default function AdminsPage() {
     setAreaInput("");
   }
 
-  // ── Filtros ─────────────────────────────────────────────────────
   const filteredUsers = useMemo(() => {
     const q = userSearch.trim().toLowerCase();
     if (!q) return users;
@@ -461,7 +476,6 @@ export default function AdminsPage() {
   // ── Render ──────────────────────────────────────────────────────
   return (
     <div className="space-y-6">
-      {/* Header con botón "Aplicar por área" */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h2 className="text-xl font-semibold">Permisos por módulo</h2>
@@ -483,7 +497,6 @@ export default function AdminsPage() {
         </Button>
       </div>
 
-      {/* Card Usuarios */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Usuarios</CardTitle>
@@ -593,7 +606,6 @@ export default function AdminsPage() {
         </CardContent>
       </Card>
 
-      {/* Barra flotante de selección múltiple */}
       {selectedUserIds.size > 0 && !dialogOpen && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 rounded-full border bg-background shadow-lg px-4 py-2">
           <span className="text-sm font-medium">
@@ -610,7 +622,6 @@ export default function AdminsPage() {
         </div>
       )}
 
-      {/* ── Modal: seleccionar área ──────────────────────────────── */}
       <Dialog
         open={areaDialogOpen}
         onOpenChange={(open) => {
@@ -800,10 +811,6 @@ export default function AdminsPage() {
     </div>
   );
 }
-
-// ─────────────────────────────────────────────────────────────────
-// Bloque de categoría
-// ─────────────────────────────────────────────────────────────────
 
 type ModDef = {
   key: AppModuleKey;
