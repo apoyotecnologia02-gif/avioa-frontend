@@ -1,9 +1,9 @@
-import { CommercialCatalog } from "@/components/commercial/catalog/CommercialCatalog";
+import { DriveTables } from "@/components/commercial/drive-tables/DriveTables";
 
 export default function CommercialRatesPage() {
   return (
     <div className="w-full h-full min-h-0">
-      <CommercialCatalog kind="rate" />
+      <DriveTables />
     </div>
   );
 }

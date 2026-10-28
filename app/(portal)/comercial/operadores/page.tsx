@@ -1,9 +1,9 @@
-import { CommercialCatalog } from "@/components/commercial/catalog/CommercialCatalog";
+import { DriveTables } from "@/components/commercial/drive-tables/DriveTables";
 
 export default function CommercialOperatorsPage() {
   return (
     <div className="w-full h-full min-h-0">
-      <CommercialCatalog kind="operator" />
+      <DriveTables operators />
     </div>
   );
 }

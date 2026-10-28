@@ -9,7 +9,6 @@ import {
   useDeleteCommercialResource,
 } from "@/hooks/useCommercialResources";
 import { copyCommercialText } from "@/lib/commercial/clipboard";
-import { examples } from "@/lib/commercial/examples";
 import { toast } from "sonner";
 import { KIND_META } from "../constants";
 import { CatalogToolbar } from "./CatalogToolbar";
@@ -38,21 +37,18 @@ export function CommercialCatalog({
   const permissions = useModulePermission("COMMERCIAL");
   const meta = KIND_META[kind];
 
-  // Estado UI
   const [query, setQuery] = useState("");
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<CommercialResource | null>(null);
   const [detail, setDetail] = useState<CommercialResource | null>(null);
   const [deleting, setDeleting] = useState<CommercialResource | null>(null);
 
-  // Datos
   const { data = [], isLoading, isError, error, refetch, isFetching } =
     useCommercialResources(kind);
   const createMutation = useCreateCommercialResource();
   const updateMutation = useUpdateCommercialResource();
   const deleteMutation = useDeleteCommercialResource();
 
-  // Guard de permisos
   if (!permissions.canAccess) {
     return (
       <div className="flex h-full items-center justify-center p-4">
@@ -63,7 +59,6 @@ export function CommercialCatalog({
     );
   }
 
-  // Filtrado en cliente (búsqueda libre)
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return data;
@@ -72,7 +67,6 @@ export function CommercialCatalog({
     );
   }, [data, query]);
 
-  // Handlers
   function handleCreate() {
     setEditing(null);
     setFormOpen(true);
@@ -108,7 +102,6 @@ export function CommercialCatalog({
 
   return (
     <div className="flex h-full w-full flex-col gap-4">
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-semibold">{title ?? meta.pluralLabel}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -116,7 +109,6 @@ export function CommercialCatalog({
         </p>
       </div>
 
-      {/* Toolbar */}
       <CatalogToolbar
         kind={kind}
         query={query}
@@ -127,7 +119,6 @@ export function CommercialCatalog({
         isRefreshing={isFetching && !isLoading}
       />
 
-      {/* Estados */}
       {isLoading ? (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
@@ -191,7 +182,6 @@ export function CommercialCatalog({
         </>
       )}
 
-      {/* Modales */}
       <ResourceFormModal
         open={formOpen}
         onOpenChange={setFormOpen}

@@ -293,9 +293,9 @@ export const NAV_SECTIONS: NavSection[] = [
         module: "COMMERCIAL",
         items: [
           { href: "/comercial", label: "Resumen", exact: true },
-          { href: "/comercial/ofertas", label: "Ofertas y destinos" },
+          { href: "/comercial/ofertas", label: "Ofertas Tarifario" },
           { href: "/comercial/cotizaciones", label: "Cotizaciones" },
-          { href: "/comercial/documentos", label: "Documentos y datos" },
+          // { href: "/comercial/documentos", label: "Documentos y datos" },
           { href: "/comercial/videos", label: "Videos de hoteles" },
           { href: "/comercial/niltze", label: "Catálogo Niltze" },
           { href: "/comercial/protocolo", label: "Protocolo de atención" },
