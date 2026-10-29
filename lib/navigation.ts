@@ -191,7 +191,7 @@ export const NAV_SECTIONS: NavSection[] = [
           },
           // { href: "/transfers", label: "Traslados" },
           {
-            href: "/auxiliares-operativos",
+            href: "/auxiliares",
             label: "Auxiliares operativos",
             module: "AUXILIARY",
           },
