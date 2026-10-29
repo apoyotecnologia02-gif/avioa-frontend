@@ -1,0 +1,108 @@
+.ai-email-launcher {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 0 24px;
+  padding: 24px 28px;
+  border: 2px solid #0578c8;
+  border-left-width: 7px;
+  border-radius: 18px;
+  background: linear-gradient(110deg, #edf7ff 0%, #fff 85%);
+  box-shadow: 0 6px 20px rgba(5, 120, 200, 0.12);
+  color: #12385a;
+  text-align: left;
+}
+.ai-email-launcher-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 62px;
+  width: 62px;
+  height: 62px;
+  border-radius: 16px;
+  background: #0578c8;
+  color: #fff;
+}
+.ai-email-launcher-copy {
+  flex: 1;
+  min-width: 0;
+}
+.ai-email-launcher .ai-email-launcher-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 9px;
+  border-radius: 6px;
+  background: #ffedaf;
+  color: #514000;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  line-height: 1.3;
+}
+.ai-email-launcher h2 {
+  margin: 8px 0 5px;
+  color: #12385a;
+  font-size: clamp(21px, 2.1vw, 27px);
+  font-weight: 800;
+  line-height: 1.2;
+}
+.ai-email-launcher p {
+  margin: 0;
+  color: #36546b;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.ai-email-launcher .ai-email-launcher-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-shrink: 0;
+  min-height: 54px;
+  padding: 15px 22px;
+  border: 2px solid #0578c8;
+  border-radius: 12px;
+  background: #0578c8;
+  color: #fff;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.3;
+  text-decoration: none;
+  box-shadow: 0 4px 10px rgba(5, 120, 200, 0.2);
+  cursor: pointer;
+}
+.ai-email-launcher .ai-email-launcher-action:hover {
+  background: #045b99;
+  border-color: #045b99;
+  color: #fff;
+}
+.ai-email-launcher .ai-email-launcher-action:focus-visible {
+  outline: 3px solid #12385a;
+  outline-offset: 4px;
+}
+@media (max-width: 760px) {
+  .ai-email-launcher {
+    flex-wrap: wrap;
+    gap: 14px;
+    padding: 20px 17px;
+  }
+  .ai-email-launcher-icon {
+    flex-basis: 48px;
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+  }
+  .ai-email-launcher-copy {
+    flex-basis: calc(100% - 65px);
+  }
+  .ai-email-launcher .ai-email-launcher-action {
+    width: 100%;
+    white-space: normal;
+  }
+  .ai-email-launcher p {
+    font-size: 13px;
+  }
+}

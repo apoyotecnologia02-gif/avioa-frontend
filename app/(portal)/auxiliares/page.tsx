@@ -1,11 +1,9 @@
 "use client";
-
 import { useModulePermission } from "@/hooks/useModulePermission";
-import "./auxiliary.css";
-import Workspace from "@/components/auxiliary/Workspace";
-
-export default function AuxiliaresPage() {
-  const permissions = useModulePermission("AUXILIARY");
-  if (!permissions.canAccess) return <p>No tienes acceso a Auxiliares.</p>;
-  return <Workspace embedded permissions={permissions} />;
+import AuxiliaryDashboard from "@/components/auxiliary-operational/auxiliary-dashboard";
+export default function Page() {
+  const permission = useModulePermission("AUXILIARY");
+  if (!permission.canAccess)
+    return <p>No tienes acceso a Auxiliares operativos.</p>;
+  return <AuxiliaryDashboard />;
 }
