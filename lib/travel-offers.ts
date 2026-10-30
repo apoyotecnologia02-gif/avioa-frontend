@@ -5,19 +5,19 @@ export const offerOrigins = {
     name: "Medellín",
     tab: "OFERTAS MED",
     gid: "915260279",
-    range: "A1:FY7",
+    range: "A1:FY50",
   },
   bogota: {
     name: "Bogotá",
     tab: "OFERTAS BOG",
     gid: "1717217639",
-    range: "A1:DO7",
+    range: "A1:DO50",
   },
   cali: {
     name: "Cali",
     tab: "OFERTAS CALI",
     gid: "1822486735",
-    range: "A1:AH8",
+    range: "A1:AH50",
   },
 } as const;
 export type OfferOrigin = keyof typeof offerOrigins;
@@ -29,12 +29,21 @@ export type OfferEvidence = {
   range: string;
   url: string;
   text: string;
+
+  months?: string;
+  dates?: string;
+  deposit?: string;
+  children?: string;
+  booking?: string;
+  landing?: string;
+  additional?: string;
 };
 export type OfferContext = {
   checkedAt: string;
   sources: { tab: string; range: string; ok: boolean; error?: string }[];
   evidence: OfferEvidence[];
   omitted: number;
+  warning: string;
 };
 export const normalizeOfferText = (s: string) =>
   s
@@ -93,16 +102,19 @@ export function offerColumns(
 ): OfferEvidence[] {
   const source = offerOrigins[origin],
     records: OfferEvidence[] = [];
+
   const labelRow =
     origin === "medellin"
       ? rows.findIndex((row) => normalizeOfferText(row[0] || "") === "oferta")
       : origin === "cali"
         ? 2
         : 3;
+
   if (labelRow < 0 || (origin === "medellin" && labelRow !== 3))
     throw Error(
       "Cambió la estructura de las ofertas. No se puede interpretar el tarifario con seguridad.",
     );
+
   const labels =
     origin === "cali"
       ? {
@@ -113,12 +125,27 @@ export function offerColumns(
           7: "EDADES NIÑOS",
         }
       : { 3: "OFERTA", 4: "MESES DISPONIBLES", 5: "FECHAS", 6: "PLAN SEPARE" };
+
   const max = Math.max(...rows.map((r) => r.length));
+
+  // Empezamos desde la columna 1 o 2 (dependiendo del origen)
   for (let c = origin === "medellin" ? 2 : 1; c < max; c++) {
     const title = rows[0]?.[c]?.trim();
-    if (!title || !(rows[labelRow]?.[c] || "").trim()) continue;
-    if (!/incluye|vuelos|tiquetes|alojamiento|hotel/i.test(rows[labelRow][c]))
-      continue;
+
+    // Si no hay título, o si el título es genérico, saltamos
+    if (!title || title.length < 3) continue;
+
+
+    let hasContent = false;
+    for (let r = labelRow; r < rows.length; r++) {
+      if (rows[r]?.[c]?.trim()) {
+        hasContent = true;
+        break;
+      }
+    }
+
+    if (!hasContent) continue;
+
     const parts = rows.flatMap((r, i) =>
       Object.hasOwn(labels, i) && r[c]?.trim()
         ? [
@@ -126,6 +153,7 @@ export function offerColumns(
           ]
         : [],
     );
+
     const range = `${column(c)}1:${column(c)}${rows.length}`;
     records.push({
       id: `${origin}:${column(c)}`,
@@ -203,7 +231,7 @@ export function selectOfferEvidence(
   const chosen: OfferEvidence[] = [];
   let size = 0;
   for (const { e } of ranked) {
-    if (chosen.length >= 10 || size + e.text.length > 65000) continue;
+    if (chosen.length >= 500 || size + e.text.length > 65000) continue;
     chosen.push(e);
     size += e.text.length;
   }
@@ -328,6 +356,7 @@ export async function readOfferContext(
   });
   return {
     checkedAt: new Date().toISOString(),
+    warning: "",
     sources,
     ...selectOfferEvidence(offers, closures, destination, query),
   };

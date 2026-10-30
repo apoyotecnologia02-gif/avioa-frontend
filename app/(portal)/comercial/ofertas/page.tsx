@@ -1,9 +1,9 @@
-import { CommercialCatalog } from "@/components/commercial/catalog/CommercialCatalog";
+import { OfertasTarifario } from "@/components/commercial/offers/ofertas-tarifario";
 
 export default function CommercialOffersPage() {
   return (
-    <div className="w-full h-full min-h-0">
-      <CommercialCatalog kind="offer" />
+    <div className="h-full w-full min-h-0">
+      <OfertasTarifario />
     </div>
   );
 }
