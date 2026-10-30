@@ -14,14 +14,16 @@ import {
   SelectValue,
 } from "../ui/select";
 import { Button } from "../ui/button";
+import { DESTINOS } from "@/lib/destinos";
 
 export function FilterFields() {
   const { filters, setFilter, clearAll, activeCount } = useFlightFilters();
 
   return (
     <div className="space-y-5">
-      <IataField filterKey="origen" label="Origen" />
-      <IataField filterKey="destino" label="Destino" />
+      {/* <IataField filterKey="origen" label="Origen" /> */}
+      {/* <IataField filterKey="destino" label="Destino" /> */}
+      <DestinoField />
       <AerolineaField />
 
       <div className="flex items-center justify-between">
@@ -151,6 +153,38 @@ function IataField({
         maxLength={3}
         className="font-mono uppercase tracking-wider"
       />
+    </div>
+  );
+}
+
+function DestinoField() {
+  const { filters, setFilter } = useFlightFilters();
+
+  const destinosUnicos = Array.from(
+    new Map(DESTINOS.map((d) => [d.code, d])).values(),
+  );
+
+  return (
+    <div className="space-y-1.5">
+      <Label>Destino</Label>
+      <Select
+        value={filters.destino ?? "any"}
+        onValueChange={(val) => {
+          setFilter("destino", val === "any" ? undefined : val);
+        }}
+      >
+        <SelectTrigger className="w-full">
+          <SelectValue placeholder="Selecciona un destino" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="any">Cualquier destino</SelectItem>
+          {destinosUnicos.map((d) => (
+            <SelectItem key={d.code} value={d.code}>
+              {d.name} ({d.code})
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   );
 }

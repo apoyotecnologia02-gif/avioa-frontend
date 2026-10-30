@@ -146,6 +146,7 @@ export function Sidebar() {
 
           const visibleGroups = section.groups
             .map((group) => {
+              if (!canSeeItem(group, user)) return null;
               if (!group.items || group.items.length === 0) {
                 if (!group.href) return null;
                 return canSeeItem(group, user)

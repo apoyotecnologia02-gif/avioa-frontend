@@ -1,6 +1,20 @@
 import { fmtFecha, fmtPrecio } from "@/lib/format";
 import { OfertaVuelo } from "@/types/vuelos.types";
-import { CalendarDays, Clock, MapPin, Plane } from "lucide-react";
+import { CalendarDays, Clock, Info, MapPin, Plane } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
+
+const formatHora = (fechaHora?: string) => {
+  if (!fechaHora) return "--:--";
+  const parts = fechaHora.split(" ");
+  return parts.length > 1 ? parts[1] : fechaHora;
+};
+
+const textoEscalas = (escalas?: number) => {
+  if (escalas === undefined || escalas === null) return "";
+  return escalas === 0
+    ? "Directo"
+    : `${escalas} escala${escalas > 1 ? "s" : ""}`;
+};
 
 export function FlightDealCard({ deal }: { deal: OfertaVuelo }) {
   return (
@@ -47,35 +61,96 @@ export function FlightDealCard({ deal }: { deal: OfertaVuelo }) {
           <span className="text-xs">{deal.noches} noches</span>
         </div>
 
-        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1">
-            <Plane className="h-3.5 w-3.5" />
-            {deal.aerolinea_ida}
-          </span>
-          <span className="flex items-center gap-1">
-            <Clock className="h-3.5 w-3.5" />
-            {deal.duracion_ida}
-          </span>
-          <span>
-            {deal.escalas_ida === 0
-              ? "Directo"
-              : `${deal.escalas_ida} escala${deal.escalas_ida > 1 ? "s" : ""}`}
-          </span>
+        {/* NUEVO BLOQUE DE ITINERARIO (IDA Y REGRESO) */}
+        <div className="rounded-lg border bg-slate-50/50 p-3">
+          {/* SECCIÓN IDA */}
+          <div className="mb-3">
+            <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              Ida
+            </p>
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-slate-700">
+                {formatHora(deal.salida_ida)}
+              </span>
+
+              <div className="flex flex-1 items-center px-2">
+                <div className="h-px flex-1 border-t border-dashed border-slate-300"></div>
+                <span className="px-2 text-[11px] text-slate-500">
+                  {deal.duracion_ida}
+                </span>
+                <div className="h-px flex-1 border-t border-dashed border-slate-300"></div>
+              </div>
+
+              <span className="text-sm font-semibold text-slate-700">
+                {formatHora(deal.llegada_ida)}
+              </span>
+            </div>
+            <div className="mt-1 flex justify-between text-[11px] text-slate-500">
+              <span>{deal.aerolinea_ida}</span>
+              <span>{textoEscalas(deal.escalas_ida)}</span>
+            </div>
+          </div>
+
+          {/* SECCIÓN REGRESO (solo si existe) */}
+          {deal.salida_regreso && (
+            <div>
+              <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                Regreso
+              </p>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-slate-700">
+                  {formatHora(deal.salida_regreso)}
+                </span>
+
+                <div className="flex flex-1 items-center px-2">
+                  <div className="h-px flex-1 border-t border-dashed border-slate-300"></div>
+                  <span className="px-2 text-[11px] text-slate-500">
+                    {deal.duracion_regreso}
+                  </span>
+                  <div className="h-px flex-1 border-t border-dashed border-slate-300"></div>
+                </div>
+
+                <span className="text-sm font-semibold text-slate-700">
+                  {formatHora(deal.llegada_regreso as string)}
+                </span>
+              </div>
+              <div className="mt-1 flex justify-between text-[11px] text-slate-500">
+                <span>{deal.aerolinea_regreso}</span>
+                <span>{textoEscalas(deal.escalas_regreso)}</span>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center justify-between border-t pt-3">
           <span className="text-[11px] text-muted-foreground">
             {deal.vendedor}
           </span>
-          <a
-            href={deal.link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm font-medium text-primary hover:underline"
-          >
-            Ver oferta →
-          </a>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <a
+                href={deal.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm font-medium text-primary hover:underline"
+              >
+                Ver oferta →
+              </a>
+            </TooltipTrigger>
+            <TooltipContent side="top" align="end" className="max-w-[220px]">
+              <p className="text-xs">
+                ¿Buscas otro horario? Haz clic en <b>Ver oferta</b> para ver más
+                opciones y fechas disponibles.
+              </p>
+            </TooltipContent>
+          </Tooltip>
         </div>
+
+        <p className="flex items-center justify-end gap-1 text-[10px] leading-tight text-muted-foreground">
+          <Info className="h-3 w-3 shrink-0" />
+          <span>Más horarios y fechas en «Ver oferta»</span>
+        </p>
       </div>
     </article>
   );
