@@ -68,7 +68,7 @@ export function FlightDeals() {
       try {
         setIsLoading(true);
         setError(null);
-        const { data } = await api.get("/vuelos/mejores-del-dia", {
+        const { data } = await api.get("/vuelos/mejores-por-destino", {
           skip401Redirect: true,
         });
         if (!cancelled) setVuelos(data.data);
