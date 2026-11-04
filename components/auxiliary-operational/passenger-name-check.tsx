@@ -1,12 +1,6 @@
 "use client";
 import { useState } from "react";
-import {
-  UserRoundSearch,
-  ExternalLink,
-  Copy,
-  Plus,
-  RotateCcw,
-} from "lucide-react";
+import { UserRoundSearch } from "lucide-react";
 import {
   cleanPassengerName,
   identityNumberForCopy,
@@ -20,7 +14,6 @@ const registraduria = "https://certvigenciacedula.registraduria.gov.co/";
 export default function PassengerNameCheck({
   canEdit,
   disabled,
-  onAppend,
 }: {
   canEdit: boolean;
   disabled: boolean;
@@ -84,8 +77,18 @@ export default function PassengerNameCheck({
         el nombre que aparece con el de la reserva.
       </p>
       <details>
-        <summary>Abrir consulta de nombres</summary>
-        <ol className="aux-name-steps">
+        <summary>
+          <a
+            href={procuraduria}
+            target="_blank"
+            rel="noopener noreferrer"
+            referrerPolicy="no-referrer"
+            // className="aux-name-link"
+          >
+            Abrir consulta de nombres
+          </a>
+        </summary>
+        {/* <ol className="aux-name-steps">
           <li>
             <strong>1. Copia la cédula</strong>
             <span>Ten listo el número para la consulta.</span>
@@ -256,7 +259,7 @@ export default function PassengerNameCheck({
           >
             Consultar estado de cédula <ExternalLink size={14} />
           </a>
-        </details>
+        </details> */}
       </details>
     </section>
   );
