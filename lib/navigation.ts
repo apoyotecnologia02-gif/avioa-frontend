@@ -18,6 +18,7 @@ import {
   ClipboardList,
   Wrench,
   Compass,
+  BookOpen,
 } from "lucide-react";
 import { isAdminRole, isLeaderOrManagerOrAdminRole } from "@/lib/roles";
 import { AppModuleKey } from "./modules";
@@ -195,6 +196,11 @@ export const NAV_SECTIONS: NavSection[] = [
             href: "/auxiliares",
             label: "Auxiliares operativos",
             module: "AUXILIARY",
+          },
+          {
+            href: "/tutorials",
+            label: "Tutoriales",
+            icon: BookOpen,
           },
         ],
       },
