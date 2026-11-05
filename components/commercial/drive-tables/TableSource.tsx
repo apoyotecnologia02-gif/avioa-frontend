@@ -1,3 +1,4 @@
+// TableSource.tsx
 "use client";
 
 import { useCallback, useState } from "react";
@@ -44,6 +45,8 @@ interface TableData {
   warning?: string;
   error?: string;
 }
+
+
 
 function link(value: string): string {
   try {
@@ -294,9 +297,6 @@ function OperatorsView({
   );
 }
 
-/* ─────────────────────────────────────────────
-   Vista de tarifas (tabla)
-   ───────────────────────────────────────────── */
 function RatesView({
   data,
   rows,
@@ -308,7 +308,7 @@ function RatesView({
   source: (typeof commercialTables)[CommercialTable];
   onCopy: (text: string) => Promise<void>;
 }) {
-  if (rows.length === 0 && !data.headers) {
+  if (rows.length === 0 && (!data.headers || data.headers.length === 0)) {
     return (
       <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-border bg-muted/30 p-12 text-center">
         <Search className="h-8 w-8 text-muted-foreground" />
@@ -320,21 +320,67 @@ function RatesView({
     );
   }
 
+  if (source.title.includes("Navidad")) {
+    return (
+      <div className="flex flex-col gap-4">
+        <p className="text-xs text-muted-foreground">
+          Valores y condiciones tal como aparecen en Drive, sin recalcular.
+        </p>
+        {rows.map((r) => (
+          <div key={r.id} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {data.headers?.map((h, i) => {
+              const val = r.cells[i];
+              if (!val) return null;
+              return (
+                <div key={i} className="rounded-lg border border-border bg-background p-3 shadow-sm text-foreground">
+                 
+                  <h4 className="mb-2 text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
+                    {h}
+                  </h4>
+             
+                  <p className="text-xs leading-relaxed whitespace-pre-wrap text-foreground/80">
+                    {val}
+                  </p>
+                  <Button
+                    variant="ghost" 
+                    size="sm" 
+                    className="mt-3 h-7 px-2 text-[10px] text-muted-foreground hover:text-foreground"
+                    onClick={() => void onCopy(`${h}: ${val}`)}
+                  >
+                    <Copy className="mr-1.5 h-3 w-3" /> Copiar bloque
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  const rawHeaders = data.headers || [];
+  const activeHeaders = rawHeaders
+    .map((label, index) => ({ label: (label || "").trim(), index }))
+    .filter((h) => {
+    
+      if (h.index === 0 && (h.label === "" || h.label === "FILA" || h.label === "FILA EN DRIVE")) {
+        return false;
+      }
+      
+      // Descartar si el título está vacío
+      if (h.label === "" || h.label === "—") return false;
+      
+      // Verificar que la columna tenga al menos un dato real
+      const hasData = rows.some(r => r.cells[h.index] && r.cells[h.index] !== "—" && r.cells[h.index].trim() !== "");
+      return hasData;
+    });
+
   return (
     <>
       <p className="text-xs text-muted-foreground">
         Valores y condiciones tal como aparecen en Drive, sin recalcular.
         Confirma vigencia y disponibilidad antes de cotizar.
       </p>
-
-      {data.notes?.map((n, i) => (
-        <p
-          key={i}
-          className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-900/20 dark:text-amber-300"
-        >
-          {n}
-        </p>
-      ))}
 
       {source.title === "Villas Naio" && (
         <p className="rounded-md bg-primary/10 px-3 py-2 text-xs text-primary">
@@ -360,81 +406,97 @@ function RatesView({
         role="region"
         aria-label={"Tarifas " + source.title}
         tabIndex={0}
-        className="max-h-[70vh] overflow-auto rounded-lg border border-border bg-card"
+        className="max-h-[70vh] overflow-y-auto overflow-x-auto rounded-lg border border-border bg-card relative"
       >
-        <table className="min-w-[1100px] w-full border-collapse text-xs">
-          <thead>
+        <table className="w-full table-fixed border-collapse text-[13px] text-left">
+          <thead className="sticky top-0 z-10 bg-blue-50/95 backdrop-blur-sm dark:bg-muted/95 text-blue-900 dark:text-blue-100 shadow-sm">
             <tr>
-              <th className="sticky top-0 border border-border bg-muted px-3 py-3 text-left font-semibold">
-                Fila en Drive
+              <th className="w-12 border-r border-b border-border px-2 py-3 font-semibold text-[10px] tracking-wide uppercase text-center first:border-l">
+                <div className="flex flex-col leading-tight">
+                  <span>Fila</span>
+                  <span>en</span>
+                  <span>Drive</span>
+                </div>
               </th>
-              {data.headers?.map((h, i) => (
-                <th
-                  key={i}
-                  className="sticky top-0 border border-border bg-muted px-3 py-3 text-left font-semibold"
+              
+              {activeHeaders.map((h, i) => (
+                <th 
+                  key={i} 
+                  className="border-r border-b border-border px-2 py-3 font-semibold text-[10px] tracking-wide uppercase text-center whitespace-normal break-words"
+                  style={{ width: `${Math.max(7, 100 / (activeHeaders.length + 2))}%` }}
                 >
-                  {h}
+                  {h.label}
                 </th>
               ))}
-              <th className="sticky top-0 border border-border bg-muted px-3 py-3 text-left font-semibold">
+              
+              <th className="w-[70px] border-b border-border px-2 py-3 font-semibold text-[10px] tracking-wide uppercase bg-blue-50/95 dark:bg-muted/95 text-center">
                 Acciones
               </th>
             </tr>
           </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.id} className="transition-colors hover:bg-muted/30">
-                <td className="border border-border px-3 py-2 align-top">
-                  {r.id}
-                </td>
-                {data.headers?.map((_, i) => (
-                  <td
-                    key={i}
-                    className="whitespace-pre-wrap border border-border px-3 py-2 align-top"
-                    style={{ minWidth: i < 5 ? 140 : 100 }}
-                  >
-                    {r.cells[i] || "—"}
+          <tbody className="divide-y divide-border">
+            {rows.map((r) => {
+              const getVal = (idx: number) => {
+                const val = r.cells[idx];
+                return val && val !== "—" ? val : "";
+              };
+
+              return (
+                <tr key={r.id} className="transition-colors hover:bg-muted/30">
+                  <td className="border-r border-border px-2 py-3 text-center font-medium text-muted-foreground bg-muted/20 text-xs">
+                    {r.id}
                   </td>
-                ))}
-                <td className="border border-border px-3 py-2 align-top">
-                  <div className="flex flex-col gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() =>
-                        void onCopy(
-                          data.headers
-                            ?.map((h, i) =>
-                              r.cells[i] ? `${h}: ${r.cells[i]}` : "",
-                            )
-                            .filter(Boolean)
-                            .join("\n") || "",
-                        )
-                      }
-                    >
-                      <Copy className="mr-1.5 h-3 w-3" />
-                      Copiar fila
-                    </Button>
-                    <Button variant="link" size="sm" asChild>
-                      <a
-                        href={
-                          offersSheetUrl +
-                          "#gid=" +
-                          source.gid +
-                          "&range=A" +
-                          r.id
-                        }
-                        target="_blank"
-                        rel="noopener noreferrer"
+                  
+                  {activeHeaders.map((h, colIdx) => {
+                    const val = getVal(h.index);
+                    const isPrice = val.includes("$") || val.includes("COP") || h.label.includes("TARIFA");
+                    
+                    return (
+                      <td 
+                        key={colIdx} 
+                        className={`border-r border-border px-2 py-3 whitespace-normal break-words text-center ${
+                          isPrice ? "font-mono text-[11px]" : ""
+                        }`}
                       >
-                        Ver fuente{" "}
-                        <ExternalLink className="ml-1 h-3 w-3" />
-                      </a>
-                    </Button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+                        {val}
+                      </td>
+                    );
+                  })}
+
+                  <td className="px-2 py-3 text-center">
+                    <div className="flex flex-col items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-[11px]"
+                        onClick={() => {
+                           const copyText = activeHeaders
+                             .map((h) => {
+                               const val = r.cells[h.index];
+                               return val && val !== "—" ? `${h.label}: ${val}` : "";
+                             })
+                             .filter(Boolean)
+                             .join("\n");
+                           void onCopy(copyText);
+                        }}
+                      >
+                        <Copy className="mr-1 h-3 w-3" />
+                        Copiar
+                      </Button>
+                      <Button variant="link" size="sm" className="h-6 p-0 text-[10px]" asChild>
+                        <a
+                          href={offersSheetUrl + "#gid=" + source.gid + "&range=A" + r.id}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          Ver fuente <ExternalLink className="ml-0.5 h-2.5 w-2.5" />
+                        </a>
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

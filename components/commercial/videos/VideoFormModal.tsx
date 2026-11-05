@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { safeVideoUrl, type HotelVideo } from "@/lib/commercial-videos";
+import { HotelVideo } from "@/lib/commercial-videos";
 
 export interface VideoDraft extends HotelVideo {
   id?: string;
@@ -49,8 +49,8 @@ export function VideoFormModal({
   }, [open, draft]);
 
   const isEditing = Boolean(form.id);
-  const urlValid = Boolean(safeVideoUrl(form.url));
-  const canSubmit = form.title.trim().length > 0 && urlValid;
+  // const urlValid = Boolean(safeVideoUrl(form.url));
+  const canSubmit = form.title.trim().length > 0;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -87,7 +87,7 @@ export function VideoFormModal({
             />
           </div>
 
-          <div className="space-y-1.5">
+          {/* <div className="space-y-1.5">
             <Label htmlFor="v-url">
               Enlace del video <span className="text-destructive">*</span>
             </Label>
@@ -99,12 +99,7 @@ export function VideoFormModal({
               value={form.url}
               onChange={(e) => setForm({ ...form, url: e.target.value })}
             />
-            {form.url.length > 0 && !urlValid && (
-              <p className="text-xs text-destructive">
-                Usa un enlace HTTPS válido.
-              </p>
-            )}
-          </div>
+          </div> */}
 
           <div className="space-y-1.5">
             <Label htmlFor="v-description">Descripción para compartir</Label>

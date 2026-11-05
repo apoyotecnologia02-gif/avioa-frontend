@@ -10,7 +10,7 @@ import type {
   ResourceKind,
 } from "@/types/commercial.types";
 
-// ===== KEYS PARA REACT QUERY =====
+
 export const COMMERCIAL_KEYS = {
   all: ["commercial"] as const,
   resources: () => [...COMMERCIAL_KEYS.all, "resources"] as const,
@@ -18,7 +18,7 @@ export const COMMERCIAL_KEYS = {
     [...COMMERCIAL_KEYS.resources(), "list", { kind }] as const,
 };
 
-// ===== FUNCIONES DE API =====
+
 const apiClient = {
   list: async (kind?: ResourceKind): Promise<CommercialResource[]> => {
     const params = kind ? { kind } : undefined;

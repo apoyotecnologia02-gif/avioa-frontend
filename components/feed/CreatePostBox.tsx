@@ -23,6 +23,10 @@ import { RichTextEditor } from "./RichTextEditor";
 
 export function CreatePostBox() {
   const user = useAuthStore((s) => s.user);
+  const actions = user?.modulePermissions?.flatMap(
+    (permission) => permission.actions,
+  )
+  console.log("actions", actions)
   const createPost = useFeedStore((s) => s.createPost);
 
   const [open, setOpen] = useState(false);

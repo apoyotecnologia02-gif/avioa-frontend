@@ -8,22 +8,6 @@ export const videoNormalize = (s: string) =>
     .replace(/\s+/g, " ")
     .trim();
 
-export function safeVideoUrl(value: unknown): string {
-  if (typeof value !== "string" || value.length > 2000) return "";
-  try {
-    const u = new URL(value.trim());
-    if (
-      !["https:", "http:"].includes(u.protocol) ||
-      u.username ||
-      u.password ||
-      !u.hostname.includes(".")
-    )
-      return "";
-    return u.href;
-  } catch {
-    return "";
-  }
-}
 
 export function validVideo(v: unknown): v is HotelVideo {
   if (!v || typeof v !== "object") return false;
@@ -33,13 +17,12 @@ export function validVideo(v: unknown): v is HotelVideo {
     !!e.title.trim() &&
     e.title.length <= 250 &&
     typeof e.description === "string" &&
-    e.description.length <= 20000 &&
-    !!safeVideoUrl(e.url)
+    e.description.length <= 20000
   );
 }
 
 export const videoIdentity = (e: HotelVideo) =>
-  JSON.stringify([videoNormalize(e.title), safeVideoUrl(e.url)]);
+  JSON.stringify([videoNormalize(e.title),]);
 
 function text(v: unknown): string {
   if (v == null) return "";
@@ -66,8 +49,6 @@ function links(v: unknown) {
   return [
     ...new Set(
       found
-        .map((u) => safeVideoUrl(u.replace(/[.,;!?)]+$/, "")))
-        .filter(Boolean),
     ),
   ];
 }

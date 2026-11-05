@@ -293,7 +293,7 @@ export const NAV_SECTIONS: NavSection[] = [
         module: "COMMERCIAL",
         items: [
           { href: "/comercial", label: "Resumen", exact: true },
-          { href: "/comercial/ofertas", label: "Ofertas Tarifario" },
+          { href: "/comercial/ofertas", label: "Ofertas del día" },
           { href: "/comercial/cotizaciones", label: "Cotizaciones" },
           // { href: "/comercial/documentos", label: "Documentos y datos" },
           { href: "/comercial/videos", label: "Videos de hoteles" },
