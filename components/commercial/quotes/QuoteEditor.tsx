@@ -1,16 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { FileText, Sparkles } from "lucide-react";
+
+import { Sparkles } from "lucide-react";
 import { useModulePermission } from "@/hooks/useModulePermission";
-import { QuoteForm } from "./QuoteForm";
 import { AssistantChat } from "./AssistantChat";
 
-type Tab = "manual" | "ai";
+
 
 export function QuoteEditor() {
   const permissions = useModulePermission("COMMERCIAL");
-  const [tab, setTab] = useState<Tab>("manual");
 
   if (!permissions.canAccess) {
     return (
@@ -33,35 +31,15 @@ export function QuoteEditor() {
       </div>
 
       <nav className="flex gap-1 rounded-lg border border-border bg-muted/30 p-1">
-        <button
-          type="button"
-          aria-pressed={tab === "manual"}
-          onClick={() => setTab("manual")}
-          className={`flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm transition-colors ${
-            tab === "manual"
-              ? "bg-card font-semibold shadow-sm"
-              : "text-muted-foreground hover:bg-card/50"
-          }`}
-        >
-          <FileText className="h-4 w-4" />
-          Preparar propuesta
-        </button>
-        <button
-          type="button"
-          aria-pressed={tab === "ai"}
-          onClick={() => setTab("ai")}
-          className={`flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm transition-colors ${
-            tab === "ai"
-              ? "bg-card font-semibold shadow-sm"
-              : "text-muted-foreground hover:bg-card/50"
-          }`}
+        <p
+          className={`flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm transition-colors`}
         >
           <Sparkles className="h-4 w-4" />
           Consultar tarifario
-        </button>
+        </p>
       </nav>
 
-      {tab === "manual" ? <QuoteForm /> : <AssistantChat mode="quotes" />}
+      {<AssistantChat mode="quotes" />}
     </div>
   );
 }

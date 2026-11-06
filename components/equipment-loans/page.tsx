@@ -84,6 +84,22 @@ import {
 } from "@/types/equipment-loan.types";
 import { EditEquipmentDialog } from "./edit-equipment";
 
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
+
 const statusConfig = {
   [EquipmentStatus.AVAILABLE]: {
     label: "Disponible",
@@ -211,9 +227,17 @@ export function EquipmentLoans() {
     user?.isLeader === true || role === "leader" || role === "admin";
   const isSupport = user?.isSupport === true;
   const currentUserId = user?.userId;
-  // console.log("DEBUG currentUserId:", currentUserId);
 
   const canManageLoans = isLeader || isSupport;
+
+  // ¿Puede prestar a otros? (admin o soporte → a cualquiera)
+  const canLendToAnyone = isSupport || isAdmin;
+
+  // ¿Puede prestar a sus subordinados? (líder)
+  const canLendToTeam = isLeader;
+
+  // ¿Ve el select? (cualquiera de los dos casos)
+  const canLendToOthers = canLendToAnyone || canLendToTeam;
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<LoanFilterStatus>("ALL");
@@ -242,6 +266,8 @@ export function EquipmentLoans() {
   const [rejectLoanId, setRejectLoanId] = useState<string | null>(null);
   const [showEditEquipmentDialog, setShowEditEquipmentDialog] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [userComboboxOpen, setUserComboboxOpen] = useState(false);
+  const { useUsersToLend } = useEquipmentLoans();
 
   const {
     useEquipment,
@@ -251,11 +277,13 @@ export function EquipmentLoans() {
     useCreateLoan,
     useUpdateLoanStatus,
     useCancelLoan,
-    useMyTeam,
     useCreateEquipment,
     useUpdateEquipment,
+    useMyTeam,
   } = useEquipmentLoans();
 
+  const { data: myTeam } = useMyTeam({ enabled: canLendToTeam });
+  const { data: usersToLend } = useUsersToLend({ enabled: canLendToOthers });
   const {
     data: equipment,
     isLoading: isLoadingEquipment,
@@ -281,8 +309,6 @@ export function EquipmentLoans() {
   const updateStatus = useUpdateLoanStatus();
   const cancelLoan = useCancelLoan();
   const updateEquipment = useUpdateEquipment();
-  const canCreateForOthers = isLeader || isAdmin;
-  const { data: myTeam } = useMyTeam({ enabled: canCreateForOthers });
 
   useEffect(() => {
     const handleEquipmentLoanUpdate = () => {
@@ -1690,30 +1716,136 @@ export function EquipmentLoans() {
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2 min-w-0">
-                {canCreateForOthers && (
+                {canLendToOthers && (
                   <div className="space-y-2 min-w-0">
                     <Label>Solicitar para</Label>
-                    <Select
-                      value={selectedTargetUserId || "__myself__"}
-                      onValueChange={(v) =>
-                        setSelectedTargetUserId(v === "__myself__" ? "" : v)
-                      }
+                    <Popover
+                      open={userComboboxOpen}
+                      onOpenChange={setUserComboboxOpen}
                     >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Para mí" />
-                      </SelectTrigger>
-                      <SelectContent className="w-[var(--radix-select-trigger-width)]">
-                        <SelectItem value="__myself__">Para mí</SelectItem>
-                        {myTeam?.map((member: any) => (
-                          <SelectItem key={member.userId} value={member.userId}>
-                            {member.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={userComboboxOpen}
+                          className="w-full justify-between font-normal"
+                        >
+                          <span className="truncate">
+                            {selectedTargetUserId
+                              ? (() => {
+                                  const allUsers = [
+                                    ...(canLendToAnyone
+                                      ? (usersToLend ?? [])
+                                      : []),
+                                    ...(canLendToTeam ? (myTeam ?? []) : []),
+                                  ];
+                                  const selected = allUsers.find(
+                                    (u: any) =>
+                                      u.userId === selectedTargetUserId,
+                                  );
+                                  return selected?.name || "Para mí";
+                                })()
+                              : "Para mí"}
+                          </span>
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        className="w-[var(--radix-popover-trigger-width)] p-0"
+                        align="start"
+                      >
+                        <Command
+                          filter={(value, search) => {
+                            const searchLower = search.toLowerCase();
+                            return value.toLowerCase().includes(searchLower)
+                              ? 1
+                              : 0;
+                          }}
+                        >
+                          <CommandInput placeholder="Buscar por nombre, email o área..." />
+                          <CommandList className="max-h-[300px]">
+                            <CommandEmpty>
+                              No se encontraron usuarios.
+                            </CommandEmpty>
+                            <CommandGroup>
+                              {/* "Para mí" */}
+                              <CommandItem
+                                value="para mi mismo __myself__"
+                                onSelect={() => {
+                                  setSelectedTargetUserId("");
+                                  setUserComboboxOpen(false);
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    !selectedTargetUserId
+                                      ? "opacity-100"
+                                      : "opacity-0",
+                                  )}
+                                />
+                                <span className="font-medium">Para mí</span>
+                              </CommandItem>
+
+                              {/* Lista deduplicada */}
+                              {(() => {
+                                // Combinar ambas listas
+                                const allUsers = [
+                                  ...(canLendToAnyone
+                                    ? (usersToLend ?? [])
+                                    : []),
+                                  ...(canLendToTeam ? (myTeam ?? []) : []),
+                                ];
+
+                                // Deduplicar por userId
+                                const uniqueUsers = Array.from(
+                                  new Map(
+                                    allUsers.map((u: any) => [u.userId, u]),
+                                  ).values(),
+                                );
+
+                                return uniqueUsers.map((member: any) => {
+                                  const label = `${member.name}${member.area ? ` ${member.area}` : ""}${member.email ? ` ${member.email}` : ""}`;
+                                  return (
+                                    <CommandItem
+                                      key={member.userId}
+                                      value={label}
+                                      onSelect={() => {
+                                        setSelectedTargetUserId(member.userId);
+                                        setUserComboboxOpen(false);
+                                      }}
+                                    >
+                                      <Check
+                                        className={cn(
+                                          "mr-2 h-4 w-4",
+                                          selectedTargetUserId === member.userId
+                                            ? "opacity-100"
+                                            : "opacity-0",
+                                        )}
+                                      />
+                                      <div className="flex flex-col min-w-0">
+                                        <span className="font-medium truncate">
+                                          {member.name}
+                                        </span>
+                                        <span className="text-xs text-muted-foreground truncate">
+                                          {member.area && member.area}
+                                          {member.area && member.email && " · "}
+                                          {member.email}
+                                        </span>
+                                      </div>
+                                    </CommandItem>
+                                  );
+                                });
+                              })()}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                     <p className="text-xs text-muted-foreground">
-                      Si seleccionas un colaborador, la solicitud se creará a su
-                      nombre y te aparecerá a ti para aprobarla.
+                      {canLendToTeam
+                        ? "Si seleccionas un colaborador de tu equipo, la solicitud se creará a su nombre."
+                        : "Si seleccionas un colaborador, la solicitud se creará a su nombre y el equipo quedará asignado directamente (aprobado)."}
                     </p>
                   </div>
                 )}
@@ -1965,7 +2097,6 @@ export function EquipmentLoans() {
               <p className="text-xs text-muted-foreground text-right">
                 {rejectReason.length}/500
               </p>
-              
             </div>
             <DialogFooter>
               <Button

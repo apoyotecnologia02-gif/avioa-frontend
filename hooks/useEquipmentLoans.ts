@@ -33,6 +33,14 @@ const api = {
       return res.json();
     }),
 
+  getUsersToLend: (): Promise<any[]> =>
+    fetch(`${API_URL}?path=users-to-lend`, {
+      credentials: "include",
+    }).then((res) => {
+      if (!res.ok) throw new Error("Error al obtener usuarios");
+      return res.json();
+    }),
+
   createEquipment: (data: any) =>
     fetch(`${API_URL}?path=equipment`, {
       method: "POST",
@@ -293,6 +301,13 @@ export function useEquipmentLoans() {
     });
   };
 
+  const useUsersToLend = (options?: { enabled?: boolean }) => {
+    return useQuery({
+      queryKey: ["equipment-loans", "users-to-lend"],
+      queryFn: api.getUsersToLend,
+      enabled: options?.enabled ?? true,
+    });
+  };
   return {
     useEquipment,
     useCreateEquipment,
@@ -305,5 +320,6 @@ export function useEquipmentLoans() {
     useMyTeam,
     useMyLoanedEquipment,
     useUpdateEquipment,
+    useUsersToLend,
   };
 }
