@@ -47,6 +47,7 @@ export interface ActiveLeaveRequest {
     position: string | null;
     department: string | null;
     area: string | null;
+    office: string | null;
   };
 }
 

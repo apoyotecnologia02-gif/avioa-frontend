@@ -52,10 +52,7 @@ const TYPE_GROUPS: Record<string, LeaveType[]> = {
     "DILIGENCIA_PERSONAL",
     "OBLIGACION_COMO_ACUDIENTE",
   ],
-  CITAS_MEDICAS: [
-    "CITA_MEDICA_PARTICULAR",
-    "CITA_MEDICA_CON_ESPECIALISTA_EPS",
-  ],
+  CITAS_MEDICAS: ["CITA_MEDICA_PARTICULAR", "CITA_MEDICA_CON_ESPECIALISTA_EPS"],
   OTRO: ["OTRO"],
 };
 
@@ -72,9 +69,7 @@ const getInitials = (name: string | null | undefined): string => {
   if (!name) return "U";
   const parts = name.trim().split(" ");
   if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
-  return (
-    parts[0].charAt(0) + parts[parts.length - 1].charAt(0)
-  ).toUpperCase();
+  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
 };
 
 const formatDate = (date: string) => {
@@ -95,8 +90,10 @@ const formatDuration = (startDate: string, endDate: string) => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const totalDays = Math.round((end.getTime() - start.getTime()) / 86400000) + 1;
-  const daysElapsed = Math.round((today.getTime() - start.getTime()) / 86400000) + 1;
+  const totalDays =
+    Math.round((end.getTime() - start.getTime()) / 86400000) + 1;
+  const daysElapsed =
+    Math.round((today.getTime() - start.getTime()) / 86400000) + 1;
   const daysRemaining = totalDays - daysElapsed + 1;
 
   if (daysElapsed <= 1 && daysRemaining <= 1) {
@@ -274,7 +271,9 @@ export const AbsencesModal: React.FC<AbsencesModalProps> = ({
           </div>
 
           {/* Lista */}
-          <div className={cn("flex-1 overflow-y-auto p-3 sm:p-4", scrollbarStyles)}>
+          <div
+            className={cn("flex-1 overflow-y-auto p-3 sm:p-4", scrollbarStyles)}
+          >
             {isLoading ? (
               <div className="flex items-center justify-center py-16">
                 <Loader2 className="w-6 h-6 animate-spin text-primary" />
@@ -306,14 +305,14 @@ export const AbsencesModal: React.FC<AbsencesModalProps> = ({
                           Empleado
                         </th>
                         <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">
-                          Departamento
+                          Oficina
                         </th>
                         <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">
                           Área
                         </th>
-                        <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        {/* <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                           Tipo
-                        </th>
+                        </th> */}
                         <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden sm:table-cell">
                           Período
                         </th>
@@ -361,12 +360,12 @@ export const AbsencesModal: React.FC<AbsencesModalProps> = ({
                               </div>
                             </td>
                             <td className="py-3 px-4 text-foreground hidden md:table-cell">
-                              {absence.user.department ?? "—"}
+                              {absence.user.office ?? "—"}
                             </td>
                             <td className="py-3 px-4 text-muted-foreground hidden lg:table-cell">
                               {absence.user.area ?? "—"}
                             </td>
-                            <td className="py-3 px-4">
+                            {/* <td className="py-3 px-4">
                               <span
                                 className={cn(
                                   "inline-flex items-center gap-1.5 text-[11px] px-2 py-0.5 rounded-full border font-medium whitespace-nowrap",
@@ -381,7 +380,7 @@ export const AbsencesModal: React.FC<AbsencesModalProps> = ({
                                 />
                                 {meta.short}
                               </span>
-                            </td>
+                            </td> */}
                             <td className="py-3 px-4 text-foreground text-sm hidden sm:table-cell">
                               <div className="flex flex-col">
                                 <span>{formatDate(absence.startDate)}</span>

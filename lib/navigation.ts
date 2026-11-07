@@ -18,6 +18,7 @@ import {
   ClipboardList,
   Wrench,
   Compass,
+  BookOpen,
 } from "lucide-react";
 import { isAdminRole, isLeaderOrManagerOrAdminRole } from "@/lib/roles";
 import { AppModuleKey } from "./modules";
@@ -196,6 +197,11 @@ export const NAV_SECTIONS: NavSection[] = [
             label: "Auxiliares operativos",
             module: "AUXILIARY",
           },
+          {
+            href: "/tutorials",
+            label: "Tutoriales",
+            icon: BookOpen,
+          },
         ],
       },
       {
@@ -297,8 +303,8 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: Compass,
         module: "COMMERCIAL",
         items: [
-          { href: "/comercial", label: "Resumen", exact: true },
-          { href: "/comercial/ofertas", label: "Ofertas Tarifario" },
+          // { href: "/comercial", label: "Resumen", exact: true },
+          { href: "/comercial/ofertas", label: "Ofertas del día" },
           { href: "/comercial/cotizaciones", label: "Cotizaciones" },
           // { href: "/comercial/documentos", label: "Documentos y datos" },
           { href: "/comercial/videos", label: "Videos de hoteles" },

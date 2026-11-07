@@ -149,7 +149,7 @@ export function HotelVideos() {
         entry: {
           title: d.title,
           description: d.description,
-          url: d.url,
+          // url: d.url,
         },
       };
       const res = await callVideosApi(payload);

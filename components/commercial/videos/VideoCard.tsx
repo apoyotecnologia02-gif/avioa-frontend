@@ -1,8 +1,23 @@
 "use client";
 
-import { ExternalLink, Copy, Video, ChevronDown } from "lucide-react";
+import {
+  ExternalLink,
+  Pencil,
+  Trash,
+  Copy,
+  Video,
+  ChevronDown,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import Linkify from "linkify-react";
+import { useAuthStore } from "@/store/authStore";
+
+const linkifyOptions = {
+  target: "_blank",
+  rel: "noopener noreferrer",
+  className: "text-blue-500 hover:underline",
+};
 
 export interface VideoEntry {
   id: string;
@@ -45,6 +60,24 @@ export function VideoCard({
 
   const isFromDrive = entry.source === "drive";
 
+
+
+  //function to check if user has permission to update or delete videos
+  const user = useAuthStore((s) => s.user);
+
+  const canUpdate = user?.modulePermissions?.some(
+    (permission) => 
+      permission.module === "COMMERCIAL" && 
+      permission.actions?.includes("update")
+  ) ?? false; 
+
+  const canDelete = user?.modulePermissions?.some(
+    (permission) => 
+      permission.module == "COMMERCIAL" && 
+      permission.actions?.includes("delete")
+  ) ?? false;
+
+
   return (
     <article className="flex flex-col gap-2 rounded-lg border border-border bg-card p-4">
       <Badge variant="secondary" className="w-fit gap-1">
@@ -59,7 +92,9 @@ export function VideoCard({
           expanded ? "" : "line-clamp-3"
         }`}
       >
-        {entry.description || "Sin descripción."}
+        <Linkify options={linkifyOptions}>
+          {entry.description || "Sin descripción."}
+        </Linkify>
       </p>
 
       {entry.description.length > 150 && (
@@ -79,41 +114,44 @@ export function VideoCard({
       )}
 
       <div className="mt-auto flex flex-wrap gap-2 pt-2">
-        <Button size="sm" asChild>
+        {/* <Button size="sm" asChild>
           <a href={entry.url} target="_blank" rel="noopener noreferrer">
             <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
             Abrir video
           </a>
-        </Button>
-        <Button size="sm" variant="outline" onClick={onCopyUrl}>
+        </Button> */}
+        {/* <Button size="sm" variant="outline" onClick={onCopyUrl}>
           <Copy className="mr-1.5 h-3.5 w-3.5" />
           Enlace
-        </Button>
+        </Button> */}
         <Button size="sm" variant="outline" onClick={onCopyMessage}>
           <Copy className="mr-1.5 h-3.5 w-3.5" />
-          Mensaje
         </Button>
 
-        {canEdit && !isFromDrive && (
+        {canUpdate && !isFromDrive &&  (
           <>
             <Button
               size="sm"
               variant="ghost"
               onClick={onEdit}
               disabled={busy}
+              className="text-primary hover:text-primary"
             >
-              Editar
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={onDelete}
-              disabled={busy}
-              className="text-destructive hover:text-destructive"
-            >
-              Eliminar
+              <Pencil />
             </Button>
           </>
+        )}
+
+        {canDelete && !isFromDrive && (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={onDelete}
+            disabled={busy}
+            className="text-destructive hover:text-destructive"
+          >
+            <Trash />
+          </Button>
         )}
       </div>
     </article>

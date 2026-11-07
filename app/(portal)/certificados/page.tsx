@@ -38,6 +38,23 @@ const LEGAL_ENTITY_LABELS: Record<LegalEntity, string> = {
   //   [LegalEntity.HOTELES_DE_LA_MONTANA]: "HOTELES DE LA MONTAÑA",
 };
 
+const downloadFile = async (url: string, filename: string) => {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error("No se pudo descargar el archivo");
+  }
+
+  const blob = await response.blob();
+
+  const blobUrl = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = blobUrl;
+  a.download = filename;
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(blobUrl);
+};
+
 export default function CertificadosPage() {
   const { toast } = useToast();
   const { user } = useAuth();
@@ -89,7 +106,9 @@ export default function CertificadosPage() {
 
       const result = await pollJob(data.jobId);
 
-      window.open(result.url, "_blank", "noopener,noreferrer");
+      // window.open(result.url, "_blank", "noopener,noreferrer");
+
+      await downloadFile(result.url, `certificado-laboral-${Date.now()}.pdf`);
 
       toast({
         title: "Certificado generado",

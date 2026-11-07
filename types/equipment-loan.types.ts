@@ -1,4 +1,3 @@
-// types/equipment-loan.types.ts
 export enum EquipmentStatus {
   AVAILABLE = "AVAILABLE",
   LOANED = "LOANED",
