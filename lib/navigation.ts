@@ -303,7 +303,7 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: Compass,
         module: "COMMERCIAL",
         items: [
-          { href: "/comercial", label: "Resumen", exact: true },
+          // { href: "/comercial", label: "Resumen", exact: true },
           { href: "/comercial/ofertas", label: "Ofertas del día" },
           { href: "/comercial/cotizaciones", label: "Cotizaciones" },
           // { href: "/comercial/documentos", label: "Documentos y datos" },
