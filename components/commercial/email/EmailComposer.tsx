@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { Sparkles } from "lucide-react";
 import { useModulePermission } from "@/hooks/useModulePermission";
-import { AssistantChat } from "../quotes/AssistantChat";
+import { EmailAssistant } from "./EmailAssistant";
 
 
 export function EmailComposer() {
@@ -38,7 +37,7 @@ export function EmailComposer() {
         </p>
       </nav>
 
-        <AssistantChat mode="email" />
+        <EmailAssistant />
     </div>
-  );
+  )
 }

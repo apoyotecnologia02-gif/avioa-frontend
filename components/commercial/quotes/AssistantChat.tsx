@@ -8,23 +8,20 @@ import {
   Plus,
   Loader2,
   ExternalLink,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { commercialRequest } from "@/lib/commercial/request";
 import { copyCommercialText } from "@/lib/commercial/clipboard";
+import { useCommercialQuotes } from "@/hooks/useCommercialQuotes";
 import {
   OfferCard,
   offerClientText,
   type PresentedOffer,
 } from "./OfferCard";
 
-/**
- * Si false → el chat muestra "próximamente" (modo mantenimiento).
- * Se activa cuando el proveedor de IA esté configurado en el backend.
- */
 const AI_ENABLED = process.env.NEXT_PUBLIC_AI_ENABLED === "true";
 
 type Turn = {
@@ -32,34 +29,27 @@ type Turn = {
   answer: string;
   options: PresentedOffer[];
   sources: { id: string; title: string; url: string }[];
+  warnings: string[];
 };
 
-interface AssistantChatProps {
-  mode?: "quotes" | "email";
-}
-
-export function AssistantChat({ mode = "quotes" }: AssistantChatProps) {
-  const isEmail = mode === "email";
-
+export function AssistantChat() {
   const [message, setMessage] = useState("");
   const [turns, setTurns] = useState<Turn[]>([]);
-  const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [copiedText, setCopiedText] = useState("");
+
+  const mutation = useCommercialQuotes();
+  const busy = mutation.isPending;
 
   if (!AI_ENABLED) {
     return (
       <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border bg-muted/30 p-12 text-center">
         <Sparkles className="h-10 w-10 text-primary" />
         <h3 className="text-lg font-semibold">
-          {isEmail
-            ? "El asistente de correos estará disponible próximamente"
-            : "El consultor de tarifario estará disponible próximamente"}
+          El consultor de tarifario estará disponible próximamente
         </h3>
         <p className="max-w-md text-sm text-muted-foreground">
-          {isEmail
-            ? "Estamos conectando el proveedor de IA. Mientras tanto, usa la pestaña “Plantilla manual”."
-            : "Estamos conectando el proveedor de IA. Mientras tanto, usa la pestaña “Preparar propuesta”."}
+          Estamos conectando el proveedor de IA. Mientras tanto, usa la pestaña “Preparar propuesta”.
         </p>
       </div>
     );
@@ -69,34 +59,31 @@ export function AssistantChat({ mode = "quotes" }: AssistantChatProps) {
     e.preventDefault();
     if (busy || !message.trim()) return;
 
-    setBusy(true);
     setError("");
     const question = message.trim();
 
     try {
-      const r = await commercialRequest(
-        "/api/commercial/" + (isEmail ? "email" : "quotes"),
+      const data = await mutation.mutateAsync({
+        requestId: crypto.randomUUID(),
+        message: question,
+        history: turns
+          .slice(-5)
+          .map((t) => ({ question: t.question, answer: t.answer })),
+      });
+
+      setTurns((old) => [
+        ...old,
         {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            requestId: crypto.randomUUID(),
-            message: question,
-            history: turns
-              .slice(-5)
-              .map((t) => ({ question: t.question, answer: t.answer })),
-          }),
+          question,
+          answer: data.answer,
+          options: data.options,
+          sources: data.sources,
+          warnings: data.warnings,
         },
-      );
-      const data = (await r.json()) as Turn & { error?: string };
-      if (!r.ok)
-        throw new Error(data.error || "No se pudo consultar el asistente.");
-      setTurns((old) => [...old, { ...data, question }]);
+      ]);
       setMessage("");
     } catch (e) {
       setError((e as Error).message);
-    } finally {
-      setBusy(false);
     }
   }
 
@@ -123,12 +110,10 @@ export function AssistantChat({ mode = "quotes" }: AssistantChatProps) {
         <div>
           <h2 className="flex items-center gap-2 text-lg font-semibold">
             <Sparkles className="h-5 w-5 text-primary" />
-            {isEmail ? "Asistente de correos" : "Consultor de tarifario"}
+            Consultor de tarifario
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            {isEmail
-              ? "Redacta un borrador para revisar y enviar desde tu correo."
-              : "Consulta las ofertas y cierres del tarifario con referencias de origen."}
+            Consulta las ofertas y cierres del tarifario con referencias de origen.
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={reset} disabled={busy}>
@@ -146,14 +131,10 @@ export function AssistantChat({ mode = "quotes" }: AssistantChatProps) {
           <div className="flex flex-col items-center gap-2 py-12 text-center">
             <Sparkles className="h-8 w-8 text-muted-foreground" />
             <h3 className="text-base font-semibold">
-              {isEmail
-                ? "¿Qué correo necesitas preparar?"
-                : "¿Qué viaje necesitas cotizar?"}
+              ¿Qué viaje necesitas cotizar?
             </h3>
             <p className="max-w-md text-sm text-muted-foreground">
-              {isEmail
-                ? "Indica el objetivo, el destinatario y los datos que debe incluir el mensaje."
-                : "Por ejemplo: San Andrés desde Medellín para dos adultos en noviembre."}
+              Por ejemplo: San Andrés desde Medellín para dos adultos en noviembre.
             </p>
           </div>
         )}
@@ -170,6 +151,20 @@ export function AssistantChat({ mode = "quotes" }: AssistantChatProps) {
             <div className="max-w-[90%] whitespace-pre-wrap break-words text-sm leading-relaxed">
               {t.answer}
             </div>
+
+            {t.warnings.length > 0 && (
+              <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-900 dark:text-amber-200">
+                <div className="mb-1 flex items-center gap-1.5 font-medium">
+                  <AlertTriangle className="h-3.5 w-3.5" />
+                  Avisos
+                </div>
+                <ul className="list-inside list-disc space-y-0.5">
+                  {t.warnings.map((w, k) => (
+                    <li key={k}>{w}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             {t.options.length > 0 && (
               <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
@@ -193,14 +188,18 @@ export function AssistantChat({ mode = "quotes" }: AssistantChatProps) {
                 <ul className="mt-2 space-y-1">
                   {t.sources.map((s) => (
                     <li key={s.id}>
-                      <a
-                        href={s.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-1 text-primary hover:underline"
-                      >
-                        {s.title} <ExternalLink className="h-3 w-3" />
-                      </a>
+                      {s.url ? (
+                        <a
+                          href={s.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 text-primary hover:underline"
+                        >
+                          {s.title} <ExternalLink className="h-3 w-3" />
+                        </a>
+                      ) : (
+                        <span className="text-muted-foreground">{s.title}</span>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -226,7 +225,7 @@ export function AssistantChat({ mode = "quotes" }: AssistantChatProps) {
         {busy && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
-            Revisando tu solicitud…
+            Revisando tu solicitud… (puede tardar 15–30s)
           </div>
         )}
       </div>
@@ -247,17 +246,11 @@ export function AssistantChat({ mode = "quotes" }: AssistantChatProps) {
           disabled={busy}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          placeholder={
-            isEmail
-              ? "Necesito redactar un correo para…"
-              : "Escribe aquí lo que necesitas cotizar…"
-          }
+          placeholder="Escribe aquí lo que necesitas cotizar…"
         />
         <div className="flex items-center justify-between gap-3">
           <p className="text-xs text-muted-foreground">
-            {isEmail
-              ? "Solo prepara borradores. No envía correos."
-              : "Precios, cierres y disponibilidad sujetos a reconfirmación."}
+            Precios, cierres y disponibilidad sujetos a reconfirmación.
           </p>
           <Button type="submit" disabled={busy || !message.trim()}>
             {busy ? (
