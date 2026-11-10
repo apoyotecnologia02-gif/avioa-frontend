@@ -16,12 +16,10 @@ export function VideoModal({ tutorial, onClose }: Props) {
 
   return (
     <Dialog open={!!tutorial} onOpenChange={(open) => !open && onClose()}>
-      {/* [&>button]:hidden oculta la X por defecto de shadcn que se superpone al iframe */}
-      <DialogContent className="max-w-5xl p-0 overflow-hidden bg-background border-border/50 gap-0 sm:rounded-2xl shadow-2xl [&>button]:hidden">
+      <DialogContent className="w-[95vw] sm:w-[90vw] !max-w-6xl p-0 overflow-hidden bg-background border-border/50 gap-0 sm:rounded-2xl shadow-2xl [&>button]:hidden flex flex-col">
         <DialogTitle className="sr-only">{tutorial.title}</DialogTitle>
 
-        {/* Reproductor */}
-        <div className="relative w-full aspect-[16/10] sm:aspect-[16/9.5] bg-black flex items-center justify-center overflow-hidden">
+        <div className="relative w-full aspect-[16/10] bg-black flex items-center justify-center overflow-hidden">
           <iframe
             src={getDriveEmbedUrl(tutorial.driveUrl)}
             className="absolute inset-0 w-full h-full border-0 z-0"
@@ -30,8 +28,7 @@ export function VideoModal({ tutorial, onClose }: Props) {
           />
         </div>
 
-        {/* Información y botón de cierre */}
-        <div className="p-6 md:p-8 flex items-start justify-between gap-6">
+        <div className="p-6 md:p-8 flex items-start justify-between gap-6 bg-background">
           <div className="flex-1">
             <Badge variant="secondary" className="mb-3">
               {tutorial.category}
@@ -40,13 +37,12 @@ export function VideoModal({ tutorial, onClose }: Props) {
               {tutorial.title}
             </h2>
             {tutorial.description && (
-              <p className="mt-4 text-muted-foreground leading-relaxed">
+              <p className="mt-4 text-muted-foregroundleading-relaxed">
                 {tutorial.description}
               </p>
             )}
           </div>
 
-          {/* Botón de cerrar en la zona segura */}
           <DialogClose asChild>
             <Button
               variant="ghost"
