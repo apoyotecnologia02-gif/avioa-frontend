@@ -111,7 +111,6 @@ export default function TutorialsPage() {
                 className="group cursor-pointer overflow-hidden border-border/60 bg-card hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 hover:-translate-y-1 flex flex-col"
                 onClick={() => setSelectedVideo(tutorial)}
               >
-                {/* Thumbnail mejorado */}
                 <div className="relative aspect-video bg-muted flex items-center justify-center overflow-hidden">
                   {thumbnail ? (
                     <img
@@ -119,7 +118,6 @@ export default function TutorialsPage() {
                       alt={tutorial.title}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       onError={(e) => {
-                        // Si la imagen falla, ocultamos el img y mostramos el gradiente
                         (e.target as HTMLImageElement).style.display = "none";
                         (
                           e.target as HTMLImageElement
@@ -127,15 +125,11 @@ export default function TutorialsPage() {
                       }}
                     />
                   ) : null}
-
-                  {/* Fallback si no hay thumbnail o falla */}
                   <div
                     className={`absolute inset-0 bg-gradient-to-br from-primary/20 via-primary/5 to-background flex items-center justify-center ${thumbnail ? "hidden" : ""}`}
                   >
                     <Video className="h-8 w-8 text-primary/40" />
                   </div>
-
-                  {/* Overlay oscuro y botón de play */}
                   <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors z-10" />
                   <div className="absolute inset-0 flex items-center justify-center z-20">
                     <div className="bg-white/20 backdrop-blur-md p-4 rounded-full shadow-lg group-hover:scale-110 group-hover:bg-primary transition-all duration-300">
@@ -170,7 +164,6 @@ export default function TutorialsPage() {
         </div>
       )}
 
-      {/* Modal */}
       <VideoModal
         tutorial={selectedVideo}
         onClose={() => setSelectedVideo(null)}
