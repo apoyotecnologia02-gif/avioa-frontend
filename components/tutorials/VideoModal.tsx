@@ -19,7 +19,7 @@ export function VideoModal({ tutorial, onClose }: Props) {
       <DialogContent className="w-[95vw] sm:w-[90vw] !max-w-6xl p-0 overflow-hidden bg-background border-border/50 gap-0 sm:rounded-2xl shadow-2xl [&>button]:hidden flex flex-col">
         <DialogTitle className="sr-only">{tutorial.title}</DialogTitle>
 
-        <div className="relative w-full aspect-[16/10] bg-black flex items-center justify-center overflow-hidden">
+        <div className="relative w-full aspect-[4/3] sm:aspect-[16/10] max-h-[75vh] bg-background flex items-center justify-center overflow-hidden">
           <iframe
             src={getDriveEmbedUrl(tutorial.driveUrl)}
             className="absolute inset-0 w-full h-full border-0 z-0"
