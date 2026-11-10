@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, type FormEvent } from "react";
-import { Sparkles, Mail, Send, Copy, AlertTriangle, Loader2 } from "lucide-react";
+import { Sparkles, Mail, Send, Copy, Loader2, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -52,24 +52,28 @@ export function EmailAssistant() {
         message: question,
         history: turns.slice(-5).map((t) => ({
           question: t.question,
-          answer: t.answer.answer, // Solo el texto del asistente para el historial
+          answer: t.answer.answer,
         })),
       });
 
-      // Asumimos que el backend devuelve: { answer: string, subject: string, body: string }
-      const answerData = data.raw as any;
+      // El hook ya devuelve answer, subject y body mapeados directamente
       const structuredAnswer = {
-        answer: answerData.answer || data.answer,
-        subject: answerData.subject || "",
-        body: answerData.body || "",
+        answer: data.answer || "El asistente no generó una explicación.",
+        subject: data.subject || "",
+        body: data.body || "",
       };
+
+      // Si la IA devolvió todo vacío, mostramos un aviso
+      if (!structuredAnswer.answer && !structuredAnswer.subject && !structuredAnswer.body) {
+        structuredAnswer.answer = "No se pudo generar el borrador. Intenta dar más detalles o cambiar la solicitud.";
+      }
 
       setTurns((old) => [
         ...old,
         { id: requestId, question, answer: structuredAnswer },
       ]);
 
-      // Si viene asunto o cuerpo, actualizamos el borrador
+      // Actualizamos el editor de la derecha si hay contenido nuevo
       if (structuredAnswer.subject || structuredAnswer.body) {
         setDraft({
           subject: structuredAnswer.subject,
@@ -111,6 +115,7 @@ export function EmailAssistant() {
             Nueva conversación
           </Button>
         </div>
+        
         <p className="text-xs text-muted-foreground bg-muted/50 p-2 rounded-md w-fit">
           IA configurada
         </p>
@@ -119,7 +124,7 @@ export function EmailAssistant() {
           {turns.length === 0 && (
             <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
               <Sparkles className="h-8 w-8 mb-2 opacity-50" />
-              <p className="text-sm">
+              <p className="text-sm max-w-xs">
                 Ejemplo: «Responde amablemente este correo del cliente y solicita
                 las fechas del viaje para preparar la cotización».
               </p>
@@ -148,6 +153,7 @@ export function EmailAssistant() {
 
         {error && (
           <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            <AlertTriangle className="h-4 w-4 inline mr-1" />
             {error}
           </div>
         )}

@@ -58,28 +58,28 @@ export function useCommercialQuotes() {
  */
 
 export function useCommercialEmailAssistant() {
-  return useMutation<SendQuoteResult, Error, SendQuotePayload>({
-    mutationFn: async (payload) => {
+  return useMutation({
+    mutationFn: async (payload: any) => {
       const res = await commercialRequest("/api/commercial/email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
-      // AQUI CAMBIA: El backend de correos devolverá algo distinto
-      const data = (await res.json()) as any; 
+      const data = (await res.json()) as any;
 
       if (!res.ok) {
         throw new Error(data.error || "No se pudo consultar el asistente.");
       }
 
-      // Devolvemos la data cruda para que el componente la maneje
       return {
-        answer: data.answer || "",
-        options: [], // No aplica para correos
+        answer: data.answer?.answer || "", // Texto del chat
+        subject: data.answer?.subject || "", // Asunto
+        body: data.answer?.body || "",       // Cuerpo del correo
+        options: [],
         sources: [],
         warnings: [],
-        raw: data, 
+        raw: data,
       };
     },
   });
