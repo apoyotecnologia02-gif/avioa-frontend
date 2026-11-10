@@ -20,6 +20,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "../ui/dialog";
+import { useRouter } from "next/navigation";
 
 type Vuelo = {
   id: number;
@@ -57,6 +58,8 @@ function formatDate(iso: string) {
 }
 
 export function FlightDeals() {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
   const [vuelos, setVuelos] = useState<Vuelo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -89,6 +92,11 @@ export function FlightDeals() {
   if (error || vuelos.length === 0) return null;
 
   const mejorPrecio = Math.min(...vuelos.map((v) => v.precio));
+
+  const irAlFiltro = (destino: string) => {
+    setOpen(false);
+    router.push(`/vuelos?destino=${encodeURIComponent(destino)}`);
+  };
 
   return (
     // <section className="rounded-2xl border border-border/60 bg-gradient-to-br from-primary/[0.04] via-transparent to-transparent p-4">
@@ -173,7 +181,11 @@ export function FlightDeals() {
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {vuelos.map((v) => (
-            <FlightDealCard key={v.id} vuelo={v} />
+            <FlightDealCard
+              key={v.id}
+              vuelo={v}
+              onClick={() => irAlFiltro(v.destino)}
+            />
           ))}
         </div>
       </DialogContent>
@@ -181,17 +193,22 @@ export function FlightDeals() {
   );
 }
 
-function FlightDealCard({ vuelo }: { vuelo: Vuelo }) {
+function FlightDealCard({
+  vuelo,
+  onClick,
+}: {
+  vuelo: Vuelo;
+  onClick: () => void;
+}) {
   const discount = Math.round(vuelo.pct_vs_piso);
   const isGanga = vuelo.ganga === 1;
   const directo = vuelo.escalas_ida === 0 && vuelo.escalas_regreso === 0;
 
   return (
-    <a
-      href={vuelo.link}
-      target="_blank"
+    <button
+      onClick={onClick}
       rel="noopener noreferrer"
-      className="group relative flex w-full flex-col gap-3 rounded-2xl border border-border/60 bg-card p-4 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
+      className="group relative flex w-full flex-col gap-3 rounded-2xl border border-border/60 bg-card p-4 text-left transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md"
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
@@ -248,9 +265,9 @@ function FlightDealCard({ vuelo }: { vuelo: Vuelo }) {
             {cop.format(vuelo.piso)}
           </div>
         </div>
-        <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground transition group-hover:text-primary" />
+        <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-primary" />
       </div>
-    </a>
+    </button>
   );
 }
 
