@@ -852,6 +852,7 @@ function TransferRepliesPanel({
   const [raw, setRaw] = useState<Record<string, string | "loading">>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     let cancelled = false;
@@ -875,7 +876,6 @@ function TransferRepliesPanel({
   }, [voucherId]);
 
   async function loadRaw(replyId: string) {
-    console.log("replyId", replyId);
     setRaw((p) => ({ ...p, [replyId]: "loading" }));
     try {
       const r = await api.get(
@@ -890,120 +890,293 @@ function TransferRepliesPanel({
     }
   }
 
+  function trimQuoted(text: string): string {
+    if (!text) return "";
+
+    const patterns = [
+      /\n\s*(?:>\s*)?El\s[\s\S]{0,400}?(?:escribió|escribio):\s*\n/i,
+      /\n\s*(?:>\s*)?On\s[\s\S]{0,400}?wrote:\s*\n/i,
+      /\n-{2,}\s*Mensaje original\s*-{2,}/i,
+      /\n-{2,}\s*Original Message\s*-{2,}/i,
+    ];
+
+    for (const p of patterns) {
+      const m = text.match(p);
+      if (m && m.index !== undefined) return text.slice(0, m.index).trim();
+    }
+
+    return text.trim();
+  }
+
+  const MAX_PREVIEW = 320;
+
   return (
     <div
       role="dialog"
       aria-modal="true"
       aria-label={`Respuestas de la reserva ${reservationCode}`}
       onClick={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-xl bg-white shadow-xl p-5"
+        className="w-full max-w-2xl max-h-[88vh] flex flex-col overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-900/5"
       >
-        {/* Header */}
-        <div className="flex items-start justify-between gap-3 mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">
-            Respuestas · {reservationCode}{" "}
-            <span className="text-sm font-normal text-gray-500">
-              · {holder}
-            </span>
-          </h3>
+        <div className="flex items-start justify-between gap-3 px-6 py-4 border-b border-slate-100 bg-slate-50/60">
+          <div className="flex items-start gap-3 min-w-0">
+            <div className="flex-shrink-0 rounded-xl bg-blue-100 p-2.5 text-blue-600">
+              <MessageSquare size={20} />
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-base font-semibold text-slate-900 leading-tight truncate">
+                Conversación · {reservationCode}
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5 truncate">
+                {holder}
+                {!loading && (
+                  <>
+                    {" · "}
+                    {replies.length}{" "}
+                    {replies.length === 1 ? "respuesta" : "respuestas"}
+                  </>
+                )}
+              </p>
+            </div>
+          </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Cerrar"
-            className="inline-flex items-center gap-1 rounded-md border border-gray-300 px-2 py-1 text-sm hover:bg-gray-50"
+            className="flex-shrink-0 rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
           >
-            <X size={16} /> Cerrar
+            <X size={18} />
           </button>
         </div>
 
-        {/* Error */}
-        {error && (
-          <div
-            role="alert"
-            className="mb-3 rounded-md bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700"
-          >
-            {error}
-          </div>
-        )}
+        <div className="flex-1 overflow-y-auto px-6 py-5">
+          {error && (
+            <div
+              role="alert"
+              className="mb-4 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700"
+            >
+              {error}
+            </div>
+          )}
 
-        {/* Contenido */}
-        {loading ? (
-          <p role="status" className="text-sm text-gray-500">
-            Cargando respuestas…
-          </p>
-        ) : replies.length === 0 ? (
-          <p className="text-sm text-gray-500">
-            Aún no hay respuestas registradas para esta solicitud. Cuando el
-            operador responda al correo, aparecerá aquí.
-          </p>
-        ) : (
-          <ul className="flex flex-col gap-3">
-            {replies.map((r) => {
-              const value = raw[r.id];
-              const isEmpty = !r.body || r.body.trim().length < 5;
-              return (
-                <li
-                  key={r.id}
-                  className="rounded-lg border border-gray-200 p-3"
-                >
-                  <div className="flex items-center justify-between gap-3 text-xs text-gray-500 mb-2">
-                    <strong className="text-gray-700">{r.from}</strong>
-                    <small>
-                      {new Date(r.receivedAt).toLocaleString("es-CO", {
-                        timeZone: "America/Bogota",
-                      })}
-                    </small>
-                  </div>
+          {loading ? (
+            <div className="flex items-center justify-center py-12 gap-2 text-slate-500">
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-blue-600" />
+              <span className="text-sm">Cargando respuestas…</span>
+            </div>
+          ) : replies.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
+              <div className="mb-3 rounded-full bg-slate-100 p-3 text-slate-400">
+                <Mail size={22} />
+              </div>
+              <p className="text-sm font-medium text-slate-700">
+                Aún no hay respuestas
+              </p>
+              <p className="mt-1 text-xs text-slate-500 max-w-xs">
+                Cuando el operador responda al correo, la respuesta aparecerá
+                aquí.
+              </p>
+            </div>
+          ) : (
+            <ul className="space-y-5">
+              {replies.map((r) => {
+                const displayName = getDisplayName(r.from);
+                const email = extractEmail(r.from);
+                const initials = getInitials(r.from);
+                const isOwn = email.toLowerCase().includes("@avioa.co");
+                const cleanBody = trimQuoted(r.body);
+                const isEmpty = !cleanBody || cleanBody.length < 3;
+                const isLong = cleanBody.length > MAX_PREVIEW;
+                const isExpanded = !!expanded[r.id];
+                const shown =
+                  isLong && !isExpanded
+                    ? cleanBody.slice(0, MAX_PREVIEW).trimEnd() + "…"
+                    : cleanBody;
+                const value = raw[r.id];
 
-                  <p className="whitespace-pre-wrap text-sm text-gray-800 m-0 mb-2">
-                    {isEmpty ? (
-                      <em className="text-gray-400">
-                        (Sin contenido reconocido. Usa "Ver correo original".)
-                      </em>
-                    ) : (
-                      r.body
-                    )}
-                  </p>
-
-                  {value === undefined && (
-                    <button
-                      type="button"
-                      onClick={() => void loadRaw(r.id)}
-                      className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700"
+                return (
+                  <li key={r.id} className="flex gap-3">
+                    <div
+                      className={`flex-shrink-0 flex h-9 w-9 items-center justify-center rounded-full text-xs font-semibold ring-2 ring-white shadow-sm ${
+                        isOwn
+                          ? "bg-blue-600 text-white"
+                          : "bg-emerald-100 text-emerald-700"
+                      }`}
+                      aria-hidden
                     >
-                      <ChevronDown size={14} /> Ver correo original
-                    </button>
-                  )}
+                      {initials}
+                    </div>
 
-                  {value === "loading" && (
-                    <small className="text-gray-500">Cargando original…</small>
-                  )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-baseline justify-between gap-2 mb-1">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-sm font-semibold text-slate-900 truncate">
+                            {displayName}
+                          </span>
+                          {isOwn && (
+                            <span className="flex-shrink-0 rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-blue-700">
+                              Tú
+                            </span>
+                          )}
+                        </div>
+                        <span
+                          className="flex-shrink-0 text-[11px] text-slate-500"
+                          title={new Date(r.receivedAt).toLocaleString("es-CO")}
+                        >
+                          {formatReplyDate(r.receivedAt)}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 mb-2 truncate">
+                        {email}
+                      </p>
 
-                  {typeof value === "string" && value !== "loading" && (
-                    <details open className="mt-1">
-                      <summary className="inline-flex items-center gap-1 text-sm text-blue-600 cursor-pointer">
-                        <ChevronUp size={14} /> Ocultar original
-                      </summary>
-                      <pre className="mt-2 max-h-72 overflow-auto whitespace-pre-wrap break-words rounded-md bg-gray-50 p-2 text-xs text-gray-800">
-                        {value || "(sin contenido)"}
-                      </pre>
-                    </details>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        )}
+                      <div className="rounded-xl rounded-tl-sm bg-slate-50 border border-slate-100 px-4 py-3 text-[14px] leading-relaxed text-slate-800">
+                        {isEmpty ? (
+                          <em className="text-slate-400">
+                            (Sin contenido reconocido. Abre el correo original
+                            abajo.)
+                          </em>
+                        ) : (
+                          <p className="whitespace-pre-wrap break-words m-0">
+                            {shown}
+                          </p>
+                        )}
+                        {isLong && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setExpanded((p) => ({
+                                ...p,
+                                [r.id]: !p[r.id],
+                              }))
+                            }
+                            className="mt-2 text-xs font-medium text-blue-600 hover:text-blue-700"
+                          >
+                            {isExpanded ? "Mostrar menos" : "Mostrar más"}
+                          </button>
+                        )}
+                      </div>
 
-        <p className="mt-4 text-xs text-gray-500">
-          El listado se actualiza bajo demanda. Si el operador responde después
-          de abrir este panel, ciérralo y vuelve a abrirlo.
-        </p>
+                      <div className="mt-2">
+                        {value === undefined && (
+                          <button
+                            type="button"
+                            onClick={() => void loadRaw(r.id)}
+                            className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 hover:text-slate-700 transition-colors"
+                          >
+                            <ChevronDown size={12} /> Ver correo original
+                          </button>
+                        )}
+                        {value === "loading" && (
+                          <small className="text-[11px] text-slate-400">
+                            Cargando original…
+                          </small>
+                        )}
+                        {typeof value === "string" && value !== "loading" && (
+                          <details
+                            open
+                            className="group mt-2"
+                            onToggle={(e) =>
+                              setRaw((p) => ({
+                                ...p,
+                                [`${r.id}__open`]: (
+                                  e.target as HTMLDetailsElement
+                                ).open
+                                  ? "1"
+                                  : "",
+                              }))
+                            }
+                          >
+                            <summary className="inline-flex cursor-pointer items-center gap-1 text-[11px] font-medium text-slate-500 hover:text-slate-700 list-none">
+                              {raw[`${r.id}__open`] === "" ? (
+                                <>
+                                  <ChevronDown size={12} /> Ver correo original
+                                </>
+                              ) : (
+                                <>
+                                  <ChevronUp size={12} /> Ocultar original
+                                </>
+                              )}
+                            </summary>
+                            <pre className="mt-2 max-h-60 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-slate-900 px-3 py-2 text-[11px] leading-relaxed font-mono text-slate-100">
+                              {value || "(sin contenido)"}
+                            </pre>
+                          </details>
+                        )}
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between gap-3 px-6 py-3 border-t border-slate-100 bg-slate-50/60">
+          <p className="text-[11px] text-slate-500">
+            Actualiza bajo demanda. Cierra y vuelve a abrir para refrescar.
+          </p>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg bg-white border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+          >
+            Cerrar
+          </button>
+        </div>
       </div>
     </div>
   );
+}
+
+function extractEmail(from: string): string {
+  const m = from.match(/<([^>\s]+@[^>\s]+)>/);
+  return (m ? m[1] : from).replace(/"/g, "").trim();
+}
+
+function getDisplayName(from: string): string {
+  const m = from.match(/^\s*"?([^"<]+?)"?\s*</);
+  if (m) return m[1].trim();
+  return extractEmail(from);
+}
+
+function getInitials(from: string): string {
+  const name = getDisplayName(from);
+  const parts = name.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+
+  if (parts.length === 1 && parts[0].length >= 2) {
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+
+  return (extractEmail(from)[0] || "?").toUpperCase();
+}
+
+function formatReplyDate(iso: string): string {
+  const d = new Date(iso);
+  const now = new Date();
+
+  const sameDay =
+    d.toLocaleDateString("es-CO", { timeZone: "America/Bogota" }) ===
+    now.toLocaleDateString("es-CO", { timeZone: "America/Bogota" });
+
+  return sameDay
+    ? d.toLocaleTimeString("es-CO", {
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: "America/Bogota",
+      })
+    : d.toLocaleString("es-CO", {
+        day: "2-digit",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: "America/Bogota",
+      });
 }
