@@ -28,6 +28,7 @@ import { POST_TYPE_BADGE } from "@/lib/feed-reactions";
 import { useModulePermission } from "@/hooks/useModulePermission";
 import { cn } from "@/lib/utils";
 import DOMPurify from "dompurify";
+import { FeedPostAttachments } from "./FeedPostAttachments";
 
 export function PostCard({ post }: { post: FeedPost }) {
   const user = useAuthStore((s) => s.user);
@@ -201,7 +202,9 @@ export function PostCard({ post }: { post: FeedPost }) {
           />
         )}
 
-        {post.images?.length > 0 && <ImageGrid images={post.images} />}
+        {post.attachments?.length > 0 && (
+          <FeedPostAttachments attachments={post.attachments} />
+        )}
 
         <div className="mt-4 flex flex-wrap items-center justify-between gap-x-2 gap-y-2 border-t border-border/60 pt-3">
           <div className="min-w-0 flex-1">
