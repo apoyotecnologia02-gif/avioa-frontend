@@ -45,6 +45,7 @@ export async function POST(request: Request) {
         ...(authorization ? { Authorization: authorization } : {}),
       },
       body: JSON.stringify(body),
+      cache: "no-store",
     });
 
     const data = await parseResponseData(response);

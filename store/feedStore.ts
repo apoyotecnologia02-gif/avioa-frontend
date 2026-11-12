@@ -3,6 +3,7 @@ import {
   Birthday,
   CommentDeletedSocketPayload,
   CommentSocketPayload,
+  CreateAttachmentInput,
   FeedComment,
   FeedPost,
   ReactionSocketPayload,
@@ -27,6 +28,7 @@ interface FeedState {
     type: string;
     images?: string[];
     recognizedUserId?: string;
+    attachments?: CreateAttachmentInput[];
   }) => Promise<void>;
   react: (postId: string, type: ReactionType) => Promise<void>;
   unreact: (postId: string) => Promise<void>;

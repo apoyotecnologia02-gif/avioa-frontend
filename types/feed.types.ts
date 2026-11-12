@@ -11,6 +11,29 @@ export type ReactionType =
   | "SUPPORT"
   | "INSIGHTFUL";
 
+export type FeedAttachmentType = "IMAGE" | "FILE";
+
+export interface FeedAttachment {
+  feedAttachmentId: string;
+  type: FeedAttachmentType;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  width: number | null;
+  height: number | null;
+  url: string;
+}
+
+export interface CreateAttachmentInput {
+  type: FeedAttachmentType;
+  storageKey: string;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  width?: number;
+  height?: number;
+}
+
 export interface FeedAuthor {
   userId: string;
   name: string;
@@ -31,7 +54,7 @@ export interface FeedPost {
   feedPostId: string;
   type: FeedPostType;
   content: string;
-  images: string[];
+  // images: string[];
   pinned: boolean;
   author: FeedAuthor;
   recognizedUser: FeedAuthor | null;
@@ -43,6 +66,7 @@ export interface FeedPost {
   commentsCount: number;
   createdAt: string;
   updatedAt: string;
+  attachments: FeedAttachment[];
 }
 
 export interface Birthday {
@@ -72,4 +96,11 @@ export interface CommentDeletedSocketPayload {
   commentId: string;
   parentId: string | null;
   commentsCount: number;
+}
+
+export interface CreatePostInput {
+  type: FeedPostType;
+  content: string;
+  recognizedUserId?: string;
+  attachments?: CreateAttachmentInput[];
 }

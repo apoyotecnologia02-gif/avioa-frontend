@@ -20,6 +20,8 @@ import { useFeedStore } from "@/store/feedStore";
 import { POST_TYPE_LABELS } from "@/lib/feed-reactions";
 import { RecognitionUserPicker } from "./RecognitionUserPicket";
 import { RichTextEditor } from "./RichTextEditor";
+import { useAttachmentUpload } from "@/hooks/useAttachmentUpload";
+import { AttachmentPicker } from "./AttachmentPicker";
 
 export function CreatePostBox() {
   const user = useAuthStore((s) => s.user);
@@ -31,6 +33,7 @@ export function CreatePostBox() {
   const [recognizedUser, setRecognizedUser] = useState<FeedAuthor | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  const attachments = useAttachmentUpload();
   const isRecognition = type === "RECOGNITION";
 
   const plainText = content
@@ -38,30 +41,43 @@ export function CreatePostBox() {
     .replace(/&nbsp;/g, " ")
     .trim();
 
+  const hasContent = plainText.length > 0 || attachments.items.length;
+
   const canSubmit =
-    content.trim().length > 0 && (!isRecognition || !!recognizedUser);
+    hasContent &&
+    (!isRecognition || !!recognizedUser) &&
+    !attachments.isUploading &&
+    !attachments.hasErrors &&
+    !submitting;
 
   const reset = () => {
     setContent("");
     setType("PUBLICATION");
     setRecognizedUser(null);
+    attachments.reset();
     setOpen(false);
   };
 
   const handleSubmit = async () => {
-    if (!canSubmit || submitting) return;
+    if (!canSubmit) return;
     setSubmitting(true);
     try {
+      const payloadAttachments = attachments.toPayload();
       await createPost({
         type,
         content: content.trim(),
         recognizedUserId: isRecognition ? recognizedUser!.userId : undefined,
+        attachments: payloadAttachments.length ? payloadAttachments : undefined,
       });
       reset();
       toast.success("¡Publicado!");
     } catch (error) {
       console.error(error);
-      toast.error("No se pudo crear la publicación");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "No se pudo crear la publicación",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -102,63 +118,72 @@ export function CreatePostBox() {
           />
 
           {open && (
-            <div className="flex flex-wrap items-center gap-2 border-t border-border/60 pt-3">
-              <Select
-                value={type}
-                onValueChange={(v) => {
-                  setType(v as FeedPostType);
-                  if (v !== "RECOGNITION") setRecognizedUser(null);
-                }}
-              >
-                <SelectTrigger className="h-9 w-full rounded-full border-border/60 bg-muted/40 px-4 text-xs font-medium sm:w-[190px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableTypes.map((t) => (
-                    <SelectItem key={t} value={t}>
-                      {POST_TYPE_LABELS[t]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <>
+              <AttachmentPicker
+                items={attachments.items}
+                onAdd={attachments.addFiles}
+                onRemove={attachments.remove}
+                disabled={submitting}
+              />
 
-              {isRecognition && (
-                <div className="min-w-0 flex-1 sm:flex-initial">
-                  <RecognitionUserPicker
-                    value={recognizedUser}
-                    onChange={setRecognizedUser}
-                  />
+              <div className="flex flex-wrap items-center gap-2 border-t border-border/60 pt-3">
+                <Select
+                  value={type}
+                  onValueChange={(v) => {
+                    setType(v as FeedPostType);
+                    if (v !== "RECOGNITION") setRecognizedUser(null);
+                  }}
+                >
+                  <SelectTrigger className="h-9 w-full rounded-full border-border/60 bg-muted/40 px-4 text-xs font-medium sm:w-[190px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableTypes.map((t) => (
+                      <SelectItem key={t} value={t}>
+                        {POST_TYPE_LABELS[t]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {isRecognition && (
+                  <div className="min-w-0 flex-1 sm:flex-initial">
+                    <RecognitionUserPicker
+                      value={recognizedUser}
+                      onChange={setRecognizedUser}
+                    />
+                  </div>
+                )}
+
+                {/* <button
+                  type="button"
+                  title="Adjuntar imagen (próximamente)"
+                  className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:inline-flex"
+                >
+                  <ImagePlus className="h-4 w-4" />
+                </button> */}
+
+                <div className="ml-auto flex w-full items-center justify-end gap-2 sm:w-auto">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={reset}
+                    className="h-9 rounded-full px-4 text-muted-foreground hover:text-foreground"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    size="sm"
+                    disabled={!canSubmit || submitting}
+                    onClick={handleSubmit}
+                    className="h-9 shrink-0 rounded-full bg-gradient-to-r from-primary to-primary/85 px-5 font-medium shadow-sm hover:shadow-md"
+                  >
+                    <Send className="mr-1.5 h-3.5 w-3.5" />
+                    Publicar
+                  </Button>
                 </div>
-              )}
-
-              <button
-                type="button"
-                title="Adjuntar imagen (próximamente)"
-                className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:inline-flex"
-              >
-                <ImagePlus className="h-4 w-4" />
-              </button>
-
-              <div className="ml-auto flex w-full items-center justify-end gap-2 sm:w-auto">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={reset}
-                  className="h-9 rounded-full px-4 text-muted-foreground hover:text-foreground"
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  size="sm"
-                  disabled={!canSubmit || submitting}
-                  onClick={handleSubmit}
-                  className="h-9 shrink-0 rounded-full bg-gradient-to-r from-primary to-primary/85 px-5 font-medium shadow-sm hover:shadow-md"
-                >
-                  <Send className="mr-1.5 h-3.5 w-3.5" />
-                  Publicar
-                </Button>
               </div>
-            </div>
+            </>
           )}
         </div>
       </div>
