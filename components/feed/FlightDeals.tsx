@@ -5,7 +5,6 @@ import {
   ArrowRight,
   Calendar,
   ChevronRight,
-  ExternalLink,
   Flame,
   Moon,
   Plane,
