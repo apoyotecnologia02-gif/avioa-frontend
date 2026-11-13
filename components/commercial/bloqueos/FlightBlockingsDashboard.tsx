@@ -36,6 +36,15 @@ import {
   isAdminBlock,
 } from "@/hooks/useFlightBlockings";
 
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/table";
+
 // Componentes hijos
 import ReservationTable from "./ReservationTable";
 import BlockEditor from "./BlockEditor";
@@ -522,17 +531,92 @@ export function FlightBlockingsDashboard({
       {/* ========================================================= */}
       {/* VISTA: HISTORIAL Y SETUP (Placeholders)                   */}
       {/* ========================================================= */}
-      {(h.tab === "history" || h.tab === "setup") && (
-        <div className="p-8 text-center bg-muted/20 border border-dashed rounded-lg">
-          <h2 className="text-lg font-semibold mb-2">
-            Módulo {h.tab === "history" ? "de Historial" : "de Origen"}
-          </h2>
-          <p className="text-muted-foreground">
-            Esta vista se puede implementar después. La lógica y los datos ya
-            están listos en el hook.
-          </p>
-        </div>
+      {/* ========================================================= */}
+{/* VISTA: HISTORIAL                                         */}
+{/* ========================================================= */}
+{h.tab === 'history' && (
+  <div className="flex flex-col gap-4">
+    <div className="bg-muted/30 p-4 rounded-lg border border-border">
+      <h2 className="text-lg font-semibold">Historial de gestiones</h2>
+      <p className="text-sm text-muted-foreground">
+        Últimos 250 movimientos realizados en los bloqueos. Los registros anteriores se conservan.
+      </p>
+    </div>
+
+    <div className="rounded-lg border overflow-hidden">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Fecha</TableHead>
+            <TableHead>Gestión</TableHead>
+            <TableHead>Bloqueo / Servicio</TableHead>
+            <TableHead>Responsable</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {h.board?.events.map((e: any) => {
+            const block = h.board?.blocks.find((b: any) => b.id === e.blockId);
+            return (
+              <TableRow key={e.id}>
+                <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
+                  {new Date(e.at).toLocaleString('es-CO')}
+                </TableCell>
+                <TableCell className="text-sm font-medium">{e.action}</TableCell>
+                <TableCell className="text-sm">
+                  {block ? `${block.code} · ${block.title}` : e.serviceId || '—'}
+                </TableCell>
+                <TableCell className="text-sm">{e.by}</TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+      {(!h.board?.events || h.board.events.length === 0) && (
+        <div className="p-8 text-center text-muted-foreground">No hay movimientos registrados aún.</div>
       )}
+    </div>
+  </div>
+)}
+
+{/* ========================================================= */}
+{/* VISTA: SETUP (Origen de los bloqueos)                     */}
+{/* ========================================================= */}
+{h.tab === 'setup' && (
+  <div className="flex flex-col gap-4">
+    <div className="bg-muted/30 p-4 rounded-lg border border-border">
+      <h2 className="text-lg font-semibold">Origen de los bloqueos</h2>
+      <p className="text-sm text-muted-foreground">
+        Los bloqueos se cargan automáticamente desde la hoja de Google Sheets y se sincronizan con Travel Compositor.
+      </p>
+    </div>
+
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Conexión con Google Drive</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2 text-sm">
+        <p><strong>Saldo inicial cargado de Drive:</strong> Sí</p>
+        <p><strong>Última verificación:</strong> {h.board?.drive?.checkedAt ? new Date(h.board.drive.checkedAt).toLocaleString('es-CO') : 'Pendiente'}</p>
+        {h.board?.drive?.error && (
+          <p className="text-destructive">Error de Drive: {h.board.drive.error}</p>
+        )}
+      </CardContent>
+    </Card>
+
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Sincronización con Travel Compositor</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2 text-sm">
+        <p><strong>Estado:</strong> {h.board?.sync?.configured ? 'Conectado' : 'No configurado'}</p>
+        <p><strong>Última sincronización exitosa:</strong> {h.board?.sync?.lastSuccess ? new Date(h.board.sync.lastSuccess).toLocaleString('es-CO') : 'Pendiente'}</p>
+        {h.board?.sync?.error && (
+          <p className="text-destructive">Error de TC: {h.board.sync.error}</p>
+        )}
+      </CardContent>
+    </Card>
+  </div>
+)}
 
       {/* ========================================================= */}
       {/* MODALES (Editores)                                        */}
