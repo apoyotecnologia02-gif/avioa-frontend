@@ -171,18 +171,18 @@ export const NAV_SECTIONS: NavSection[] = [
         label: "Herramientas",
         icon: Wrench,
         items: [
-          {
-            href: process.env.NEXT_PUBLIC_DIRECTORIO_AVIOA ?? "#",
-            label: "Directorio aVioa",
-            module: "AVIOA_DIRECTORY",
-            external: true,
-          },
-          {
-            href: process.env.NEXT_PUBLIC_AVIOA_GASTOS ?? "#",
-            label: "aVioa Gastos",
-            module: "AVIOA_GASTOS",
-            external: true,
-          },
+          // {
+          //   href: process.env.NEXT_PUBLIC_DIRECTORIO_AVIOA ?? "#",
+          //   label: "Directorio aVioa",
+          //   module: "AVIOA_DIRECTORY",
+          //   external: true,
+          // },
+          // {
+          //   href: process.env.NEXT_PUBLIC_AVIOA_GASTOS ?? "#",
+          //   label: "aVioa Gastos",
+          //   module: "AVIOA_GASTOS",
+          //   external: true,
+          // },
           {
             href: "/avi-click",
             label: "Avi Click",
