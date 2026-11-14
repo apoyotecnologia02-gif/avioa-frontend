@@ -18,8 +18,6 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
-  SidebarRail,
-  useSidebar,
 } from "@/components/ui/sidebar";
 import {
   Collapsible,
@@ -73,8 +71,6 @@ function isGroupActive(group: NavGroup, pathname: string): boolean {
 export function Sidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
-  const { state, isMobile } = useSidebar();
-  const collapsed = !isMobile && state === "collapsed";
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const [hydrated, setHydrated] = useState(false);
@@ -116,18 +112,18 @@ export function Sidebar() {
   };
 
   return (
-    <SidebarPrimitive collapsible="icon">
+    <SidebarPrimitive collapsible="none">
       <SidebarHeader className="h-16 justify-center border-b border-sidebar-border">
         <Link
           href="/dashboard"
-          className="flex items-center justify-center px-2 group-data-[collapsible=icon]:px-0"
+          className="flex items-center justify-center px-2"
         >
           <Image
             src="/avioa-logo.png"
             alt="avioa Agencia de Viajes logo"
             width={360}
             height={180}
-            className="h-9 w-auto max-w-full object-contain group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8"
+            className="h-9 w-auto max-w-full object-contain"
             priority
           />
         </Link>
@@ -135,15 +131,6 @@ export function Sidebar() {
 
       <SidebarContent>
         {NAV_SECTIONS.map((section, sectionIndex) => {
-          // if (!canSeeItem(section, user)) return null;
-
-          // // Filtra grupos por visibility + module
-          // const visibleGroups = section.groups.filter((g) =>
-          //   canSeeItem(g, user),
-          // );
-
-          // if (visibleGroups.length === 0) return null;
-
           const visibleGroups = section.groups
             .map((group) => {
               if (!canSeeItem(group, user)) return null;
@@ -182,31 +169,8 @@ export function Sidebar() {
                     if (!group.href) return null;
                     return (
                       <SidebarMenuItem key={group.key}>
-                        <SidebarMenuButton
-                          asChild
-                          isActive={active}
-                          tooltip={group.label}
-                        >
+                        <SidebarMenuButton asChild isActive={active}>
                           <Link href={group.href}>
-                            <Icon />
-                            <span>{group.label}</span>
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    );
-                  }
-
-                  // caso sidebar colapsado a iconos
-                  if (collapsed) {
-                    const firstItem = visibleItems[0];
-                    return (
-                      <SidebarMenuItem key={group.key}>
-                        <SidebarMenuButton
-                          asChild
-                          isActive={active}
-                          tooltip={group.label}
-                        >
-                          <Link href={firstItem.href}>
                             <Icon />
                             <span>{group.label}</span>
                           </Link>
@@ -227,10 +191,7 @@ export function Sidebar() {
                     >
                       <SidebarMenuItem>
                         <CollapsibleTrigger asChild>
-                          <SidebarMenuButton
-                            tooltip={group.label}
-                            isActive={active && !isOpen}
-                          >
+                          <SidebarMenuButton isActive={active && !isOpen}>
                             <Icon />
                             <span>{group.label}</span>
                             <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
@@ -273,7 +234,7 @@ export function Sidebar() {
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border">
-        {user && !collapsed && (
+        {user && (
           <div className="px-2 py-1.5">
             <p className="truncate text-sm font-medium text-sidebar-foreground">
               {user.name}
@@ -287,7 +248,6 @@ export function Sidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton
               onClick={logout}
-              tooltip="Cerrar sesión"
               className="text-muted-foreground hover:text-destructive"
             >
               <LogOut />
@@ -296,8 +256,6 @@ export function Sidebar() {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
-
-      <SidebarRail />
     </SidebarPrimitive>
   );
 }

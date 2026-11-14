@@ -2,40 +2,17 @@
 
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
-import { SidebarProvider, useSidebar } from "@/components/ui/sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 
 function AppShellContent({ children }: { children: React.ReactNode }) {
-  const { state, setOpen, isMobile } = useSidebar();
-
-  const supportsHover = () =>
-    !isMobile &&
-    window.matchMedia("(hover: hover) and (pointer: fine)").matches;
-
-  const handleSidebarMouseEnter = () => {
-    if (supportsHover()) setOpen(true);
-  };
-
-  const handleSidebarMouseLeave = () => {
-    if (supportsHover()) setOpen(false);
-  };
-
-  const isCollapsed = state === "collapsed";
-  const SIDEBAR_EXPANDED = 240;
-  const SIDEBAR_COLLAPSED = 56;
-  const sidebarWidth = isCollapsed ? SIDEBAR_COLLAPSED : SIDEBAR_EXPANDED;
-
   return (
     <div className="flex h-svh w-full max-w-[100vw] overflow-hidden bg-background">
-      <div
-        onMouseEnter={handleSidebarMouseEnter}
-        onMouseLeave={handleSidebarMouseLeave}
-        className="relative h-full w-0 shrink-0 md:w-[var(--app-sidebar-width)] md:transition-[width] md:duration-300 md:ease-[cubic-bezier(0.4,0,0.2,1)]"
-        style={
-          {
-            "--app-sidebar-width": `${sidebarWidth}px`,
-          } as React.CSSProperties
-        }
-      >
+      {/* 
+        Contenedor del Sidebar:
+        - Oculto en móvil (el Sidebar de shadcn usa un Sheet para móvil automáticamente).
+        - Ancho fijo en escritorio. Usamos la variable nativa de shadcn.
+      */}
+      <div className="relative hidden h-full w-[--sidebar-width] shrink-0 md:block">
         <Sidebar />
       </div>
 
@@ -55,15 +32,13 @@ interface AppShellProps {
   storageKey?: string;
 }
 
-export function AppShell({ 
-  children, 
-  defaultOpen = false,
-  storageKey = "portal-sidebar-state"
+export function AppShell({
+  children,
+  defaultOpen = true, // Forzamos que inicie abierto
+  storageKey = "portal-sidebar-state",
 }: AppShellProps) {
   return (
-    <SidebarProvider 
-      defaultOpen={defaultOpen}
-    >
+    <SidebarProvider defaultOpen={defaultOpen}>
       <AppShellContent>{children}</AppShellContent>
     </SidebarProvider>
   );
