@@ -51,6 +51,8 @@ interface FeedState {
   ) => void;
   receiveNewComment: (payload: CommentSocketPayload) => void;
   receiveCommentDeleted: (payload: CommentDeletedSocketPayload) => void;
+  reactToComment: (postId: string, commentId: string, type: string) => void;
+  unreactComment: (postId: string, commentId: string) => void;
 }
 
 // ============================================================
@@ -134,6 +136,24 @@ const bumpSummary = (
   if (value <= 0) delete next[type];
   else next[type] = value;
   return next;
+};
+
+const updateCommentInTree = (
+  comments: FeedComment[],
+  commentId: string,
+  updateFn: (c: FeedComment) => FeedComment,
+): FeedComment[] => {
+  return comments.map((c) => {
+    if (c.feedCommentId === commentId) return updateFn(c);
+    if (c.replies && c.replies.length > 0) {
+      return {
+        ...c,
+        replies: updateCommentInTree(c.replies, commentId, updateFn),
+      };
+    }
+
+    return c;
+  });
 };
 
 // ============================================================
@@ -430,4 +450,105 @@ export const useFeedStore = create<FeedState>((set, get) => ({
         return { ...p, comments: tree, commentsCount };
       }),
     })),
+
+  reactToComment: async (postId, commentId, type) => {
+    const previousPost = get().posts.find((p) => p.feedPostId === postId);
+    if (!previousPost) return;
+
+    const previousComment = findComment(previousPost.comments, commentId);
+    if (!previousComment) return;
+    if (previousComment.myReaction === type) return; // Ya tiene esta reacción
+
+    const oldReaction = previousComment.myReaction as ReactionType;
+
+    // 1. Actualización optimista (UI instantánea)
+    set((state) => ({
+      posts: state.posts.map((p) => {
+        if (p.feedPostId !== postId) return p;
+        return {
+          ...p,
+          comments: updateCommentInTree(p.comments, commentId, (c) => {
+            let summary = { ...(c.reactionsSummary ?? {}) };
+            let count = c.reactionsCount ?? 0;
+
+            if (oldReaction) {
+              summary = bumpSummary(summary, oldReaction, -1);
+            } else {
+              count += 1;
+            }
+            summary = bumpSummary(summary, type as ReactionType, 1);
+
+            return {
+              ...c,
+              myReaction: type,
+              reactionsSummary: summary,
+              reactionsCount: count,
+            };
+          }),
+        };
+      }),
+    }));
+
+    // 2. Llamada al backend
+    try {
+      await api.post(
+        `/feed/comments/${commentId}/react`,
+        { type },
+        { skip401Redirect: true },
+      );
+    } catch (error) {
+      console.error("Error al reaccionar al comentario:", error);
+      // Rollback en caso de error
+      set((state) => ({
+        posts: state.posts.map((p) =>
+          p.feedPostId === postId ? previousPost : p,
+        ),
+      }));
+    }
+  },
+
+  unreactComment: async (postId, commentId) => {
+    const previousPost = get().posts.find((p) => p.feedPostId === postId);
+    if (!previousPost) return;
+
+    const previousComment = findComment(previousPost.comments, commentId);
+    if (!previousComment?.myReaction) return;
+
+    const oldReaction = previousComment.myReaction as ReactionType;
+
+    // 1. Actualización optimista
+    set((state) => ({
+      posts: state.posts.map((p) => {
+        if (p.feedPostId !== postId) return p;
+        return {
+          ...p,
+          comments: updateCommentInTree(p.comments, commentId, (c) => ({
+            ...c,
+            myReaction: null,
+            reactionsCount: Math.max(0, (c.reactionsCount ?? 0) - 1),
+            reactionsSummary: bumpSummary(
+              c.reactionsSummary ?? {},
+              oldReaction,
+              -1,
+            ),
+          })),
+        };
+      }),
+    }));
+
+    // 2. Llamada al backend
+    try {
+      await api.delete(`/feed/comments/${commentId}/react`, {
+        skip401Redirect: true,
+      });
+    } catch (error) {
+      console.error("Error al desreaccionar al comentario:", error);
+      // Rollback
+      set((state) => ({
+        posts: state.posts.map((p) =>
+          p.feedPostId === postId ? previousPost : p,
+        ),
+      }));
+    }
+  },
 }));

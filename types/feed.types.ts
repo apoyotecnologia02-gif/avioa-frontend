@@ -48,6 +48,10 @@ export interface FeedComment {
   parentId: string | null;
   replies: FeedComment[];
   createdAt: string;
+
+  reactionsCount?: number;
+  reactionsSummary?: Record<string, number>;
+  myReaction?: string | null;
 }
 
 export interface FeedPost {
