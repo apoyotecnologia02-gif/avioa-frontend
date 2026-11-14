@@ -1,13 +1,16 @@
 import { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
-import { CornerDownRight } from "lucide-react";
+import { CornerDownRight, SmilePlus } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import type { FeedComment, FeedPost } from "@/types/feed.types";
+import type { FeedComment, FeedPost, ReactionType } from "@/types/feed.types";
 import { useFeedStore } from "@/store/feedStore";
 import { useAuthStore } from "@/store/authStore";
+import { REACTIONS_META, REACTIONS_ORDER } from "@/lib/feed-reactions";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import { cn } from "@/lib/utils";
 
 interface SectionProps {
   post: FeedPost;
@@ -39,7 +42,7 @@ export function CommentSection({ post }: SectionProps) {
       {/* Input raíz */}
       <div className="flex items-start gap-3">
         <Avatar className="h-8 w-8 shrink-0">
-          <AvatarImage src={currentUser?.avatarUrl ?? undefined} />
+          <AvatarImage src={currentUser?.avatar ?? undefined} />
           <AvatarFallback className="text-xs">
             {currentUser?.name?.[0] ?? "U"}
           </AvatarFallback>
@@ -100,7 +103,13 @@ interface ItemProps {
   onReply: (parentId: string, content: string) => Promise<void>;
 }
 
-function CommentItem({ comment, currentUserId, onRemove, onReply }: ItemProps) {
+function CommentItem({
+  comment,
+  currentUserId,
+  onRemove,
+  onReply,
+  postId,
+}: ItemProps) {
   const [showReplyBox, setShowReplyBox] = useState(false);
   const [replyText, setReplyText] = useState("");
   const [showAllReplies, setShowAllReplies] = useState(false);
@@ -121,6 +130,7 @@ function CommentItem({ comment, currentUserId, onRemove, onReply }: ItemProps) {
       await onReply(comment.feedCommentId, text);
       setReplyText("");
       setShowReplyBox(false);
+      setShowAllReplies(false);
     } finally {
       setSubmitting(false);
     }
@@ -142,7 +152,12 @@ function CommentItem({ comment, currentUserId, onRemove, onReply }: ItemProps) {
               <span className="text-xs font-semibold">
                 {comment.author.name}
               </span>
-              <span className="text-[10px] text-muted-foreground">…</span>
+              <span className="text-[10px] text-muted-foreground">
+                {formatDistanceToNow(new Date(comment.createdAt), {
+                  addSuffix: true,
+                  locale: es,
+                })}
+              </span>
             </div>
             <p className="mt-0.5 whitespace-pre-wrap break-words text-sm leading-snug">
               {comment.content}
@@ -156,6 +171,9 @@ function CommentItem({ comment, currentUserId, onRemove, onReply }: ItemProps) {
             >
               Responder
             </button>
+
+            <CommentReaction comment={comment} postId={postId} />
+
             {isOwner && (
               <button
                 onClick={() => onRemove(comment.feedCommentId)}
@@ -224,7 +242,7 @@ function CommentItem({ comment, currentUserId, onRemove, onReply }: ItemProps) {
               )}
 
               {visibleReplies.map((r) => (
-                <ReplyItem key={r.feedCommentId} reply={r} />
+                <ReplyItem key={r.feedCommentId} reply={r} postId={postId} />
               ))}
 
               {showAllReplies && hiddenCount > 0 && (
@@ -243,7 +261,7 @@ function CommentItem({ comment, currentUserId, onRemove, onReply }: ItemProps) {
   );
 }
 
-function ReplyItem({ reply }: { reply: FeedComment }) {
+function ReplyItem({ reply, postId }: { reply: FeedComment; postId: string }) {
   return (
     <div className="flex items-start gap-2">
       <Avatar className="h-6 w-6 shrink-0">
@@ -266,6 +284,107 @@ function ReplyItem({ reply }: { reply: FeedComment }) {
           {reply.content}
         </p>
       </div>
+      <div className="mt-1 pl-1">
+        <CommentReaction comment={reply} postId={postId} />
+      </div>
+    </div>
+  );
+}
+
+function CommentReaction({
+  comment,
+  postId,
+}: {
+  comment: FeedComment;
+  postId: string;
+}) {
+  const { reactToComment, unreactComment } = useFeedStore();
+  const [open, setOpen] = useState(false);
+  const [pending, setPending] = useState(false);
+
+  const hasReaction = (comment.reactionsCount ?? 0) > 0;
+
+  const myReactionMeta = comment.myReaction
+    ? REACTIONS_META[comment.myReaction as ReactionType]
+    : null;
+
+  let topReaction: ReactionType = "LIKE";
+
+  if (comment.reactionsSummary) {
+    const sorted = Object.entries(comment.reactionsSummary).sort(
+      (a, b) => b[1] - a[1],
+    );
+
+    if (sorted.length > 0) topReaction = sorted[0][0] as ReactionType;
+  }
+
+  const handleReact = async (type: ReactionType) => {
+    if (pending) return;
+    setPending(true);
+    try {
+      if (comment.myReaction === type) {
+        await unreactComment(postId, comment.feedCommentId);
+      } else {
+        await reactToComment(postId, comment.feedCommentId, type);
+      }
+    } finally {
+      (setPending(false), setOpen(false));
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-1.5">
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <button
+            className={cn(
+              "flex items-center gap-1 text-[11px] font-semibold transition-colors hover:text-foreground",
+              myReactionMeta ? myReactionMeta.color : "text-muted-foreground",
+            )}
+          >
+            {myReactionMeta ? (
+              <span className="text-sm leading-none">
+                {myReactionMeta.emoji}
+              </span>
+            ) : (
+              <SmilePlus className="h-3.5 w-3.5" />
+            )}
+            <span>{myReactionMeta ? myReactionMeta.label : "Reaccionar"}</span>
+          </button>
+        </PopoverTrigger>
+        <PopoverContent
+          side="top"
+          align="start"
+          sideOffset={4}
+          className="flex w-auto gap-0.5 rounded-full p-1 shadow-md"
+        >
+          {REACTIONS_ORDER.map((t) => (
+            <button
+              key={t}
+              disabled={pending}
+              onClick={() => handleReact(t)}
+              title={REACTIONS_META[t].label}
+              className="flex h-8 w-8 items-center justify-center rounded-full text-lg transition-transform hover:-translate-y-1 hover:scale-125"
+            >
+              {REACTIONS_META[t].emoji}
+            </button>
+          ))}
+        </PopoverContent>
+      </Popover>
+
+      {hasReaction && (
+        <div
+          className="flex items-center gap-1 rounded-full bg-muted/50 px-1.5 py-0.5"
+          title={`${comment.reactionsCount} reacciones`}
+        >
+          <span className="text-[10px] leading-none">
+            {REACTIONS_META[topReaction]?.emoji}
+          </span>
+          <span className="text-[10px] font-medium text-muted-foreground">
+            {comment.reactionsCount}
+          </span>
+        </div>
+      )}
     </div>
   );
 }
