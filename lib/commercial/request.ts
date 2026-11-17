@@ -1,6 +1,5 @@
 import { api } from "@/lib/axios";
 
-// Preserve the existing JWT/refresh interceptors; return Fetch-compatible responses to the shared UI.
 export const commercialRequest: typeof fetch = async (input, init) => {
   const raw =
     typeof input === "string"
@@ -9,13 +8,29 @@ export const commercialRequest: typeof fetch = async (input, init) => {
         ? input.href
         : input.url;
   const url = raw.replace(/^\/api\/commercial\//, "/commercial/");
+  
   if (!url.startsWith("/commercial/"))
     throw Error("Ruta comercial no permitida.");
+
+  // Detectamos si es FormData o JSON
+  let data: any = undefined;
+  if (init?.body) {
+    if (init.body instanceof FormData) {
+      data = init.body;
+    } else {
+      try {
+        data = JSON.parse(String(init.body));
+      } catch {
+        data = init.body; 
+      }
+    }
+  }
+
   try {
     const response = await api.request({
       url,
       method: init?.method || "GET",
-      data: init?.body ? JSON.parse(String(init.body)) : undefined,
+      data,
       signal: init?.signal || undefined,
       timeout: 130000,
     });
