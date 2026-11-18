@@ -236,43 +236,17 @@ export function HotelVideos() {
             clientes.
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => void load(undefined, true)}
-          disabled={busy || loading}
-        >
-          {loading ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <RefreshCw className="mr-2 h-4 w-4" />
-          )}
-          Actualizar
-        </Button>
       </div>
 
       {/* Estado Drive */}
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-        <span>
+        {/* <span>
           {checkedAt
             ? `Drive consultado: ${new Date(checkedAt).toLocaleString("es-CO")}`
             : "Se muestran los videos migrados y los guardados aquí."}
-        </span>
-        <a
-          href={DRIVE_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-1 text-primary hover:underline"
-        >
-          Abrir hoja de Drive <ExternalLink className="h-3 w-3" />
-        </a>
+        </span> */}
       </div>
 
-      {error && (
-        <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          {error}
-        </div>
-      )}
 
       {/* Botones de acción */}
       {canEdit && (
