@@ -196,6 +196,12 @@ export const NAV_SECTIONS: NavSection[] = [
           label: "Bloqueo de vuelos",
 
           },
+
+          {
+          href: "/comercial/FlightBlocking/control", 
+          label: "Bloqueo/Admin",
+
+          },
           {
             href: "/auxiliares",
             label: "Auxiliares operativos",
