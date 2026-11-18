@@ -5,7 +5,7 @@ import { commercialRequest } from "@/lib/commercial/request";
 import { TableSource } from "./TableSource";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Plus, AlertCircle, UploadCloud, Loader2 } from "lucide-react";
+import {NotebookText,Users, Plus, AlertCircle, UploadCloud, Loader2 } from "lucide-react";
 import { CreateTableModal } from "./CreateTableModal";
 import {
   Dialog,
@@ -114,7 +114,10 @@ export function DriveTables() {
     <div className="w-full">
       <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
         <div className="flex flex-col gap-1">
-          <h2 className="text-lg font-semibold">Tarifas y Planes</h2>
+          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+            <NotebookText className="h-6 w-6 text-white" />
+            Tarifas y Planes
+          </h1>
           <p className="text-sm text-muted-foreground">
             Gestiona las tablas cargadas en la base de datos.
           </p>
