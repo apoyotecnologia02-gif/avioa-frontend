@@ -122,16 +122,15 @@ function relatedToBlock(
     )
   );
 }
-
 const initialFilters = (control: boolean): Filters => ({
-  search: "",
-  allDates: false,
-  selected: null,
-  destination: "",
-  nights: "",
-  arrival: control ? "after" : "all",
-  inbox: control ? "pending" : "all",
-  related: false,
+  search: '', 
+  allDates: false, 
+  selected: null, 
+  destination: '', 
+  nights: '',
+  arrival: 'all', 
+  inbox: 'all',   
+  related: false, 
   reviewOnly: false,
 });
 const errorMessage = (error: unknown): string =>
@@ -330,7 +329,6 @@ export function useFlightBlockings(options: UseFlightBlockingsOptions = {}) {
     [],
   );
 
-  // Único punto para POST JSON y subida multipart. No reintenta escrituras.
   const mutate = useCallback(
     async (
       url: string,
@@ -342,7 +340,7 @@ export function useFlightBlockings(options: UseFlightBlockingsOptions = {}) {
         return false;
       mutationLock.current = true;
       setBusy(true);
-      setError("");
+      setError(""); // Limpiamos errores anteriores
       setMessage("");
       const controller = new AbortController();
       writeController.current = controller;
@@ -356,17 +354,24 @@ export function useFlightBlockings(options: UseFlightBlockingsOptions = {}) {
             ? { headers: { "Content-Type": "application/json" } }
             : {}),
         });
-        await readResponse(response);
+        
+        // Si la respuesta no es OK, leemos el JSON para obtener el mensaje del backend
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || errorData.error || `Error HTTP ${response.status}`);
+        }
+
         if (!mounted.current || controller.signal.aborted) return false;
         setMessage(success);
         if (!keepEditor) setEditor({ kind: "closed" });
-        // Si falla la recarga, se conserva el éxito de la escritura y se muestra
-        // el error de lectura; no se invita a repetir una operación ya guardada.
         await load();
         return true;
       } catch (cause: unknown) {
-        if (mounted.current && !controller.signal.aborted)
-          setError(errorMessage(cause));
+        if (mounted.current && !controller.signal.aborted) {
+          const errorMsg = errorMessage(cause);
+          setError(errorMsg);
+          throw cause;
+        }
         return false;
       } finally {
         mutationLock.current = false;
@@ -800,30 +805,21 @@ export function useFlightBlockings(options: UseFlightBlockingsOptions = {}) {
     [post],
   );
 
-  const openSection = useCallback(
+    const openSection = useCallback(
     (section: Tab, reviewOnly = false) => {
       if (mutationLock.current) return;
-      const url =
-        section === "inventory" && control
-          ? inventoryPath
-          : section !== "inventory" && !control
-            ? `${controlPath}?tab=${encodeURIComponent(section)}`
-            : null;
-      if (url) {
-        if (navigate) navigate(url);
-        else window.location.assign(url);
-        return;
-      }
+      
       setTab(section);
+
       setFilters({
         ...initialFilters(control),
-        inbox: section === "reservations" ? "pending" : "all",
-        arrival: section === "reservations" ? "after" : "all",
-        reviewOnly,
+        inbox: "all", 
+        arrival: "all", 
+        reviewOnly: false,
       });
       setEditor({ kind: "closed" });
     },
-    [control, controlPath, inventoryPath, navigate],
+    [control]
   );
 
   const derived = useMemo(() => {

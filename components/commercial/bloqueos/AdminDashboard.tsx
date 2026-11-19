@@ -1,7 +1,6 @@
 "use client";
 
 import type { ReactNode } from "react";
-
 import {
   AlertTriangle,
   CalendarDays,
@@ -12,7 +11,6 @@ import {
   Link2,
   Search,
   Send,
-  ShieldAlert,
   Split,
   Upload,
   Users,
@@ -66,7 +64,6 @@ export type AdminFilters = Pick<
 >;
 
 export interface AdminDashboardProps {
-  /** Reservas del board, sin prefiltrar; los filtros se derivan de estas props. */
   services: readonly Service[];
   alerts: readonly Alert[];
   events: readonly BlockingEvent[];
@@ -74,7 +71,6 @@ export interface AdminDashboardProps {
   files: readonly Attachment[];
   canEdit: boolean;
   canAdmin: boolean;
-  /** Fecha YYYY-MM-DD de board.today, calculada por el backend. */
   today: string;
   activeTab: AdminTab;
   onTabChange: (tab: AdminTab) => void;
@@ -88,27 +84,28 @@ export interface AdminDashboardProps {
     blockId: string,
     kind: TaskKind,
   ) => void | Promise<unknown>;
-  /** Sin soporte, esta función debe solicitar confirmación expresa en el padre. */
   onCompleteTask: (
     block: AdminBlock,
     kind: TaskKind,
     reopen?: boolean,
   ) => void | Promise<unknown>;
-  /** Prefijo único si se monta más de una instancia en la página. */
   idPrefix?: string;
 }
 
 const isAdminBlock = (block: Block): block is AdminBlock =>
   "revision" in block && "signature" in block;
+
 const isAdminTab = (value: string): value is AdminTab =>
   value === "reservations" ||
   value === "paymentAlerts" ||
   value === "dataAlerts" ||
   value === "history";
+
 const formatDay = (value: string): string => {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
   return match ? `${match[3]}/${match[2]}/${match[1]}` : value || "Sin fecha";
 };
+
 const formatStamp = (value: string | null): string => {
   if (!value || !Number.isFinite(Date.parse(value))) return "Sin registro";
   return new Intl.DateTimeFormat("es-CO", {
@@ -117,11 +114,7 @@ const formatStamp = (value: string | null): string => {
     timeStyle: "short",
   }).format(new Date(value));
 };
-const normalize = (value: string): string =>
-  value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
+
 const actionLabels: Record<string, string> = {
   adjust_inventory: "Cupos ajustados",
   split_reservation: "División de pasajeros",
@@ -129,7 +122,7 @@ const actionLabels: Record<string, string> = {
   manual_reservation: "Reserva manual creada",
   delete_manual_reservation: "Reserva manual eliminada",
   delete_block: "Bloqueo eliminado",
-  drive_import: "Saldo inicial de Drive importado",
+  drive_import: "Saldo inicial importado",
   api: "Reserva actualizada desde TC",
   edit_block: "Bloqueo editado",
   create_block: "Bloqueo creado",
@@ -190,16 +183,7 @@ function ReservationFilters({
           <Label htmlFor={`${idPrefix}-arrival`}>Origen de la reserva</Label>
           <Select
             value={filters.arrival}
-            onValueChange={(value) => {
-              if (
-                value === "all" ||
-                value === "after" ||
-                value === "before" ||
-                value === "unknown" ||
-                value === "manual"
-              )
-                onChange({ arrival: value });
-            }}
+            onValueChange={(value: any) => onChange({ arrival: value })}
           >
             <SelectTrigger id={`${idPrefix}-arrival`} className="w-full">
               <SelectValue />
@@ -221,16 +205,7 @@ function ReservationFilters({
           <Label htmlFor={`${idPrefix}-inbox`}>Estado de revisión</Label>
           <Select
             value={filters.inbox}
-            onValueChange={(value) => {
-              if (
-                value === "all" ||
-                value === "pending" ||
-                value === "new" ||
-                value === "changed" ||
-                value === "reviewed"
-              )
-                onChange({ inbox: value });
-            }}
+            onValueChange={(value: any) => onChange({ inbox: value })}
           >
             <SelectTrigger id={`${idPrefix}-inbox`} className="w-full">
               <SelectValue />
@@ -262,12 +237,6 @@ function ReservationFilters({
                   {block.code} · {formatDay(block.departDate)}
                 </SelectItem>
               ))}
-              {filters.selected &&
-                !blocks.some((block) => block.id === filters.selected) && (
-                  <SelectItem value={filters.selected}>
-                    Bloqueo no disponible
-                  </SelectItem>
-                )}
             </SelectContent>
           </Select>
         </div>
@@ -275,20 +244,18 @@ function ReservationFilters({
           <Button
             type="button"
             variant={filters.allDates ? "secondary" : "outline"}
-            aria-pressed={filters.allDates}
             onClick={() => onChange({ allDates: !filters.allDates })}
           >
-            <CalendarDays className="size-4" aria-hidden="true" />
+            <CalendarDays className="size-4 mr-2" />
             Histórico, canceladas y sin fecha
           </Button>
           <Button
             type="button"
             variant={filters.reviewOnly ? "secondary" : "outline"}
-            aria-pressed={filters.reviewOnly}
             onClick={() => onChange({ reviewOnly: !filters.reviewOnly })}
           >
-            <AlertTriangle className="size-4" aria-hidden="true" />
-            Solo pendientes de vinculación
+            <AlertTriangle className="size-4 mr-2" />
+            Solo pendientes
           </Button>
           <Button
             type="button"
@@ -346,19 +313,15 @@ function ReviewBadge({ service }: { service: Service }) {
 
 function ReservationActions({
   service,
-  canEdit,
   onLink,
   onSplit,
   onReview,
 }: {
   service: Service;
-  canEdit: boolean;
   onLink: AdminDashboardProps["onLink"];
   onSplit: AdminDashboardProps["onSplit"];
   onReview: AdminDashboardProps["onReview"];
 }) {
-  if (!canEdit)
-    return <span className="text-xs text-muted-foreground">Solo consulta</span>;
   const inactive = service.cancelled || !!service.deletedAt;
   return (
     <div className="flex flex-wrap gap-2">
@@ -367,39 +330,27 @@ function ReservationActions({
         size="sm"
         variant="outline"
         disabled={inactive}
-        aria-label={`Vincular ${service.avi}`}
         onClick={() => onLink(service)}
       >
-        <Link2 className="size-4" aria-hidden="true" />
-        Vincular
+        <Link2 className="size-4 mr-1" /> Vincular
       </Button>
       <Button
         type="button"
         size="sm"
         variant="outline"
         disabled={inactive || !service.splitReady}
-        aria-label={`Dividir ${service.avi}`}
         onClick={() => onSplit(service)}
       >
-        <Split className="size-4" aria-hidden="true" />
-        Dividir
+        <Split className="size-4 mr-1" /> Dividir
       </Button>
       <Button
         type="button"
         size="sm"
         variant="secondary"
         disabled={service.reviewBlocked || service.reviewState === "reviewed"}
-        title={
-          service.reviewBlocked
-            ? "Revisa la vinculación, los cupos y las divisiones."
-            : undefined
-        }
-        aria-label={`Marcar ${service.avi} revisada`}
-        onClick={() => {
-          void onReview(service);
-        }}
+        onClick={() => void onReview(service)}
       >
-        <Check className="size-4" aria-hidden="true" />
+        <Check className="size-4 mr-1" />
         {service.reviewState === "reviewed" ? "Revisada" : "Marcar revisada"}
       </Button>
     </div>
@@ -409,14 +360,12 @@ function ReservationActions({
 function ReservationsView({
   services,
   blocks,
-  canEdit,
   onLink,
   onSplit,
   onReview,
 }: {
   services: readonly Service[];
   blocks: readonly Block[];
-  canEdit: boolean;
   onLink: AdminDashboardProps["onLink"];
   onSplit: AdminDashboardProps["onSplit"];
   onReview: AdminDashboardProps["onReview"];
@@ -457,14 +406,6 @@ function ReservationsView({
                         Manual
                       </Badge>
                     )}
-                    {service.splits.length > 0 && (
-                      <p className="mt-2 break-words text-xs">
-                        Divisiones:{" "}
-                        {service.splits
-                          .map((part) => `${part.code} (${part.passengers})`)
-                          .join(", ")}
-                      </p>
-                    )}
                   </TableCell>
                   <TableCell className="max-w-56 whitespace-normal align-top">
                     <p className="break-words font-medium">
@@ -495,29 +436,13 @@ function ReservationsView({
                         ? "Cupos por confirmar"
                         : `${service.seats} cupos`}
                     </p>
-                    {service.reason && (
-                      <p className="mt-2 flex items-start gap-1 text-xs text-amber-700 dark:text-amber-400">
-                        <AlertTriangle
-                          className="size-3.5 shrink-0"
-                          aria-hidden="true"
-                        />
-                        {service.reason}
-                      </p>
-                    )}
                   </TableCell>
                   <TableCell className="max-w-56 whitespace-normal align-top">
                     <ReviewBadge service={service} />
-                    {service.reviewedAt && (
-                      <p className="mt-2 text-xs text-muted-foreground">
-                        {service.reviewedBy || "Sin responsable"} ·{" "}
-                        {formatStamp(service.reviewedAt)}
-                      </p>
-                    )}
                   </TableCell>
                   <TableCell className="min-w-64 align-top">
                     <ReservationActions
                       service={service}
-                      canEdit={canEdit}
                       onLink={onLink}
                       onSplit={onSplit}
                       onReview={onReview}
@@ -529,10 +454,6 @@ function ReservationsView({
           </TableBody>
         </Table>
       </div>
-      <p className="border-t p-3 text-xs text-muted-foreground">
-        Los cupos se cuentan una vez por AVI y bloqueo. Los tramos de ida y
-        regreso no duplican la venta.
-      </p>
     </div>
   );
 }
@@ -542,8 +463,6 @@ function TaskCard({
   kind,
   due,
   files,
-  services,
-  canEdit,
   onUpload,
   onCompleteTask,
   idPrefix,
@@ -552,8 +471,6 @@ function TaskCard({
   kind: TaskKind;
   due: string;
   files: readonly Attachment[];
-  services: readonly Service[];
-  canEdit: boolean;
   onUpload: AdminDashboardProps["onUpload"];
   onCompleteTask: AdminDashboardProps["onCompleteTask"];
   idPrefix: string;
@@ -563,17 +480,8 @@ function TaskCard({
   );
   const payment = kind === "payment";
   const complete = payment ? !!block.paidAt : block.namesComplete;
-  const staleSplits = services.some(
-    (service) =>
-      service.blockId === block.id &&
-      !service.cancelled &&
-      !service.deletedAt &&
-      service.splitStale,
-  );
-  const blocked =
-    !payment &&
-    (block.unresolved > 0 || block.inventoryUnresolved > 0 || staleSplits);
   const inputId = `${idPrefix}-${kind}-${block.id}-file`;
+
   return (
     <Card className="min-w-0">
       <CardHeader>
@@ -612,20 +520,10 @@ function TaskCard({
             </dd>
           </div>
         </dl>
-        {blocked && (
-          <p className="flex items-start gap-2 rounded-lg border border-amber-300 p-3 text-sm text-amber-800 dark:border-amber-800 dark:text-amber-300">
-            <AlertTriangle
-              className="mt-0.5 size-4 shrink-0"
-              aria-hidden="true"
-            />
-            Revisa las reservas, los cupos y las divisiones antes de confirmar
-            el envío de datos.
-          </p>
-        )}
+
         <div className="space-y-2">
           <p className="flex items-center gap-2 text-sm font-medium">
-            <FileText className="size-4" aria-hidden="true" />
-            Soportes
+            <FileText className="size-4" aria-hidden="true" /> Soportes
           </p>
           {supports.length ? (
             <ul className="space-y-2">
@@ -645,43 +543,41 @@ function TaskCard({
             </p>
           )}
         </div>
-                  <div className="space-y-3 border-t pt-4">
-            <div className="space-y-2">
-              <Label htmlFor={inputId} className="flex items-center gap-2">
-                <Upload className="size-4" aria-hidden="true" />
-                Subir archivo de soporte
-              </Label>
-              <Input
-                id={inputId}
-                type="file"
-                accept="application/pdf,image/jpeg,image/png,image/webp"
-                onChange={(event) => {
-                  const file = event.currentTarget.files?.[0];
-                  event.currentTarget.value = "";
-                  if (file) void onUpload(file, block.id, kind);
-                }}
-              />
-              <p className="text-xs text-muted-foreground">
-                PDF, JPG, PNG o WebP · Máximo 10 MB.
-              </p>
-            </div>
-            <Button
-              type="button"
-              className="w-full"
-              variant={complete ? "outline" : "default"}
-              disabled={!complete && blocked}
-              onClick={() => {
-                void onCompleteTask(block, kind, complete);
+
+        <div className="space-y-3 border-t pt-4">
+          <div className="space-y-2">
+            <Label htmlFor={inputId} className="flex items-center gap-2">
+              <Upload className="size-4" aria-hidden="true" /> Subir archivo de
+              soporte
+            </Label>
+            <Input
+              id={inputId}
+              type="file"
+              accept="application/pdf,image/jpeg,image/png,image/webp"
+              onChange={(event) => {
+                const file = event.currentTarget.files?.[0];
+                event.currentTarget.value = "";
+                if (file) void onUpload(file, block.id, kind);
               }}
-            >
-              <Check className="size-4" aria-hidden="true" />
-              {complete
-                ? "Reabrir gestión"
-                : supports.length
-                  ? "Confirmar gestión"
-                  : "Confirmar gestión anterior"}
-            </Button>
+            />
+            <p className="text-xs text-muted-foreground">
+              PDF, JPG, PNG o WebP · Máximo 10 MB.
+            </p>
           </div>
+          <Button
+            type="button"
+            className="w-full"
+            variant={complete ? "outline" : "default"}
+            onClick={() => void onCompleteTask(block, kind, complete)}
+          >
+            <Check className="size-4 mr-2" />
+            {complete
+              ? "Reabrir gestión"
+              : supports.length
+                ? "Confirmar gestión"
+                : "Confirmar gestión anterior"}
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
@@ -692,8 +588,6 @@ function TasksView({
   alerts,
   blocks,
   files,
-  services,
-  canEdit,
   onUpload,
   onCompleteTask,
   idPrefix,
@@ -702,8 +596,6 @@ function TasksView({
   alerts: readonly Alert[];
   blocks: readonly Block[];
   files: readonly Attachment[];
-  services: readonly Service[];
-  canEdit: boolean;
   onUpload: AdminDashboardProps["onUpload"];
   onCompleteTask: AdminDashboardProps["onCompleteTask"];
   idPrefix: string;
@@ -715,6 +607,7 @@ function TasksView({
         .map((alert) => [alert.blockId, alert]),
     ).values(),
   ].sort((a, b) => a.due.localeCompare(b.due));
+
   if (!selected.length)
     return (
       <Empty>
@@ -723,6 +616,7 @@ function TasksView({
           : "No hay alertas de envío de datos pendientes."}
       </Empty>
     );
+
   return (
     <div className="grid gap-4 xl:grid-cols-2">
       {selected.map((alert) => {
@@ -744,8 +638,6 @@ function TasksView({
             kind={kind}
             due={alert.due}
             files={files}
-            services={services}
-            canEdit={canEdit}
             onUpload={onUpload}
             onCompleteTask={onCompleteTask}
             idPrefix={idPrefix}
@@ -794,13 +686,9 @@ function HistoryView({
                       event.blockId ||
                       "Sin bloqueo"}
                   </p>
-                  {event.serviceId && (
-                    <p className="break-words text-xs text-muted-foreground">
-                      {event.serviceId}
-                    </p>
-                  )}
                 </TableCell>
                 <TableCell className="max-w-64 whitespace-normal align-top">
+                  {/* Usamos event.by que el backend ya debería estar traduciendo al nombre */}
                   <p className="break-words">{event.by}</p>
                 </TableCell>
               </TableRow>
@@ -808,10 +696,6 @@ function HistoryView({
           </TableBody>
         </Table>
       </div>
-      <p className="border-t p-3 text-xs text-muted-foreground">
-        Se muestran los {events.length} movimientos recibidos del backend. Los
-        filtros de reservas no alteran el historial.
-      </p>
     </div>
   );
 }
@@ -836,51 +720,6 @@ export default function AdminDashboard({
   onCompleteTask,
   idPrefix = "flight-admin",
 }: AdminDashboardProps) {
-
-  const query = normalize(filters.search.trim());
-  const visibleServices = services
-    .filter((service) => {
-      const departure =
-        blocks.find((block) => block.id === service.blockId)?.departDate ||
-        service.date;
-      const changed = service.reviewState === "changed";
-      const inPeriod =
-        filters.allDates ||
-        changed ||
-        ((!service.cancelled || service.reviewState !== "reviewed") &&
-          !!departure &&
-          departure >= today);
-      return (
-        (!service.deletedAt || changed || filters.allDates) &&
-        inPeriod &&
-        (filters.arrival === "all" ||
-          service.arrivalGroup === filters.arrival) &&
-        (filters.inbox === "all" ||
-          (filters.inbox === "pending" && service.reviewState !== "reviewed") ||
-          filters.inbox === service.reviewState) &&
-        (!filters.selected || service.blockId === filters.selected) &&
-        (!filters.reviewOnly ||
-          (!service.cancelled &&
-            !service.deletedAt &&
-            (!service.blockId || !!service.reason))) &&
-        (!query ||
-          normalize(
-            [
-              service.avi,
-              service.reference,
-              service.passenger,
-              service.advisor,
-              ...service.splits.map((part) => part.code),
-            ].join(" "),
-          ).includes(query))
-      );
-    })
-    .sort(
-      (a, b) =>
-        (b.arrivalCreatedAt || b.sourceAt || "").localeCompare(
-          a.arrivalCreatedAt || a.sourceAt || "",
-        ) || a.id.localeCompare(b.id),
-    );
   const pending = new Set(
     services
       .filter((service) => service.reviewState !== "reviewed")
@@ -911,6 +750,7 @@ export default function AdminDashboard({
         </p>
         {!canEdit && <Badge variant="outline">Solo consulta</Badge>}
       </header>
+
       <Tabs
         value={activeTab}
         onValueChange={(value) => {
@@ -936,6 +776,7 @@ export default function AdminDashboard({
             Historial
           </TabsTrigger>
         </TabsList>
+
         <TabsContent value="reservations" className="space-y-4">
           <ReservationFilters
             filters={filters}
@@ -944,26 +785,22 @@ export default function AdminDashboard({
             idPrefix={idPrefix}
           />
           <p role="status" className="text-sm text-muted-foreground">
-            {visibleServices.length} servicios ·{" "}
-            {
-              new Set(
-                visibleServices.map((service) => service.avi || service.id),
-              ).size
-            }{" "}
+            {services.length} servicios ·{" "}
+            {new Set(services.map((service) => service.avi || service.id)).size}{" "}
             reservas ·{" "}
             {filters.allDates
               ? "Todas las fechas"
-              : `Salidas desde ${formatDay(today)} y cambios pendientes de revisión`}
+              : `Salidas desde ${formatDay(today)}`}
           </p>
           <ReservationsView
-            services={visibleServices}
+            services={services} 
             blocks={blocks}
-            canEdit={canEdit}
             onLink={onLink}
             onSplit={onSplit}
             onReview={onReview}
           />
         </TabsContent>
+
         <TabsContent value="paymentAlerts" className="space-y-4">
           <p className="text-sm text-muted-foreground">
             Pagos pendientes · Fecha límite: 30 días antes de la salida.
@@ -973,13 +810,12 @@ export default function AdminDashboard({
             alerts={alerts}
             blocks={blocks}
             files={files}
-            services={services}
-            canEdit={canEdit}
             onUpload={onUpload}
             onCompleteTask={onCompleteTask}
             idPrefix={idPrefix}
           />
         </TabsContent>
+
         <TabsContent value="dataAlerts" className="space-y-4">
           <p className="text-sm text-muted-foreground">
             Envío de datos pendientes · Fecha límite: 15 días antes de la
@@ -990,13 +826,12 @@ export default function AdminDashboard({
             alerts={alerts}
             blocks={blocks}
             files={files}
-            services={services}
-            canEdit={canEdit}
             onUpload={onUpload}
             onCompleteTask={onCompleteTask}
             idPrefix={idPrefix}
           />
         </TabsContent>
+
         <TabsContent value="history">
           <HistoryView events={events} blocks={blocks} />
         </TabsContent>
