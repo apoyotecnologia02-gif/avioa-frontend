@@ -645,8 +645,7 @@ function TaskCard({
             </p>
           )}
         </div>
-        {canEdit && (
-          <div className="space-y-3 border-t pt-4">
+                  <div className="space-y-3 border-t pt-4">
             <div className="space-y-2">
               <Label htmlFor={inputId} className="flex items-center gap-2">
                 <Upload className="size-4" aria-hidden="true" />
@@ -683,7 +682,6 @@ function TaskCard({
                   : "Confirmar gestión anterior"}
             </Button>
           </div>
-        )}
       </CardContent>
     </Card>
   );
@@ -838,21 +836,6 @@ export default function AdminDashboard({
   onCompleteTask,
   idPrefix = "flight-admin",
 }: AdminDashboardProps) {
-//   if (!canAdmin)
-//     return (
-//       <Card>
-//         <CardHeader>
-//           <CardTitle className="flex items-center gap-2 text-base">
-//             <ShieldAlert className="size-5" aria-hidden="true" />
-//             Administración restringida
-//           </CardTitle>
-//           <CardDescription>
-//             Necesitas permisos administrativos para consultar reservas, soportes
-//             e historial.
-//           </CardDescription>
-//         </CardHeader>
-//       </Card>
-//     );
 
   const query = normalize(filters.search.trim());
   const visibleServices = services
