@@ -750,35 +750,18 @@ export function useFlightBlockings(options: UseFlightBlockingsOptions = {}) {
     [askConfirmation, board?.edit, post],
   );
 
-  const completeTask = useCallback(
+    const completeTask = useCallback(
     async (
       block: AdminBlock,
       kind: TaskKind,
       reopen = false,
+      previousPaymentConfirmed = false,
+      previousDataDeliveryConfirmed = false,
     ): Promise<boolean> => {
       if (!board?.edit || loading || mutationLock.current) return false;
-      const hasSupport = board.files.some(
-        (file) => file.blockId === block.id && file.kind === kind,
-      );
-      const previousPaymentConfirmed =
-        !reopen && kind === "payment" && !hasSupport;
-      const previousDataDeliveryConfirmed =
-        !reopen && kind === "names" && !hasSupport;
-      if (
-        !reopen &&
-        !hasSupport &&
-        !(await askConfirmation({
-          title:
-            kind === "payment"
-              ? "Confirmar pago anterior"
-              : "Confirmar envío anterior",
-          message:
-            kind === "payment"
-              ? `¿Confirmas que el bloqueo ${block.code} ya fue pagado anteriormente? Se cerrará la alerta sin comprobante y quedará registrada tu confirmación.`
-              : `¿Confirmas que los datos del bloqueo ${block.code} ya fueron enviados anteriormente? Se cerrará la alerta sin soporte y quedará registrada tu confirmación.`,
-        }))
-      )
-        return false;
+      
+      // Eliminamos el askConfirmation de aquí. Si el botón lo llamó, es porque el usuario ya confirmó.
+      
       return post(
         {
           action: reopen ? "reopen" : "complete",
@@ -796,9 +779,8 @@ export function useFlightBlockings(options: UseFlightBlockingsOptions = {}) {
             : "Envío de datos registrado. Alerta cerrada.",
       );
     },
-    [askConfirmation, board, loading, post],
+    [board, loading, post],
   );
-
   const importBlocks = useCallback(
     (rows: BlockData[]) =>
       post({ action: "importBlocks", rows }, "Bloqueos importados."),

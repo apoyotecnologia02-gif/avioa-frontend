@@ -564,11 +564,26 @@ function TaskCard({
               PDF, JPG, PNG o WebP · Máximo 10 MB.
             </p>
           </div>
-          <Button
+           <Button
             type="button"
             className="w-full"
             variant={complete ? "outline" : "default"}
-            onClick={() => void onCompleteTask(block, kind, complete)}
+            onClick={() => {
+              // Si no hay soporte, forzamos la confirmación para que el backend lo acepte
+              const hasSupport = supports.length > 0;
+              const previousPaymentConfirmed = !complete && kind === "payment" && !hasSupport;
+              const previousDataDeliveryConfirmed = !complete && kind === "names" && !hasSupport;
+              
+              // Llamamos a la función del hook con todos los datos
+              void onCompleteTask(
+                block, 
+                kind, 
+                complete, 
+                // Estos dos parámetros son nuevos, asegúrate de que el Hook los reciba
+                previousPaymentConfirmed, 
+                previousDataDeliveryConfirmed
+              );
+            }}
           >
             <Check className="size-4 mr-2" />
             {complete
