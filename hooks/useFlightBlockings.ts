@@ -123,14 +123,14 @@ function relatedToBlock(
   );
 }
 const initialFilters = (control: boolean): Filters => ({
-  search: '', 
-  allDates: false, 
-  selected: null, 
-  destination: '', 
-  nights: '',
-  arrival: 'all', 
-  inbox: 'all',   
-  related: false, 
+  search: "",
+  allDates: false,
+  selected: null,
+  destination: "",
+  nights: "",
+  arrival: "all",
+  inbox: "all",
+  related: false,
   reviewOnly: false,
 });
 const errorMessage = (error: unknown): string =>
@@ -354,11 +354,15 @@ export function useFlightBlockings(options: UseFlightBlockingsOptions = {}) {
             ? { headers: { "Content-Type": "application/json" } }
             : {}),
         });
-        
+
         // Si la respuesta no es OK, leemos el JSON para obtener el mensaje del backend
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.message || errorData.error || `Error HTTP ${response.status}`);
+          throw new Error(
+            errorData.message ||
+              errorData.error ||
+              `Error HTTP ${response.status}`,
+          );
         }
 
         if (!mounted.current || controller.signal.aborted) return false;
@@ -749,8 +753,7 @@ export function useFlightBlockings(options: UseFlightBlockingsOptions = {}) {
     },
     [askConfirmation, board?.edit, post],
   );
-
-    const completeTask = useCallback(
+  const completeTask = useCallback(
     async (
       block: AdminBlock,
       kind: TaskKind,
@@ -759,9 +762,7 @@ export function useFlightBlockings(options: UseFlightBlockingsOptions = {}) {
       previousDataDeliveryConfirmed = false,
     ): Promise<boolean> => {
       if (!board?.edit || loading || mutationLock.current) return false;
-      
-      // Eliminamos el askConfirmation de aquí. Si el botón lo llamó, es porque el usuario ya confirmó.
-      
+
       return post(
         {
           action: reopen ? "reopen" : "complete",
@@ -787,21 +788,21 @@ export function useFlightBlockings(options: UseFlightBlockingsOptions = {}) {
     [post],
   );
 
-    const openSection = useCallback(
+  const openSection = useCallback(
     (section: Tab, reviewOnly = false) => {
       if (mutationLock.current) return;
-      
+
       setTab(section);
 
       setFilters({
         ...initialFilters(control),
-        inbox: "all", 
-        arrival: "all", 
+        inbox: "all",
+        arrival: "all",
         reviewOnly: false,
       });
       setEditor({ kind: "closed" });
     },
-    [control]
+    [control],
   );
 
   const derived = useMemo(() => {

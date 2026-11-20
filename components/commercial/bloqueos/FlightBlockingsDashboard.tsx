@@ -69,18 +69,24 @@ export function FlightBlockingsDashboard({
     if (!blockToDelete) return;
     setIsDeleting(true);
     try {
-      const success = await h.post({
-        action: "deleteBlock",
-        blockId: blockToDelete.id,
-        revision: blockToDelete.revision,
-      }, "Bloqueo eliminado del tablero.");
+      const success = await h.post(
+        {
+          action: "deleteBlock",
+          blockId: blockToDelete.id,
+          revision: blockToDelete.revision,
+        },
+        "Bloqueo eliminado del tablero.",
+      );
 
       if (success) {
         toast.success("Bloqueo eliminado correctamente");
         setBlockToDelete(null); // Cierra el modal si tuvo éxito
       } else {
         // El hook guarda el error del backend en h.error
-        toast.error(h.error || "No se pudo eliminar. El bloqueo tiene reservas activas vinculadas.");
+        toast.error(
+          h.error ||
+            "No se pudo eliminar. El bloqueo tiene reservas activas vinculadas.",
+        );
       }
     } catch (error: any) {
       toast.error(error.message || "Error de conexión al intentar eliminar.");
@@ -88,7 +94,6 @@ export function FlightBlockingsDashboard({
       setIsDeleting(false);
     }
   };
-
 
   if (control) {
     return (
@@ -110,7 +115,9 @@ export function FlightBlockingsDashboard({
           onSplit={(s: any) => h.openServiceEditor("split", s)}
           onReview={(s: any) => h.reviewReservation(s)}
           onUpload={(file, blockId, kind) => h.upload(file, blockId, kind)}
-          onCompleteTask={(b, kind, reopen) => h.completeTask(b, kind, reopen)}
+          onCompleteTask={(b, kind, reopen, prevPay, prevData) =>
+            h.completeTask(b, kind, reopen, prevPay, prevData)
+          }
         />
 
         {/* Modales de administración */}
@@ -379,20 +386,19 @@ export function FlightBlockingsDashboard({
 
                       {h.canEdit && (
                         <div className="flex gap-2 pt-2">
-                          {!b.drive && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => h.openBlockEditor(b)}
-                            >
-                              Editar bloqueo
-                            </Button>
-                          )}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => h.openBlockEditor(b)}
+                          >
+                            Editar bloqueo
+                          </Button>
+
                           <Button
                             variant="outline"
                             size="sm"
                             className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                            onClick={() => setBlockToDelete(b)} // Abre el modal
+                            onClick={() => setBlockToDelete(b)}
                           >
                             Eliminar bloqueo
                           </Button>

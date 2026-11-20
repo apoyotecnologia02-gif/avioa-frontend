@@ -87,6 +87,8 @@ export interface AdminDashboardProps {
   onCompleteTask: (
     block: AdminBlock,
     kind: TaskKind,
+    previousPaymentConfirmed?: boolean,
+    previousDataDeliveryConfirmed?: boolean,
     reopen?: boolean,
   ) => void | Promise<unknown>;
   idPrefix?: string;
@@ -564,24 +566,23 @@ function TaskCard({
               PDF, JPG, PNG o WebP · Máximo 10 MB.
             </p>
           </div>
-           <Button
+          <Button
             type="button"
             className="w-full"
             variant={complete ? "outline" : "default"}
             onClick={() => {
-              // Si no hay soporte, forzamos la confirmación para que el backend lo acepte
               const hasSupport = supports.length > 0;
-              const previousPaymentConfirmed = !complete && kind === "payment" && !hasSupport;
-              const previousDataDeliveryConfirmed = !complete && kind === "names" && !hasSupport;
-              
-              // Llamamos a la función del hook con todos los datos
+              const previousPaymentConfirmed =
+                !complete && kind === "payment" && !hasSupport;
+              const previousDataDeliveryConfirmed =
+                !complete && kind === "names" && !hasSupport;
+
               void onCompleteTask(
-                block, 
-                kind, 
-                complete, 
-                // Estos dos parámetros son nuevos, asegúrate de que el Hook los reciba
-                previousPaymentConfirmed, 
-                previousDataDeliveryConfirmed
+                block,
+                kind,
+                complete,
+                previousPaymentConfirmed,
+                previousDataDeliveryConfirmed,
               );
             }}
           >
@@ -808,7 +809,7 @@ export default function AdminDashboard({
               : `Salidas desde ${formatDay(today)}`}
           </p>
           <ReservationsView
-            services={services} 
+            services={services}
             blocks={blocks}
             onLink={onLink}
             onSplit={onSplit}

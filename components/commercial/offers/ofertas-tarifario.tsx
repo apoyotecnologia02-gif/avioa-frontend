@@ -13,7 +13,7 @@ const TABS: { key: OfferOrigin; label: string; icon: typeof Plane }[] = [
 
 export function OfertasTarifario() {
   const [origin, setOrigin] = useState<OfferOrigin>("medellin");
-  const [query, setQuery] = useState(""); // <-- 1. Estado para el buscador
+  const [query, setQuery] = useState(""); 
 
   return (
     <div className="flex flex-col gap-4">
@@ -32,7 +32,7 @@ export function OfertasTarifario() {
             aria-selected={origin === key}
             onClick={() => {
               setOrigin(key);
-              setQuery(""); // Limpiamos el buscador al cambiar de ciudad
+              setQuery(""); 
             }}
             className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors ${
               origin === key
@@ -49,15 +49,15 @@ export function OfertasTarifario() {
       <div className="relative">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
-          type="search" // <-- 2. Restaurado
-          value={query} // <-- 3. Conectado al estado
-          onChange={(e) => setQuery(e.target.value)} // <-- 4. Actualiza al escribir
+          type="search"
+          value={query} 
+          onChange={(e) => setQuery(e.target.value)} 
           placeholder="Buscar hotel, destino, descripción..."
           className="pl-9"
         />
       </div>
       
-      {/* 5. Le pasamos la búsqueda al tablero */}
+  
       <OffersBoard key={origin} origin={origin} query={query} />
     </div>
   );
