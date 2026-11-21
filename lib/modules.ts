@@ -186,6 +186,20 @@ export const APP_MODULES = [
     label: "Gestionar conexiones de traslados",
     description: "Administrar conexiones del módulo de traslados",
   },
+  {
+    key: "OFFERS",
+    kind: "capability",
+    category: "HERRAMIENTAS",
+    label: "Ofertas",
+    description: "Modulo de gestión de ofertas",
+  },
+  {
+    key: "OFFERS_INTERNAL",
+    kind: "capability",
+    category: "HERRAMIENTAS",
+    label: "Ofertas internas",
+    description: "Modulo de gestión de ofertas internas",
+  },
 ] as const;
 
 export type AppModuleKey = (typeof APP_MODULES)[number]["key"];
