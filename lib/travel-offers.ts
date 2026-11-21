@@ -135,7 +135,6 @@ export function offerColumns(
     // Si no hay título, o si el título es genérico, saltamos
     if (!title || title.length < 3) continue;
 
-
     let hasContent = false;
     for (let r = labelRow; r < rows.length; r++) {
       if (rows[r]?.[c]?.trim()) {
@@ -264,39 +263,22 @@ export async function readPublicRange(
   range: string,
   fetcher: typeof fetch,
 ) {
-  const url = new URL(
-    `https://docs.google.com/spreadsheets/d/${offersSheetId}/export`,
+  const response = await fetcher(
+    `/api/commercial/offers?gid=${gid}&range=${range}`,
+    {
+      cache: "no-store",
+    },
   );
-  url.searchParams.set("format", "csv");
-  url.searchParams.set("gid", gid);
-  url.searchParams.set("range", range);
-  const response = await fetcher(url, {
-    cache: "no-store",
-    signal: AbortSignal.timeout(25000),
-  });
-  if (!response.ok)
-    throw Error(
-      "No se pudo leer el tarifario público. Revisa el acceso al enlace e intenta de nuevo.",
+
+  if (!response.ok) {
+    throw new Error(
+      "No se pudo leer el tarifario. Revisa la conexión con el servidor.",
     );
-  const reader = response.body?.getReader();
-  if (!reader) throw Error("Google no devolvió contenido.");
-  const decoder = new TextDecoder();
-  let text = "",
-    bytes = 0;
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      bytes += value.byteLength;
-      if (bytes > 2_000_000)
-        throw Error("La respuesta excede el tamaño permitido.");
-      text += decoder.decode(value, { stream: true });
-    }
-    text += decoder.decode();
-  } finally {
-    await reader.cancel();
   }
-  return parseOffersCsv(text);
+
+  const data = await response.json();
+
+  return data.rows;
 }
 export async function readOfferContext(
   origin: OfferOrigin | null,

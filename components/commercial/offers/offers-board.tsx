@@ -50,11 +50,15 @@ export function OffersBoard({ origin, query }: { origin: OfferOrigin; query: str
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/commercial/drive-offers?origin=${origin}`, { cache: "no-store" });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "Error al leer ofertas");
-      setOffers(json.entries ?? []);
-      setCheckedAt(json.checkedAt ?? "");
+   // En offers-board.tsx
+const res = await fetch(`/api/commercial/offers?origin=${origin}`);
+const data = await res.json();
+
+if (!res.ok) {
+  throw new Error(data.error || "No se pudieron cargar las ofertas");
+}
+
+setOffers(data.offers || []); 
     } catch (e) {
       setError((e as Error).message);
     } finally {

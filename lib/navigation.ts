@@ -317,7 +317,7 @@ export const NAV_SECTIONS: NavSection[] = [
           { href: "/comercial/ofertas", label: "Ofertas del día" },
           { href: "/comercial/cotizaciones", label: "Cotizaciones" },
           { href: "/comercial/videos", label: "Videos de hoteles" },
-          { href: "/comercial/niltze", label: "Catálogo Niltze" },
+          // { href: "/comercial/niltze", label: "Catálogo Niltze" },
           { href: "/comercial/protocolo", label: "Protocolo de atención" },
           { href: "/comercial/respuestas", label: "Respuestas rápidas" },
           { href: "/comercial/tarifas", label: "Tarifas y planes" },
