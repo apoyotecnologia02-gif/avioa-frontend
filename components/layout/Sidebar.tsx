@@ -112,7 +112,7 @@ export function Sidebar() {
   };
 
   return (
-    <SidebarPrimitive collapsible="none">
+    <SidebarPrimitive collapsible="offcanvas">
       <SidebarHeader className="h-16 justify-center border-b border-sidebar-border">
         <Link
           href="/dashboard"
