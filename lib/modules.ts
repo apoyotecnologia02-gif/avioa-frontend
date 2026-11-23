@@ -198,10 +198,11 @@ export const APP_MODULES = [
   },
   {
     key: "OFFERS",
-    kind: "capability",
+    kind: "module",
     category: "HERRAMIENTAS",
     label: "Ofertas",
     description: "Modulo de gestión de ofertas",
+    action: ["create", "update", "delete"],
   },
   {
     key: "OFFERS_INTERNAL",
