@@ -94,7 +94,7 @@ export function OffersWorkspace({
     <iframe
       ref={frame}
       srcDoc={html}
-      sandbox="allow-scripts allow-same-origin allow-downloads allow-modals"
+      sandbox="allow-scripts allow-same-origin allow-downloads allow-modals allow-popups allow-popups-to-escape-sandbox"
       allow="clipboard-write"
       title="Ofertas, catálogo del cazador y simulador"
       className="w-full h-[calc(100dvh-100px)] min-h-[650px] border-0"
