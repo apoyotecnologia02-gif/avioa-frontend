@@ -193,12 +193,12 @@ export const NAV_SECTIONS: NavSection[] = [
             label: "Ver vuelos",
           },
           {
-          href: "/comercial/FlightBlocking", 
-          label: "Bloqueo de vuelos",
-
+            href: "/comercial/FlightBlocking",
+            label: "Bloqueo de vuelos",
           },
 
           {
+          module: "COMMERCIAL-ADMIN",
           href: "/comercial/FlightBlocking/control", 
           label: "Bloqueo/Admin",
 
@@ -311,7 +311,6 @@ export const NAV_SECTIONS: NavSection[] = [
         key: "producto",
         label: "Producto",
         icon: PackageSearch,
-        module: "OFFERS",
         items: [
           {
             href: "/portal-offers/catalogo-cazador",
