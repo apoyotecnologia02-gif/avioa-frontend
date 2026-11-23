@@ -187,9 +187,7 @@ export function Sidebar() {
                         <SidebarMenuButton asChild isActive={active}>
                           <Link
                             href={group.href}
-                            onClick={() =>
-                              isMobile && setOpenMobile(false)
-                            }
+                            onClick={() => isMobile && setOpenMobile(false)}
                           >
                             <Icon />
                             <span>{group.label}</span>
