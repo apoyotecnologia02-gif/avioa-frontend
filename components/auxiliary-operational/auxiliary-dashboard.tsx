@@ -641,7 +641,9 @@ export default function AuxiliaryDashboard({
   );
   if (documentsOnly)
     return (
-      <div className={`aux-shell aux-documents-embedded ${auxiliaryTailwindStyles}`}>
+      <div
+        className={`aux-shell aux-documents-embedded ${auxiliaryTailwindStyles}`}
+      >
         {error && (
           <p className="aux-error" role="alert">
             {error}
@@ -731,7 +733,7 @@ export default function AuxiliaryDashboard({
             </a>
           )}
         </nav>
-        {canEdit && <EmailWriterLauncher href="/auxiliares/correos" />}
+        <EmailWriterLauncher href="/auxiliares/correos" />
         {error && (
           <p className="aux-error" role="alert">
             {error}
