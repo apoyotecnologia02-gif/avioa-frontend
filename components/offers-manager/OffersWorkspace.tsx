@@ -61,14 +61,15 @@ export function OffersWorkspace({
       }
       const valid =
         typeof path === "string" &&
-        /^(session|state|history(?:\?offset=\d+)?|history\/\d+|approve|workbook-sync|hunter\/(status|sync)|product-import\/(preview|commit))$/.test(
+        /^(session|state|history(?:\?offset=\d+)?|history\/\d+|approve|workbook-sync|simulation\/query|hunter\/(status|sync)|product-import\/(preview|commit))$/.test(
           path,
         );
       if (!valid || !["GET", "POST", "PUT"].includes(options.method || "GET"))
         return;
       if (
         (path === "hunter/status" && (options.method || "GET") !== "GET") ||
-        (path === "hunter/sync" && options.method !== "POST")
+        (path === "hunter/sync" && options.method !== "POST") ||
+        (path === "simulation/query" && options.method !== "POST")
       ) return;
       try {
         const response = await api.request({
@@ -90,6 +91,7 @@ export function OffersWorkspace({
               ok: false,
               status: e.response?.status || 500,
               error:
+                e.response?.data?.error?.message ||
                 e.response?.data?.error ||
                 e.message ||
                 "No se pudo completar la operación",
