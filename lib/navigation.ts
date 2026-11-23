@@ -20,6 +20,7 @@ import {
   Compass,
   BookOpen,
   PackageSearch,
+  UserPen,
 } from "lucide-react";
 import { isAdminRole, isLeaderOrManagerOrAdminRole } from "@/lib/roles";
 import { AppModuleKey } from "./modules";
@@ -204,11 +205,6 @@ export const NAV_SECTIONS: NavSection[] = [
 
           },
           {
-            href: "/auxiliares",
-            label: "Auxiliares operativos",
-            module: "AUXILIARY",
-          },
-          {
             href: "/tutorials",
             label: "Tutoriales",
             icon: BookOpen,
@@ -307,6 +303,18 @@ export const NAV_SECTIONS: NavSection[] = [
       //       { href: "/org-chart", label: "Organigrama" },
       //     ],
       //   },
+      {
+        key: "auxiliares",
+        label: "Auxiliares",
+        icon: UserPen,
+        module: "AUXILIARY",
+        items: [
+          {
+            href: "/auxiliares",
+            label: "Auxiliares operativos",
+          },
+        ],
+      },
       {
         key: "producto",
         label: "Producto",
