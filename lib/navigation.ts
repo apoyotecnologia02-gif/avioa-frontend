@@ -156,12 +156,12 @@ export const NAV_SECTIONS: NavSection[] = [
           {
             href: "/loans",
             label: "Solicitudes de equipos",
-            module: "EQUIPMENT_LOANS",
+            // module: "EQUIPMENT_LOANS",
           },
           {
             href: "/equipment-maintenance",
             label: "Mantenimiento de equipos",
-            module: "MAINTENANCE",
+            // module: "MAINTENANCE",
           },
           // { href: "/equipment-requests", label: "Solicitud Equipos" },
           // { href: "/books-files", label: "Biblioteca" }
@@ -192,7 +192,17 @@ export const NAV_SECTIONS: NavSection[] = [
             href: "/vuelos",
             label: "Ver vuelos",
           },
-          // { href: "/transfers", label: "Traslados" },
+          {
+          href: "/comercial/FlightBlocking", 
+          label: "Bloqueo de vuelos",
+
+          },
+
+          {
+          href: "/comercial/FlightBlocking/control", 
+          label: "Bloqueo/Admin",
+
+          },
           {
             href: "/auxiliares",
             label: "Auxiliares operativos",
@@ -319,9 +329,8 @@ export const NAV_SECTIONS: NavSection[] = [
           // { href: "/comercial", label: "Resumen", exact: true },
           { href: "/comercial/ofertas", label: "Ofertas del día" },
           { href: "/comercial/cotizaciones", label: "Cotizaciones" },
-          { href: "/comercial/FlightBlocking", label: "Bloqueo de vuelos" },
           { href: "/comercial/videos", label: "Videos de hoteles" },
-          { href: "/comercial/niltze", label: "Catálogo Niltze" },
+          // { href: "/comercial/niltze", label: "Catálogo Niltze" },
           { href: "/comercial/protocolo", label: "Protocolo de atención" },
           { href: "/comercial/respuestas", label: "Respuestas rápidas" },
           { href: "/comercial/tarifas", label: "Tarifas y planes" },

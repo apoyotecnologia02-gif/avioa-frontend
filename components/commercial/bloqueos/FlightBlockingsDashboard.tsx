@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useState } from "react";
 import {
   Plane,
   Calendar,
@@ -12,11 +13,14 @@ import {
   FileText,
   Banknote,
   Users,
+  RotateCcw,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 import {
   Select,
   SelectContent,
@@ -25,8 +29,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 // Hook y utilidades
 import {
   useFlightBlockings,
@@ -36,15 +45,6 @@ import {
   isAdminBlock,
 } from "@/hooks/useFlightBlockings";
 
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from "@/components/ui/table";
-
 // Componentes hijos
 import ReservationTable from "./ReservationTable";
 import BlockEditor from "./BlockEditor";
@@ -52,6 +52,7 @@ import InventoryEditor from "./InventoryEditor";
 import LinkEditor from "./LinkEditor";
 import SplitEditor from "./SplitEditor";
 import ManualReservationEditor from "./ManualReservationEditor";
+import AdminDashboard from "./AdminDashboard";
 
 export function FlightBlockingsDashboard({
   control = false,
@@ -60,568 +61,404 @@ export function FlightBlockingsDashboard({
 }) {
   const h = useFlightBlockings({ control });
 
-  // === ESTADOS DE CARGA INICIAL ===
-  if (h.loading && !h.board) {
-    return (
-      <div className="p-8 text-center text-muted-foreground animate-pulse">
-        Cargando bloqueos desde Drive...
-      </div>
-    );
-  }
-  if (h.error && !h.board) {
-    return (
-      <div className="p-8 text-center text-destructive border border-destructive/20 bg-destructive/10 rounded-lg m-4">
-        <AlertTriangle className="mx-auto h-8 w-8 mb-2" />
-        <p>{h.error}</p>
-        <Button variant="outline" onClick={() => h.load()} className="mt-4">
-          Reintentar
-        </Button>
-      </div>
-    );
-  }
+  // Estado para el modal de eliminar
+  const [blockToDelete, setBlockToDelete] = useState<any>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  return (
-    <div className="flex flex-col gap-6 w-full max-w-7xl mx-auto p-4 md:p-6">
-      {/* HEADER */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            {control ? "Administración de Bloqueos" : "Bloqueos JetSMART"}
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            {control
-              ? "Gestiona cupos, pagos y datos de reservas."
-              : "Consulta disponibilidad de vuelos y cupos."}
-          </p>
-        </div>
+  const handleDeleteBlock = async () => {
+    if (!blockToDelete) return;
+    setIsDeleting(true);
+    try {
+      const success = await h.post(
+        {
+          action: "deleteBlock",
+          blockId: blockToDelete.id,
+          revision: blockToDelete.revision,
+        },
+        "Bloqueo eliminado del tablero.",
+      );
 
-        {control && (
-          <Tabs
-            value={h.tab}
-            onValueChange={(v) => h.openSection(v as any)}
-            className="w-full md:w-auto"
-          >
-            <TabsList className="grid grid-cols-5 w-full md:w-[600px]">
-              <TabsTrigger value="reservations">Reservas</TabsTrigger>
-              <TabsTrigger value="paymentAlerts">
-                Pagos{" "}
-                <Badge variant="secondary" className="ml-1">
-                  {h.paymentAlerts.length}
-                </Badge>
-              </TabsTrigger>
-              <TabsTrigger value="dataAlerts">
-                Datos{" "}
-                <Badge variant="secondary" className="ml-1">
-                  {h.dataAlerts.length}
-                </Badge>
-              </TabsTrigger>
-              <TabsTrigger value="history">Historial</TabsTrigger>
-              <TabsTrigger value="setup">Origen</TabsTrigger>
-            </TabsList>
-          </Tabs>
+      if (success) {
+        toast.success("Bloqueo eliminado correctamente");
+        setBlockToDelete(null); // Cierra el modal si tuvo éxito
+      } else {
+        // El hook guarda el error del backend en h.error
+        toast.error(
+          h.error ||
+            "No se pudo eliminar. El bloqueo tiene reservas activas vinculadas.",
+        );
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Error de conexión al intentar eliminar.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  if (control) {
+    return (
+      <div className="w-full max-w-7xl mx-auto">
+        <AdminDashboard
+          services={h.visibleServices || []}
+          alerts={h.board?.alerts || []}
+          events={h.board?.events || []}
+          blocks={h.board?.blocks || []}
+          files={h.board?.files || []}
+          canEdit={true} // Forzado a true para que no oculte acciones
+          canAdmin={true} // Forzado a true para que no muestre "Restringido"
+          today={h.board?.today || ""}
+          activeTab={h.tab as any}
+          onTabChange={(tab) => h.openSection(tab as any)}
+          filters={h.filters}
+          onFiltersChange={h.patchFilters}
+          onLink={(s: any) => h.openServiceEditor("link", s)}
+          onSplit={(s: any) => h.openServiceEditor("split", s)}
+          onReview={(s: any) => h.reviewReservation(s)}
+          onUpload={(file, blockId, kind) => h.upload(file, blockId, kind)}
+          onCompleteTask={(b, kind, reopen, prevPay, prevData) =>
+            h.completeTask(b, kind, reopen, prevPay, prevData)
+          }
+        />
+
+        {/* Modales de administración */}
+        {h.editor.kind === "link" && (
+          <LinkEditor
+            open={true}
+            service={(h.editor as any).service}
+            blocks={h.blocks}
+            draft={(h.editor as any).draft}
+            onChange={h.updateLinkDraft}
+            onSave={(blockId, seats) =>
+              h.linkReservation((h.editor as any).service, blockId, seats)
+            }
+            onCancel={h.closeEditor}
+            busy={h.busy}
+            error={h.error}
+          />
+        )}
+        {h.editor.kind === "split" && (
+          <SplitEditor
+            open={true}
+            service={(h.editor as any).service}
+            rows={(h.editor as any).rows}
+            onRowsChange={h.updateSplitRows}
+            onSave={(rows) =>
+              h.splitReservation((h.editor as any).service, rows)
+            }
+            onCancel={h.closeEditor}
+            busy={h.busy}
+          />
         )}
       </div>
+    );
+  }
 
-      {h.message && (
-        <div className="p-3 bg-green-50 text-green-700 border border-green-200 rounded-md text-sm flex items-center gap-2">
-          <CheckCircle2 className="h-4 w-4" /> {h.message}
+  // VISTA DE INVENTARIO (Tarjetas)
+  return (
+    <div className="flex flex-col gap-6 w-full max-w-7xl mx-auto p-4 md:p-6">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+            <Plane className="h-6 w-6" /> Bloqueos JetSMART
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Consulta disponibilidad de vuelos y cupos.
+          </p>
         </div>
-      )}
-      {h.error && h.board && (
-        <div className="p-3 bg-red-50 text-red-700 border border-red-200 rounded-md text-sm flex items-center gap-2">
-          <XCircle className="h-4 w-4" /> {h.error}
-        </div>
-      )}
+      </div>
 
-      {/* ========================================================= */}
-      {/* VISTA: INVENTARIO (Tarjetas de vuelos)                    */}
-      {/* ========================================================= */}
-      {h.tab === "inventory" && (
-        <div className="flex flex-col gap-6">
-          <div className="flex flex-wrap items-center gap-4 bg-muted/30 p-3 rounded-lg border border-border">
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar código, destino..."
-                className="pl-9"
-                value={h.filters.search}
-                onChange={(e) => h.patchFilters({ search: e.target.value })}
-              />
-            </div>
-            <Select
-              value={h.filters.destination || "all"}
-              onValueChange={(v) =>
-                h.patchFilters({ destination: v === "all" ? "" : v })
-              }
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Destino" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos los destinos</SelectItem>
-                {h.destinations.map((d) => (
-                  <SelectItem key={d} value={d}>
-                    {d}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select
-              value={h.filters.nights || "all"}
-              onValueChange={(v) =>
-                h.patchFilters({ nights: v === "all" ? "" : v })
-              }
-            >
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="Noches" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas las noches</SelectItem>
-                {h.nightOptions.map((n) => (
-                  <SelectItem key={n} value={String(n)}>
-                    {n} noches
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="all-dates"
-                checked={h.filters.allDates}
-                onChange={(e) => h.patchFilters({ allDates: e.target.checked })}
-                className="rounded border-gray-300"
-              />
-              <Label
-                htmlFor="all-dates"
-                className="text-sm font-normal cursor-pointer"
-              >
-                Ver históricos
-              </Label>
-            </div>
-            {h.canEdit && (
-              <Button size="sm" onClick={() => h.openBlockEditor()}>
-                <Plus className="h-4 w-4 mr-2" /> Nuevo Bloqueo
-              </Button>
-            )}
+      {h.error && (
+        <div className="flex flex-col gap-3 p-4 border border-destructive/30 bg-destructive/5 rounded-lg">
+          <div className="flex items-center gap-2 text-destructive">
+            <AlertTriangle className="h-5 w-5" />
+            <span className="font-medium">No se pudieron cargar los datos</span>
           </div>
+          <p className="text-sm text-muted-foreground">{h.error}</p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => h.load()}
+            className="w-fit"
+          >
+            <RotateCcw className="h-4 w-4 mr-2" /> Reintentar
+          </Button>
+        </div>
+      )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {h.blocks.map((b: any) => {
-              const nights = blockNights(b);
-              const initial = inventoryInitial(b);
-              return (
-                <Card
-                  key={b.id}
-                  className="overflow-hidden hover:border-primary/50 transition-colors flex flex-col"
-                >
-                  <CardHeader className="p-4 pb-2 bg-muted/20">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <Badge variant="outline" className="mb-1">
-                          {b.code}
-                        </Badge>
-                        <CardTitle className="text-lg leading-tight">
-                          {blockDestination(b)}
-                        </CardTitle>
-                      </div>
-                      {nights !== null && (
-                        <Badge variant="secondary">{nights} noches</Badge>
-                      )}
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-wrap items-center gap-4 bg-muted/30 p-3 rounded-lg border border-border">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar código, destino..."
+              className="pl-9"
+              value={h.filters.search}
+              onChange={(e) => h.patchFilters({ search: e.target.value })}
+            />
+          </div>
+          <Select
+            value={h.filters.destination || "all"}
+            onValueChange={(v) =>
+              h.patchFilters({ destination: v === "all" ? "" : v })
+            }
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Destino" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos los destinos</SelectItem>
+              {h.destinations.map((d: any) => (
+                <SelectItem key={d} value={d}>
+                  {d}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={h.filters.nights || "all"}
+            onValueChange={(v) =>
+              h.patchFilters({ nights: v === "all" ? "" : v })
+            }
+          >
+            <SelectTrigger className="w-[150px]">
+              <SelectValue placeholder="Noches" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas las noches</SelectItem>
+              {h.nightOptions.map((n: any) => (
+                <SelectItem key={n} value={String(n)}>
+                  {n} noches
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="all-dates"
+              checked={h.filters.allDates}
+              onChange={(e) => h.patchFilters({ allDates: e.target.checked })}
+              className="rounded border-gray-300"
+            />
+            <Label
+              htmlFor="all-dates"
+              className="text-sm font-normal cursor-pointer"
+            >
+              Ver históricos
+            </Label>
+          </div>
+          {h.canEdit && (
+            <Button size="sm" onClick={() => h.openBlockEditor()}>
+              <Plus className="h-4 w-4 mr-2" /> Nuevo Bloqueo
+            </Button>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {h.blocks.map((b: any) => {
+            const nights = blockNights(b);
+            const initial = inventoryInitial(b);
+            return (
+              <Card
+                key={b.id}
+                className="overflow-hidden hover:border-primary/50 transition-colors flex flex-col"
+              >
+                <CardHeader className="p-4 pb-2 bg-muted/20">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <Badge variant="outline" className="mb-1">
+                        {b.code}
+                      </Badge>
+                      <CardTitle className="text-lg leading-tight">
+                        {blockDestination(b)}
+                      </CardTitle>
                     </div>
-                  </CardHeader>
-                  <CardContent className="p-4 pt-2 flex flex-col gap-4 flex-1">
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex flex-col">
-                        <span className="text-xs text-muted-foreground uppercase">
-                          Ida
-                        </span>
-                        <span className="font-medium flex items-center gap-1">
-                          <Calendar className="h-3 w-3" /> {b.departDate}{" "}
-                          {b.departTime}
-                        </span>
-                      </div>
-                      <Plane className="h-4 w-4 text-muted-foreground rotate-45" />
-                      <div className="flex flex-col text-right">
-                        <span className="text-xs text-muted-foreground uppercase">
-                          Regreso
-                        </span>
-                        <span className="font-medium flex items-center gap-1 justify-end">
-                          <Calendar className="h-3 w-3" /> {b.returnDate}{" "}
-                          {b.returnTime}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2 bg-muted/50 p-2 rounded-md text-center mt-auto">
-                      <div className="flex flex-col">
-                        <span className="text-[10px] text-muted-foreground uppercase">
-                          Contratados
-                        </span>
-                        <span className="font-semibold">{initial ?? "—"}</span>
-                      </div>
-                      <div className="flex flex-col border-x border-border/50">
-                        <span className="text-[10px] text-muted-foreground uppercase">
-                          Vendidos
-                        </span>
-                        <span className="font-semibold">{b.netSold}</span>
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-[10px] text-muted-foreground uppercase">
-                          Disponibles
-                        </span>
-                        <span
-                          className={`font-semibold ${b.oversold ? "text-destructive" : "text-primary"}`}
-                        >
-                          {b.available ?? "?"}
-                        </span>
-                      </div>
-                    </div>
-                    {b.drive && (
-                      <div className="text-sm text-muted-foreground flex justify-between">
-                        <span>Valor tiquetes:</span>
-                        <span className="font-medium text-foreground">
-                          {new Intl.NumberFormat("es-CO", {
-                            style: "currency",
-                            currency: "COP",
-                            maximumFractionDigits: 0,
-                          }).format(b.drive.price)}
-                        </span>
-                      </div>
+                    {nights !== null && (
+                      <Badge variant="secondary">{nights} noches</Badge>
                     )}
-                    {h.canEdit && (
-                      <div className="flex gap-2 mt-2">
-                        {h.canAdmin && b.drive && (
+                  </div>
+                </CardHeader>
+                <CardContent className="p-4 pt-2 flex flex-col gap-4 flex-1">
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex flex-col">
+                      <span className="text-xs text-muted-foreground uppercase">
+                        Ida
+                      </span>
+                      <span className="font-medium">
+                        {" "}
+                        {b.departDate} <br /> {b.departTime}
+                      </span>
+                    </div>
+                    <div className="flex flex-col text-right">
+                      <span className="text-xs text-muted-foreground uppercase">
+                        Regreso
+                      </span>
+                      <span className="font-medium">
+                        {" "}
+                        {b.returnDate} <br /> {b.returnTime}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 bg-muted/50 p-2 rounded-md text-center mt-auto">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] text-muted-foreground uppercase">
+                        Contratados
+                      </span>
+                      <span className="font-semibold">{initial ?? "—"}</span>
+                    </div>
+                    <div className="flex flex-col border-x border-border/50">
+                      <span className="text-[10px] text-muted-foreground uppercase">
+                        Vendidos
+                      </span>
+                      <span className="font-semibold">{b.netSold}</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[10px] text-muted-foreground uppercase">
+                        Disponibles
+                      </span>
+                      <span
+                        className={`font-semibold ${b.oversold ? "text-destructive" : "text-primary"}`}
+                      >
+                        {b.available ?? "?"}
+                      </span>
+                    </div>
+                  </div>
+                  {b.drive && (
+                    <div className="text-sm text-muted-foreground flex justify-between">
+                      <span>Valor tiquetes:</span>
+                      <span className="font-medium text-foreground">
+                        {new Intl.NumberFormat("es-CO", {
+                          style: "currency",
+                          currency: "COP",
+                          maximumFractionDigits: 0,
+                        }).format(b.drive.price)}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Botones principales */}
+                  <div className="flex gap-2 mt-2">
+                    {h.canAdmin && b.drive && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => h.openInventoryEditor(b)}
+                      >
+                        Editar cupos
+                      </Button>
+                    )}
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => h.openManual(b.id)}
+                    >
+                      <Plus className="h-3 w-3 mr-1" /> Reserva
+                    </Button>
+                  </div>
+
+                  {/* Acordeón de detalles */}
+                  <details className="mt-2 text-xs border-t pt-2 group">
+                    <summary className="cursor-pointer text-muted-foreground font-medium flex items-center gap-1 hover:text-foreground">
+                      <span className="group-open:rotate-90 transition-transform text-[10px]">
+                        ▶
+                      </span>{" "}
+                      Detalles y opciones
+                    </summary>
+                    <div className="mt-2 space-y-1 pl-3 text-muted-foreground">
+                      <p>
+                        {b.title} ·{" "}
+                        {b.drive ? "Origen: Drive" : "Registro manual"}
+                      </p>
+                      <p>
+                        {b.origin || "Origen pendiente"} →{" "}
+                        {b.destination || "Destino pendiente"}{" "}
+                        {b.flight && `· ${b.flight}`}
+                      </p>
+                      {h.canAdmin && (
+                        <p>
+                          Pago: {b.paymentDue || "Pendiente"} · Datos:{" "}
+                          {b.namesDue || "Pendiente"}
+                        </p>
+                      )}
+                      {b.notes && <p className="italic">{b.notes}</p>}
+
+                      {h.canEdit && (
+                        <div className="flex gap-2 pt-2">
                           <Button
                             variant="outline"
                             size="sm"
-                            className="flex-1"
-                            onClick={() => h.openInventoryEditor(b)}
+                            onClick={() => h.openBlockEditor(b)}
                           >
-                            Editar cupos
+                            Editar bloqueo
                           </Button>
-                        )}
-                        <Button
-                          variant="default"
-                          size="sm"
-                          className="flex-1"
-                          onClick={() => h.openManual(b.id)}
-                        >
-                          <Plus className="h-3 w-3 mr-1" /> Reserva
-                        </Button>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
-      {/* ========================================================= */}
-      {/* VISTA: RESERVAS (Tabla)                                   */}
-      {/* ========================================================= */}
-      {h.tab === "reservations" && (
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-wrap items-center gap-4 bg-muted/30 p-3 rounded-lg border border-border">
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar AVI, pasajero, asesor..."
-                className="pl-9"
-                value={h.filters.search}
-                onChange={(e) => h.patchFilters({ search: e.target.value })}
-              />
-            </div>
-            <Select
-              value={h.filters.inbox}
-              onValueChange={(v: any) => h.patchFilters({ inbox: v })}
-            >
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Estado de revisión" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="pending">
-                  Sin revisar ({h.reviewCounts.pending})
-                </SelectItem>
-                <SelectItem value="changed">
-                  Cambios ({h.reviewCounts.changed})
-                </SelectItem>
-                <SelectItem value="reviewed">
-                  Revisadas ({h.reviewCounts.reviewed})
-                </SelectItem>
-                <SelectItem value="all">
-                  Todas ({h.reservationCount})
-                </SelectItem>
-              </SelectContent>
-            </Select>
-            <Select
-              value={h.filters.arrival}
-              onValueChange={(v: any) => h.patchFilters({ arrival: v })}
-            >
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Fecha de creación" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas las fechas</SelectItem>
-                <SelectItem value="after">
-                  Posteriores a integración ({h.arrivalCounts.after})
-                </SelectItem>
-                <SelectItem value="before">
-                  Anteriores a integración ({h.arrivalCounts.before})
-                </SelectItem>
-                <SelectItem value="manual">
-                  Manuales ({h.arrivalCounts.manual})
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <ReservationTable
-            services={h.visibleServices}
-            blocks={h.board?.blocks || []}
-            busy={h.busy}
-            canEdit={h.canEdit}
-            onLink={(s: any) => h.openServiceEditor("link", s)}
-            onSplit={(s: any) => h.openServiceEditor("split", s)}
-            onReview={(s: any) => h.reviewReservation(s)}
-          />
-        </div>
-      )}
-
-      {/* ========================================================= */}
-      {/* VISTA: ALERTAS (Pagos y Datos)                            */}
-      {/* ========================================================= */}
-      {(h.tab === "paymentAlerts" || h.tab === "dataAlerts") && (
-        <div className="flex flex-col gap-4">
-          <div className="bg-muted/30 p-4 rounded-lg border border-border text-sm">
-            <p className="font-medium mb-1">
-              {h.tab === "paymentAlerts"
-                ? "Pagos de bloqueos"
-                : "Envío de datos de pasajeros"}
-            </p>
-            <p className="text-muted-foreground">
-              {h.tab === "paymentAlerts"
-                ? "Se activa 30 días antes de la salida. Adjunta el comprobante o confirma un pago anterior."
-                : "Se activa 15 días antes de la salida. Adjunta el soporte del envío o confirma uno anterior."}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {h.activeAlerts.map((a: any) => {
-              const b = h.board?.blocks.find((x: any) => x.id === a.blockId);
-              if (!b) return null;
-              const files =
-                h.board?.files.filter(
-                  (f: any) => f.blockId === b.id && f.kind === a.kind,
-                ) || [];
-
-              return (
-                <Card key={a.blockId + a.kind} className="flex flex-col">
-                  <CardHeader className="p-4 pb-2">
-                    <div className="flex justify-between items-start mb-2">
-                      <Badge
-                        variant={
-                          a.due < (h.board?.today || "")
-                            ? "destructive"
-                            : "default"
-                        }
-                      >
-                        {a.due < (h.board?.today || "")
-                          ? "Vencida"
-                          : "Vence hoy"}
-                      </Badge>
-                      {a.kind === "payment" ? (
-                        <Banknote className="h-5 w-5 text-muted-foreground" />
-                      ) : (
-                        <Users className="h-5 w-5 text-muted-foreground" />
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                            onClick={() => setBlockToDelete(b)}
+                          >
+                            Eliminar bloqueo
+                          </Button>
+                        </div>
                       )}
                     </div>
-                    <CardTitle className="text-base">
-                      {b.code} · {b.title}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-4 pt-2 flex-1 flex flex-col gap-3">
-                    <div className="text-sm space-y-1">
-                      <p className="flex justify-between">
-                        <span className="text-muted-foreground">
-                          Fecha límite:
-                        </span>{" "}
-                        <strong className="text-destructive">{a.due}</strong>
-                      </p>
-                      <p className="flex justify-between">
-                        <span className="text-muted-foreground">Salida:</span>{" "}
-                        <span>{b.departDate}</span>
-                      </p>
-                    </div>
-
-                    {files.length > 0 && (
-                      <div className="bg-muted/50 p-2 rounded-md space-y-1 mt-2">
-                        {files.map((f: any) => (
-                          <a
-                            key={f.id}
-                            href={`/api/flight-blockings/files?id=${f.id}`}
-                            target="_blank"
-                            className="text-xs text-primary flex items-center gap-1 hover:underline"
-                          >
-                            <FileText className="h-3 w-3" /> {f.name}
-                          </a>
-                        ))}
-                      </div>
-                    )}
-
-                    {h.canEdit && (
-                      <div className="mt-auto pt-4 space-y-2">
-                        <Label
-                          htmlFor={`file-${b.id}-${a.kind}`}
-                          className="cursor-pointer"
-                        >
-                          <div className="flex items-center justify-center gap-2 border-2 border-dashed border-border hover:bg-muted/50 rounded-md p-3 text-sm text-muted-foreground transition-colors">
-                            <UploadCloud className="h-4 w-4" /> Subir archivo
-                            adjunto
-                          </div>
-                          <input
-                            id={`file-${b.id}-${a.kind}`}
-                            type="file"
-                            className="hidden"
-                            accept="image/*,.pdf"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (file) h.upload(file, b.id, a.kind);
-                              e.target.value = "";
-                            }}
-                          />
-                        </Label>
-                        <Button
-                          className="w-full"
-                          variant={files.length > 0 ? "default" : "secondary"}
-                          // AQUÍ ESTÁ LA CORRECCIÓN DEL ERROR:
-                          disabled={
-                            h.busy ||
-                            (a.kind === "names" &&
-                              isAdminBlock(b) &&
-                              b.unresolved > 0)
-                          }
-                          onClick={() => h.completeTask(b as any, a.kind)}
-                        >
-                          {files.length > 0
-                            ? "Marcar como completado"
-                            : "Confirmar anterior y cerrar"}
-                        </Button>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-
-          {h.activeAlerts.length === 0 && (
-            <div className="text-center py-16 bg-muted/20 border border-dashed rounded-lg">
-              <CheckCircle2 className="mx-auto h-10 w-10 text-green-500/50 mb-3" />
-              <h3 className="text-lg font-medium">Todo al día</h3>
-              <p className="text-sm text-muted-foreground">
-                No hay alertas pendientes para esta categoría.
-              </p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ========================================================= */}
-      {/* VISTA: HISTORIAL Y SETUP (Placeholders)                   */}
-      {/* ========================================================= */}
-      {/* ========================================================= */}
-{/* VISTA: HISTORIAL                                         */}
-{/* ========================================================= */}
-{h.tab === 'history' && (
-  <div className="flex flex-col gap-4">
-    <div className="bg-muted/30 p-4 rounded-lg border border-border">
-      <h2 className="text-lg font-semibold">Historial de gestiones</h2>
-      <p className="text-sm text-muted-foreground">
-        Últimos 250 movimientos realizados en los bloqueos. Los registros anteriores se conservan.
-      </p>
-    </div>
-
-    <div className="rounded-lg border overflow-hidden">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Fecha</TableHead>
-            <TableHead>Gestión</TableHead>
-            <TableHead>Bloqueo / Servicio</TableHead>
-            <TableHead>Responsable</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {h.board?.events.map((e: any) => {
-            const block = h.board?.blocks.find((b: any) => b.id === e.blockId);
-            return (
-              <TableRow key={e.id}>
-                <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
-                  {new Date(e.at).toLocaleString('es-CO')}
-                </TableCell>
-                <TableCell className="text-sm font-medium">{e.action}</TableCell>
-                <TableCell className="text-sm">
-                  {block ? `${block.code} · ${block.title}` : e.serviceId || '—'}
-                </TableCell>
-                <TableCell className="text-sm">{e.by}</TableCell>
-              </TableRow>
+                  </details>
+                </CardContent>
+              </Card>
             );
           })}
-        </TableBody>
-      </Table>
-      {(!h.board?.events || h.board.events.length === 0) && (
-        <div className="p-8 text-center text-muted-foreground">No hay movimientos registrados aún.</div>
-      )}
-    </div>
-  </div>
-)}
+        </div>
 
-{/* ========================================================= */}
-{/* VISTA: SETUP (Origen de los bloqueos)                     */}
-{/* ========================================================= */}
-{h.tab === 'setup' && (
-  <div className="flex flex-col gap-4">
-    <div className="bg-muted/30 p-4 rounded-lg border border-border">
-      <h2 className="text-lg font-semibold">Origen de los bloqueos</h2>
-      <p className="text-sm text-muted-foreground">
-        Los bloqueos se cargan automáticamente desde la hoja de Google Sheets y se sincronizan con Travel Compositor.
-      </p>
-    </div>
-
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Conexión con Google Drive</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-2 text-sm">
-        <p><strong>Saldo inicial cargado de Drive:</strong> Sí</p>
-        <p><strong>Última verificación:</strong> {h.board?.drive?.checkedAt ? new Date(h.board.drive.checkedAt).toLocaleString('es-CO') : 'Pendiente'}</p>
-        {h.board?.drive?.error && (
-          <p className="text-destructive">Error de Drive: {h.board.drive.error}</p>
+        {h.blocks.length === 0 && (
+          <div className="text-center py-16 bg-muted/20 border border-dashed rounded-lg">
+            <Plane className="mx-auto h-10 w-10 text-muted-foreground mb-3 opacity-50" />
+            <h3 className="text-lg font-medium">
+              No hay bloqueos para estos filtros
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Prueba cambiando el destino o las fechas.
+            </p>
+          </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
 
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Sincronización con Travel Compositor</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-2 text-sm">
-        <p><strong>Estado:</strong> {h.board?.sync?.configured ? 'Conectado' : 'No configurado'}</p>
-        <p><strong>Última sincronización exitosa:</strong> {h.board?.sync?.lastSuccess ? new Date(h.board.sync.lastSuccess).toLocaleString('es-CO') : 'Pendiente'}</p>
-        {h.board?.sync?.error && (
-          <p className="text-destructive">Error de TC: {h.board.sync.error}</p>
-        )}
-      </CardContent>
-    </Card>
-  </div>
-)}
+      {/* MODAL DE ELIMINAR (Shadcn) */}
+      <Dialog
+        open={!!blockToDelete}
+        onOpenChange={(open) => !open && setBlockToDelete(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>¿Eliminar este bloqueo?</DialogTitle>
+            <DialogDescription>
+              Esta acción no se puede deshacer. Las reservas y el historial se
+              conservarán.
+            </DialogDescription>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Estás a punto de eliminar el bloqueo{" "}
+            <strong>{blockToDelete?.code}</strong>. Si tiene reservas activas,
+            primero debes vincularlas al bloqueo correcto.
+          </p>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setBlockToDelete(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteBlock}
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Eliminando..." : "Eliminar bloqueo"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
-      {/* ========================================================= */}
-      {/* MODALES (Editores)                                        */}
-      {/* ========================================================= */}
-
+      {/* MODALES DE INVENTARIO */}
       {h.editor.kind === "block" && (
         <BlockEditor
           open={true}
@@ -636,7 +473,6 @@ export function FlightBlockingsDashboard({
           error={h.error}
         />
       )}
-
       {h.editor.kind === "inventory" && (
         <InventoryEditor
           open={true}
@@ -649,41 +485,6 @@ export function FlightBlockingsDashboard({
           error={h.error}
         />
       )}
-
-      {h.editor.kind === "link" && (
-        <LinkEditor
-          open={true}
-          service={h.editor.service}
-          blocks={h.blocks}
-          draft={h.editor.draft}
-          onChange={h.updateLinkDraft}
-          onSave={(blockId, seats) => {
-            const editor = h.editor;
-            if (editor.kind !== "link") return;
-            return h.linkReservation(editor.service, blockId, seats);
-          }}
-          onCancel={h.closeEditor}
-          busy={h.busy}
-          error={h.error}
-        />
-      )}
-
-      {h.editor.kind === "split" && (
-        <SplitEditor
-          open={true}
-          service={h.editor.service}
-          rows={h.editor.rows}
-          onRowsChange={h.updateSplitRows}
-          onSave={(rows) => {
-            const editor = h.editor;
-            if (editor.kind !== "split") return;
-            return h.splitReservation(editor.service, rows);
-          }}
-          onCancel={h.closeEditor}
-          busy={h.busy}
-        />
-      )}
-
       {h.editor.kind === "manual" && (
         <ManualReservationEditor
           open={true}

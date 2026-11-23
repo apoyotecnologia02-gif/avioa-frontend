@@ -122,15 +122,14 @@ function relatedToBlock(
     )
   );
 }
-
 const initialFilters = (control: boolean): Filters => ({
   search: "",
   allDates: false,
   selected: null,
   destination: "",
   nights: "",
-  arrival: control ? "after" : "all",
-  inbox: control ? "pending" : "all",
+  arrival: "all",
+  inbox: "all",
   related: false,
   reviewOnly: false,
 });
@@ -330,7 +329,6 @@ export function useFlightBlockings(options: UseFlightBlockingsOptions = {}) {
     [],
   );
 
-  // Único punto para POST JSON y subida multipart. No reintenta escrituras.
   const mutate = useCallback(
     async (
       url: string,
@@ -342,7 +340,7 @@ export function useFlightBlockings(options: UseFlightBlockingsOptions = {}) {
         return false;
       mutationLock.current = true;
       setBusy(true);
-      setError("");
+      setError(""); // Limpiamos errores anteriores
       setMessage("");
       const controller = new AbortController();
       writeController.current = controller;
@@ -356,17 +354,28 @@ export function useFlightBlockings(options: UseFlightBlockingsOptions = {}) {
             ? { headers: { "Content-Type": "application/json" } }
             : {}),
         });
-        await readResponse(response);
+
+        // Si la respuesta no es OK, leemos el JSON para obtener el mensaje del backend
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(
+            errorData.message ||
+              errorData.error ||
+              `Error HTTP ${response.status}`,
+          );
+        }
+
         if (!mounted.current || controller.signal.aborted) return false;
         setMessage(success);
         if (!keepEditor) setEditor({ kind: "closed" });
-        // Si falla la recarga, se conserva el éxito de la escritura y se muestra
-        // el error de lectura; no se invita a repetir una operación ya guardada.
         await load();
         return true;
       } catch (cause: unknown) {
-        if (mounted.current && !controller.signal.aborted)
-          setError(errorMessage(cause));
+        if (mounted.current && !controller.signal.aborted) {
+          const errorMsg = errorMessage(cause);
+          setError(errorMsg);
+          throw cause;
+        }
         return false;
       } finally {
         mutationLock.current = false;
@@ -744,36 +753,16 @@ export function useFlightBlockings(options: UseFlightBlockingsOptions = {}) {
     },
     [askConfirmation, board?.edit, post],
   );
-
   const completeTask = useCallback(
     async (
       block: AdminBlock,
       kind: TaskKind,
       reopen = false,
+      previousPaymentConfirmed = false,
+      previousDataDeliveryConfirmed = false,
     ): Promise<boolean> => {
       if (!board?.edit || loading || mutationLock.current) return false;
-      const hasSupport = board.files.some(
-        (file) => file.blockId === block.id && file.kind === kind,
-      );
-      const previousPaymentConfirmed =
-        !reopen && kind === "payment" && !hasSupport;
-      const previousDataDeliveryConfirmed =
-        !reopen && kind === "names" && !hasSupport;
-      if (
-        !reopen &&
-        !hasSupport &&
-        !(await askConfirmation({
-          title:
-            kind === "payment"
-              ? "Confirmar pago anterior"
-              : "Confirmar envío anterior",
-          message:
-            kind === "payment"
-              ? `¿Confirmas que el bloqueo ${block.code} ya fue pagado anteriormente? Se cerrará la alerta sin comprobante y quedará registrada tu confirmación.`
-              : `¿Confirmas que los datos del bloqueo ${block.code} ya fueron enviados anteriormente? Se cerrará la alerta sin soporte y quedará registrada tu confirmación.`,
-        }))
-      )
-        return false;
+
       return post(
         {
           action: reopen ? "reopen" : "complete",
@@ -791,9 +780,8 @@ export function useFlightBlockings(options: UseFlightBlockingsOptions = {}) {
             : "Envío de datos registrado. Alerta cerrada.",
       );
     },
-    [askConfirmation, board, loading, post],
+    [board, loading, post],
   );
-
   const importBlocks = useCallback(
     (rows: BlockData[]) =>
       post({ action: "importBlocks", rows }, "Bloqueos importados."),
@@ -803,27 +791,18 @@ export function useFlightBlockings(options: UseFlightBlockingsOptions = {}) {
   const openSection = useCallback(
     (section: Tab, reviewOnly = false) => {
       if (mutationLock.current) return;
-      const url =
-        section === "inventory" && control
-          ? inventoryPath
-          : section !== "inventory" && !control
-            ? `${controlPath}?tab=${encodeURIComponent(section)}`
-            : null;
-      if (url) {
-        if (navigate) navigate(url);
-        else window.location.assign(url);
-        return;
-      }
+
       setTab(section);
+
       setFilters({
         ...initialFilters(control),
-        inbox: section === "reservations" ? "pending" : "all",
-        arrival: section === "reservations" ? "after" : "all",
-        reviewOnly,
+        inbox: "all",
+        arrival: "all",
+        reviewOnly: false,
       });
       setEditor({ kind: "closed" });
     },
-    [control, controlPath, inventoryPath, navigate],
+    [control],
   );
 
   const derived = useMemo(() => {

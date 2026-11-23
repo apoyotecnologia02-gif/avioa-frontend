@@ -18,6 +18,7 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import {
   Collapsible,
@@ -71,6 +72,7 @@ function isGroupActive(group: NavGroup, pathname: string): boolean {
 export function Sidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const { isMobile, setOpenMobile, setOpen } = useSidebar();
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const [hydrated, setHydrated] = useState(false);
@@ -85,6 +87,7 @@ export function Sidebar() {
     setHydrated(true);
   }, []);
 
+  // Abrir automáticamente el grupo activo
   useEffect(() => {
     if (!hydrated) return;
     for (const section of NAV_SECTIONS) {
@@ -99,6 +102,12 @@ export function Sidebar() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname, hydrated]);
 
+  // En móvil: cerrar el sidebar al cambiar de ruta
+  useEffect(() => {
+    if (!isMobile) return;
+    setOpenMobile(false);
+  }, [pathname, isMobile, setOpenMobile]);
+
   const toggleGroup = (key: string, open: boolean) => {
     setOpenGroups((prev) => {
       const next = { ...prev, [key]: open };
@@ -111,25 +120,31 @@ export function Sidebar() {
     });
   };
 
+  const handleLogout = () => {
+    if (isMobile) setOpen(false);
+    logout();
+  };
+
   return (
-    <SidebarPrimitive collapsible="offcanvas">
-      <SidebarHeader className="h-16 justify-center border-b border-sidebar-border">
+    <SidebarPrimitive collapsible={isMobile ? "offcanvas" : "none"}>
+      <SidebarHeader className="h-14 justify-center border-b border-sidebar-border sm:h-16">
         <Link
           href="/dashboard"
-          className="flex items-center justify-center px-2"
+          className="flex items-center justify-center px-1 sm:px-2"
+          onClick={() => isMobile && setOpenMobile(false)}
         >
           <Image
             src="/avioa-logo.png"
             alt="avioa Agencia de Viajes logo"
             width={360}
             height={180}
-            className="h-9 w-auto max-w-full object-contain"
+            className="h-8 w-auto max-w-full object-contain sm:h-9"
             priority
           />
         </Link>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="px-1 sm:px-2">
         {NAV_SECTIONS.map((section, sectionIndex) => {
           const visibleGroups = section.groups
             .map((group) => {
@@ -170,7 +185,10 @@ export function Sidebar() {
                     return (
                       <SidebarMenuItem key={group.key}>
                         <SidebarMenuButton asChild isActive={active}>
-                          <Link href={group.href}>
+                          <Link
+                            href={group.href}
+                            onClick={() => isMobile && setOpenMobile(false)}
+                          >
                             <Icon />
                             <span>{group.label}</span>
                           </Link>
@@ -214,7 +232,12 @@ export function Sidebar() {
                                       <span>{item.label}</span>
                                     </a>
                                   ) : (
-                                    <Link href={item.href}>
+                                    <Link
+                                      href={item.href}
+                                      onClick={() =>
+                                        isMobile && setOpenMobile(false)
+                                      }
+                                    >
                                       <span>{item.label}</span>
                                     </Link>
                                   )}
@@ -235,7 +258,7 @@ export function Sidebar() {
 
       <SidebarFooter className="border-t border-sidebar-border">
         {user && (
-          <div className="px-2 py-1.5">
+          <div className="min-w-0 px-2 py-1.5">
             <p className="truncate text-sm font-medium text-sidebar-foreground">
               {user.name}
             </p>
@@ -247,7 +270,7 @@ export function Sidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
-              onClick={logout}
+              onClick={handleLogout}
               className="text-muted-foreground hover:text-destructive"
             >
               <LogOut />

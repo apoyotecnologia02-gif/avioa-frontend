@@ -37,7 +37,7 @@ const fields = [
 export default function BlockEditor({ open, data, capacityText, aliasesText,
   onChange, onFieldsChange, onSave, onCancel, busy = false, error,
   idPrefix = 'block-editor' }: BlockEditorProps) {
-  const managedByDrive = !!data.drive;
+    const managedByDrive = false; 
   return (
     <Dialog open={open} onOpenChange={next => { if (!next && !busy) onCancel(); }}>
       <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-2xl"
@@ -50,9 +50,7 @@ export default function BlockEditor({ open, data, capacityText, aliasesText,
         </DialogHeader>
         <form onSubmit={event => { event.preventDefault(); if (!busy && !managedByDrive) void onSave(); }}
           aria-busy={busy} className="space-y-5">
-          {managedByDrive && <p role="status" className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-100">
-            Este bloqueo se administra desde Drive. Utiliza el editor de inventario para ajustar sus cupos.
-          </p>}
+    
           <fieldset disabled={busy || managedByDrive} className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2">
             <legend className="sr-only">Datos del bloqueo</legend>
             {fields.map(field => (
