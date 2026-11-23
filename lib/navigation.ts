@@ -19,6 +19,7 @@ import {
   Wrench,
   Compass,
   BookOpen,
+  PackageSearch,
 } from "lucide-react";
 import { isAdminRole, isLeaderOrManagerOrAdminRole } from "@/lib/roles";
 import { AppModuleKey } from "./modules";
@@ -296,6 +297,18 @@ export const NAV_SECTIONS: NavSection[] = [
       //       { href: "/org-chart", label: "Organigrama" },
       //     ],
       //   },
+      {
+        key: "producto",
+        label: "Producto",
+        icon: PackageSearch,
+        module: "OFFERS",
+        items: [
+          {
+            href: "/portal-offers/catalogo-cazador",
+            label: "Portal de Ofertas",
+          },
+        ],
+      },
 
       {
         key: "comercial",
