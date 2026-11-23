@@ -5,8 +5,8 @@ export default function Page() {
   const permission = useModulePermission("AUXILIARY");
   if (!permission.canAccess)
     return <p>No tienes acceso a Auxiliares operativos.</p>;
-  if (!permission.canCreate && !permission.canUpdate)
-    return <p>Necesitas permiso de edición en Auxiliares operativos.</p>;
+  // if (!permission.canCreate && !permission.canUpdate)
+  //   return <p>Necesitas permiso de edición en Auxiliares operativos.</p>;
 
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-col px-4 py-5 text-[#203d4d] sm:px-6 md:py-8 lg:px-8">
