@@ -128,7 +128,7 @@ export function VideoCard({
           <Copy className="mr-1.5 h-3.5 w-3.5" />
         </Button>
 
-        {canUpdate && !isFromDrive &&  (
+        {/* {canUpdate && !isFromDrive &&  ( */}
           <>
             <Button
               size="sm"
@@ -140,9 +140,9 @@ export function VideoCard({
               <Pencil />
             </Button>
           </>
-        )}
+        {/* )} */}
 
-        {canDelete && !isFromDrive && (
+        {/* {canDelete && !isFromDrive && ( */}
           <Button
             size="sm"
             variant="ghost"
@@ -152,7 +152,7 @@ export function VideoCard({
           >
             <Trash />
           </Button>
-        )}
+        {/* )} */}
       </div>
     </article>
   );

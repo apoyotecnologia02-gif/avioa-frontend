@@ -149,6 +149,16 @@ export const APP_MODULES = [
     action: ["create", "update", "delete"],
   },
 
+    {
+    key: "COMMERCIAL-ADMIN",
+    kind: "module",
+    category: "HERRAMIENTAS",
+    label: "Comercial-Admin",
+    description: "Espacio de administración para comercial",
+    // action: ["create", "update", "delete"],
+  },
+
+
   // ── Administración (capacidades) ──────────────────────
   {
     key: "USERS_ADMIN",
