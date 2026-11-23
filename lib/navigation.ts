@@ -198,6 +198,7 @@ export const NAV_SECTIONS: NavSection[] = [
           },
 
           {
+          module: "COMMERCIAL-ADMIN",
           href: "/comercial/FlightBlocking/control", 
           label: "Bloqueo/Admin",
 
