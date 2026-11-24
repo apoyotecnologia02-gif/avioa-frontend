@@ -1,49 +1,67 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1";
 const TOKEN_KEY = "portal_access_token";
 
-const getAuthHeaders = (req: NextRequest) => {
+const getAuthHeader = (req: NextRequest): string | null => {
   let token = req.cookies.get(TOKEN_KEY)?.value;
   if (!token) {
     const authHeader = req.headers.get("authorization");
     if (authHeader?.startsWith("Bearer ")) token = authHeader.substring(7);
   }
   if (!token) token = req.headers.get("x-access-token") || undefined;
-
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (token) headers["Authorization"] = `Bearer ${token}`;
-  return headers;
+  return token ? `Bearer ${token}` : null;
 };
 
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const query = searchParams.toString();
-  const suffix = query ? `?${query}` : "";
+  const auth = getAuthHeader(req);
+  if (!auth) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
 
   try {
-    const response = await fetch(
-      `${API_URL}/commercial/quick-replies${suffix}`,
-      {
-        headers: getAuthHeaders(req),
-        cache: "no-store",
-      },
-    );
+    const response = await fetch(`${API_URL}/commercial/quick-replies`, {
+      headers: { Authorization: auth },
+      cache: "no-store",
+    });
+    const data = await response.json();
+    return NextResponse.json(data, { status: response.status });
+  } catch (error) {
+    return NextResponse.json({ error: "Error de conexión" }, { status: 500 });
+  }
+}
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      return NextResponse.json(
-        { error: errorData.message || "Error al obtener las respuestas rápidas" },
-        { status: response.status },
-      );
+export async function POST(req: NextRequest) {
+  const auth = getAuthHeader(req);
+  if (!auth) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+
+  const contentType = req.headers.get("content-type") || "";
+  const isFormData = contentType.includes("multipart/form-data");
+
+  try {
+    let body: any;
+    let path = "";
+
+
+    if (isFormData) {
+      body = await req.formData();
+      path = "/import";
+    } else {
+      body = await req.text();
     }
 
-    return NextResponse.json(await response.json());
-  } catch {
-    return NextResponse.json(
-      { error: "Error de conexión con el servidor" },
-      { status: 500 },
-    );
+    const response = await fetch(`${API_URL}/commercial/quick-replies${path}`, {
+      method: "POST",
+      headers: {
+        Authorization: auth,
+        ...(isFormData ? {} : { "Content-Type": "application/json" }),
+      },
+      body,
+      cache: "no-store",
+    });
+
+    const data = await response.json();
+    return NextResponse.json(data, { status: response.status });
+  } catch (error) {
+    console.error("❌ Error en proxy POST quick-replies:", error);
+    return NextResponse.json({ error: "Error de conexión" }, { status: 500 });
   }
 }
