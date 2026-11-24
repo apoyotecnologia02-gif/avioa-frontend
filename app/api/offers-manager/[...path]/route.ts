@@ -8,11 +8,12 @@ async function proxy(
   const { path } = await context.params;
   const route = path.join("/");
   if (
-    !/^(runtime|session|state|history|history\/\d+|approve|initialize|workbook-sync|product-import\/(preview|commit))$/.test(
+    !/^(runtime|session|state|history|history\/\d+|native\/(session|state|history(?:\/\d+)?)|approve|initialize|workbook-sync|product-import\/(preview|commit))$/.test(
       route,
     )
-  )
+  ) {
     return NextResponse.json({ error: "Ruta no encontrada" }, { status: 404 });
+  }
   const authorization = req.headers.get("authorization");
   if (!authorization?.startsWith("Bearer "))
     return NextResponse.json(
