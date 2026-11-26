@@ -166,6 +166,12 @@ export const NAV_SECTIONS: NavSection[] = [
           },
           // { href: "/equipment-requests", label: "Solicitud Equipos" },
           // { href: "/books-files", label: "Biblioteca" }
+
+        {
+          href: "",
+          label: "Cumpleaños",
+          // module: "Cumpleaños/tal....",
+        },
         ],
       },
       {

@@ -1,20 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   Plane,
-  Calendar,
   AlertTriangle,
   Search,
   Plus,
-  CheckCircle2,
-  XCircle,
   UploadCloud,
-  FileText,
-  Banknote,
-  Users,
   RotateCcw,
-  Trash2,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,23 +30,21 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-// Hook y utilidades
+
 import {
   useFlightBlockings,
   blockDestination,
   blockNights,
   inventoryInitial,
-  isAdminBlock,
 } from "@/hooks/useFlightBlockings";
 
-// Componentes hijos
-import ReservationTable from "./ReservationTable";
 import BlockEditor from "./BlockEditor";
 import InventoryEditor from "./InventoryEditor";
 import LinkEditor from "./LinkEditor";
 import SplitEditor from "./SplitEditor";
 import ManualReservationEditor from "./ManualReservationEditor";
 import AdminDashboard from "./AdminDashboard";
+import { commercialRequest } from "@/lib/commercial/request";
 
 export function FlightBlockingsDashboard({
   control = false,
@@ -65,6 +57,41 @@ export function FlightBlockingsDashboard({
   const [blockToDelete, setBlockToDelete] = useState<any>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Estados para la importación
+  const [importing, setImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // --- LÓGICA DE IMPORTAR EXCEL ---
+  async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImporting(true);
+    const toastId = toast.loading("Importando bloqueos...");
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+    
+      const res = await fetch("/api/flight-blockings/import", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error("Error al importar el archivo");
+
+      toast.success("Bloqueos importados correctamente", { id: toastId });
+      void h.load();
+    } catch (err: any) {
+      toast.error(err.message || "No se pudo importar", { id: toastId });
+    } finally {
+      setImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
+  // --- LÓGICA DE ELIMINAR BLOQUEO ---
   const handleDeleteBlock = async () => {
     if (!blockToDelete) return;
     setIsDeleting(true);
@@ -80,9 +107,8 @@ export function FlightBlockingsDashboard({
 
       if (success) {
         toast.success("Bloqueo eliminado correctamente");
-        setBlockToDelete(null); // Cierra el modal si tuvo éxito
+        setBlockToDelete(null);
       } else {
-        // El hook guarda el error del backend en h.error
         toast.error(
           h.error ||
             "No se pudo eliminar. El bloqueo tiene reservas activas vinculadas.",
@@ -95,6 +121,9 @@ export function FlightBlockingsDashboard({
     }
   };
 
+  // =========================================================================
+  // VISTA DE ADMINISTRACIÓN
+  // =========================================================================
   if (control) {
     return (
       <div className="w-full max-w-7xl mx-auto">
@@ -104,8 +133,8 @@ export function FlightBlockingsDashboard({
           events={h.board?.events || []}
           blocks={h.board?.blocks || []}
           files={h.board?.files || []}
-          canEdit={true} // Forzado a true para que no oculte acciones
-          canAdmin={true} // Forzado a true para que no muestre "Restringido"
+          canEdit={true}
+          canAdmin={true}
           today={h.board?.today || ""}
           activeTab={h.tab as any}
           onTabChange={(tab) => h.openSection(tab as any)}
@@ -153,7 +182,9 @@ export function FlightBlockingsDashboard({
     );
   }
 
-  // VISTA DE INVENTARIO (Tarjetas)
+  // =========================================================================
+  // VISTA DE INVENTARIO
+  // =========================================================================
   return (
     <div className="flex flex-col gap-6 w-full max-w-7xl mx-auto p-4 md:p-6">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -196,6 +227,7 @@ export function FlightBlockingsDashboard({
               onChange={(e) => h.patchFilters({ search: e.target.value })}
             />
           </div>
+
           <Select
             value={h.filters.destination || "all"}
             onValueChange={(v) =>
@@ -214,6 +246,7 @@ export function FlightBlockingsDashboard({
               ))}
             </SelectContent>
           </Select>
+
           <Select
             value={h.filters.nights || "all"}
             onValueChange={(v) =>
@@ -232,6 +265,7 @@ export function FlightBlockingsDashboard({
               ))}
             </SelectContent>
           </Select>
+
           <div className="flex items-center gap-2">
             <input
               type="checkbox"
@@ -247,10 +281,33 @@ export function FlightBlockingsDashboard({
               Ver históricos
             </Label>
           </div>
+
           {h.canEdit && (
-            <Button size="sm" onClick={() => h.openBlockEditor()}>
-              <Plus className="h-4 w-4 mr-2" /> Nuevo Bloqueo
-            </Button>
+            <div className="flex items-center gap-2">
+              <input
+                type="file"
+                accept=".xlsx,.xls,.csv"
+                className="hidden"
+                ref={fileInputRef}
+                onChange={handleImport}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={importing}
+              >
+                {importing ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <UploadCloud className="h-4 w-4 mr-2" />
+                )}
+                Importar Excel
+              </Button>
+              <Button size="sm" onClick={() => h.openBlockEditor()}>
+                <Plus className="h-4 w-4 mr-2" /> Nuevo Bloqueo
+              </Button>
+            </div>
           )}
         </div>
 
@@ -285,7 +342,6 @@ export function FlightBlockingsDashboard({
                         Ida
                       </span>
                       <span className="font-medium">
-                        {" "}
                         {b.departDate} <br /> {b.departTime}
                       </span>
                     </div>
@@ -294,11 +350,11 @@ export function FlightBlockingsDashboard({
                         Regreso
                       </span>
                       <span className="font-medium">
-                        {" "}
                         {b.returnDate} <br /> {b.returnTime}
                       </span>
                     </div>
                   </div>
+
                   <div className="grid grid-cols-3 gap-2 bg-muted/50 p-2 rounded-md text-center mt-auto">
                     <div className="flex flex-col">
                       <span className="text-[10px] text-muted-foreground uppercase">
@@ -323,6 +379,7 @@ export function FlightBlockingsDashboard({
                       </span>
                     </div>
                   </div>
+
                   {b.drive && (
                     <div className="text-sm text-muted-foreground flex justify-between">
                       <span>Valor tiquetes:</span>
@@ -336,7 +393,6 @@ export function FlightBlockingsDashboard({
                     </div>
                   )}
 
-                  {/* Botones principales */}
                   <div className="flex gap-2 mt-2">
                     {h.canAdmin && b.drive && (
                       <Button
@@ -358,7 +414,6 @@ export function FlightBlockingsDashboard({
                     </Button>
                   </div>
 
-                  {/* Acordeón de detalles */}
                   <details className="mt-2 text-xs border-t pt-2 group">
                     <summary className="cursor-pointer text-muted-foreground font-medium flex items-center gap-1 hover:text-foreground">
                       <span className="group-open:rotate-90 transition-transform text-[10px]">
@@ -393,7 +448,6 @@ export function FlightBlockingsDashboard({
                           >
                             Editar bloqueo
                           </Button>
-
                           <Button
                             variant="outline"
                             size="sm"
@@ -425,7 +479,6 @@ export function FlightBlockingsDashboard({
         )}
       </div>
 
-      {/* MODAL DE ELIMINAR (Shadcn) */}
       <Dialog
         open={!!blockToDelete}
         onOpenChange={(open) => !open && setBlockToDelete(null)}
@@ -458,7 +511,6 @@ export function FlightBlockingsDashboard({
         </DialogContent>
       </Dialog>
 
-      {/* MODALES DE INVENTARIO */}
       {h.editor.kind === "block" && (
         <BlockEditor
           open={true}
