@@ -14,8 +14,11 @@ export interface OfferRecord extends JsonObject {
 }
 
 export interface OffersPayload extends JsonObject {
+  version: number;
   offers: OfferRecord[];
-  productDefaults: JsonObject | null;
+  removedPilotIds: string[];
+  productoDefaults: JsonObject | null;
+  workbookImports: string[] | null;
 }
 
 export interface OffersSession {

@@ -6,6 +6,7 @@ import { useState } from "react";
 
 interface Props {
   onCancel: () => void;
+  onSave: (offer: OfferRecord) => Promise<void>;
   initialOffer?: OfferRecord;
 }
 
@@ -13,10 +14,13 @@ function getString(value: unknown): string {
   return typeof value === "string" ? value : "";
 }
 
-export function OffersNativeEditor({ onCancel, initialOffer }: Props) {
+export function OffersNativeEditor({ onCancel, onSave, initialOffer }: Props) {
   const [offer, setOffer] = useState<OfferRecord>(() =>
     initialOffer ? JSON.parse(JSON.stringify(initialOffer)) : createNewOffer(),
   );
+
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
 
   const isEditing = Boolean(initialOffer);
 
@@ -25,6 +29,39 @@ export function OffersNativeEditor({ onCancel, initialOffer }: Props) {
       ...current,
       [field]: value,
     }));
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    setSaveError("");
+
+    try {
+      await onSave(offer);
+    } catch (error) {
+      const apiError = error as {
+        response?: {
+          status?: number;
+          data?: { message?: string | { message?: string } };
+        };
+      };
+
+      if (apiError.response?.status === 409) {
+        setSaveError(
+          "La oferta cambió en el servidor desde que la abriste. No se guardaron tus cambios. Cancela, recarga los datos y vuelve a editar.",
+        );
+      } else {
+        const message = apiError.response?.data?.message;
+        setSaveError(
+          typeof message === "string"
+            ? message
+            : error instanceof Error
+              ? error.message
+              : "No se pudo guardar la oferta.",
+        );
+      }
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -217,11 +254,34 @@ export function OffersNativeEditor({ onCancel, initialOffer }: Props) {
         </div>
 
         <p className="mt-4 text-sm text-muted-foreground">
-          {isEditing
-            ? "Estás modificando una copia local. La oferta original permanece intacta hasta que implementemos el guardado"
-            : "Este borrador todavía no se ha guardado en la DB."}
+          Los cambios se enviarán al servidor y quedarán registrados en el
+          historial de revisiones cuando el guardado sea exitoso.
         </p>
       </section>
+
+      <footer className="flex flex-wrap items-center justify-end gap-3">
+        {saveError && (
+          <p className="mr-auto text-sm text-destructive">{saveError}</p>
+        )}
+
+        <button
+          type="button"
+          onClick={onCancel}
+          disabled={saving}
+          className="rounded-lg border px-4 py-2 disabled:opacity-50"
+        >
+          Cancelar
+        </button>
+
+        <button
+          type="button"
+          onClick={() => void handleSave()}
+          disabled={saving}
+          className="rounded-lg bg-primary px-4 py-2 text-primary-foreground disabled:opacity-50"
+        >
+          {saving ? "Guardando..." : "Guardar cambios"}
+        </button>
+      </footer>
     </main>
   );
 }

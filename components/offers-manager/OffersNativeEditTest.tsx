@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
+  OfferRecord,
   offersManagerNativeApi,
+  OffersPayload,
   type OffersWorkspaceSnapshot,
 } from "@/lib/offers-manager-native";
 import { OffersNativeEditor } from "./OffersNativeEditor";
@@ -42,6 +44,27 @@ export function OffersNativeEditTest() {
     }
   }, []);
 
+  const handleSaveOffer = async (updatedOffer: OfferRecord) => {
+    if (!snapshot) {
+      throw new Error("No hay una revisión cargada para guardar.");
+    }
+
+    const updatedPayload: OffersPayload = {
+      ...snapshot.payload,
+      offers: snapshot.payload.offers.map((offer) =>
+        offer.id === updatedOffer.id ? updatedOffer : offer,
+      ),
+    };
+
+    const savedSnapshot = await offersManagerNativeApi.saveState({
+      expectedRevision: snapshot.revision,
+      payload: updatedPayload,
+    });
+
+    setSnapshot(savedSnapshot);
+    setSelectedId("");
+  };
+
   useEffect(() => {
     void loadOffers();
   }, [loadOffers]);
@@ -78,6 +101,7 @@ export function OffersNativeEditTest() {
         key={selectedOffer.id}
         initialOffer={selectedOffer}
         onCancel={() => setSelectedId("")}
+        onSave={handleSaveOffer}
       />
     );
   }
