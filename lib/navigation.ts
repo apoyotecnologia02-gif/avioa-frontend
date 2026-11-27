@@ -166,6 +166,12 @@ export const NAV_SECTIONS: NavSection[] = [
           },
           // { href: "/equipment-requests", label: "Solicitud Equipos" },
           // { href: "/books-files", label: "Biblioteca" }
+
+        {
+          href: "",
+          label: "Cumpleaños",
+          // module: "Cumpleaños/tal....",
+        },
         ],
       },
       {
@@ -199,8 +205,10 @@ export const NAV_SECTIONS: NavSection[] = [
           },
 
           {
-            href: "/comercial/FlightBlocking/control",
-            label: "Bloqueo/Admin",
+          module: "COMMERCIAL-ADMIN",
+          href: "/comercial/FlightBlocking/control", 
+          label: "Bloqueo/Admin",
+
           },
           {
             href: "/tutorials",

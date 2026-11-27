@@ -1,3 +1,5 @@
+import { Description } from "@radix-ui/react-toast";
+
 export const MODULE_CATEGORIES = {
   RRHH: { label: "Recursos Humanos", order: 1, sensitive: false },
   ACCOUNTING: { label: "Contabilidad", order: 2, sensitive: false },
@@ -147,6 +149,22 @@ export const APP_MODULES = [
     label: "Comercial",
     description: "Espacio de trabajo del equipo comercial",
     action: ["create", "update", "delete"],
+  },
+
+  {
+    key: "COMMERCIAL-ADMIN",
+    kind: "module",
+    category: "HERRAMIENTAS",
+    label: "Comercial-Admin",
+    description: "Espacio de administración para comercial",
+    // action: ["create", "update", "delete"],
+  },
+
+  {
+    key: "MANAGE-BIRTHDAY",
+    kind: "module",
+    label: "Gestión Cumpleaños",
+    Description: "Gestión post de cumpleaños",
   },
 
   // ── Administración (capacidades) ──────────────────────
