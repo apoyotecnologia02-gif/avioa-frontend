@@ -31,13 +31,46 @@ export function OffersWorkspace({
       )
         return;
       const { id, path, options = {} } = event.data;
+      if (path === "runtime-refresh") {
+        if ((options.method || "GET") !== "GET") return;
+        try {
+          const response = await api.get("/offers-manager/runtime", {
+            responseType: "text",
+          });
+          if (!active) return;
+          const nextHtml = String(response.data)
+            .replaceAll("__OFFERS_RPC_CHANNEL__", channel)
+            .replaceAll("__OFFERS_INITIAL_VIEW__", view);
+          frame.current?.contentWindow?.postMessage(
+            { channel, id, ok: true, data: { refreshed: true } },
+            window.location.origin,
+          );
+          setHtml(nextHtml);
+        } catch (e: any) {
+          if (active)
+            frame.current?.contentWindow?.postMessage(
+              {
+                channel, id, ok: false,
+                status: e.response?.status || 500,
+                error: "No se pudo recargar el catálogo. Intenta de nuevo.",
+              },
+              window.location.origin,
+            );
+        }
+        return;
+      }
       const valid =
         typeof path === "string" &&
-        /^(session|state|history(?:\?offset=\d+)?|history\/\d+|approve|workbook-sync|product-import\/(preview|commit))$/.test(
+        /^(session|state|history(?:\?offset=\d+)?|history\/\d+|approve|workbook-sync|simulation\/query|hunter\/(status|sync)|product-import\/(preview|commit))$/.test(
           path,
         );
       if (!valid || !["GET", "POST", "PUT"].includes(options.method || "GET"))
         return;
+      if (
+        (path === "hunter/status" && (options.method || "GET") !== "GET") ||
+        (path === "hunter/sync" && options.method !== "POST") ||
+        (path === "simulation/query" && options.method !== "POST")
+      ) return;
       try {
         const response = await api.request({
           url: "/offers-manager/" + path,
@@ -58,6 +91,7 @@ export function OffersWorkspace({
               ok: false,
               status: e.response?.status || 500,
               error:
+                e.response?.data?.error?.message ||
                 e.response?.data?.error ||
                 e.message ||
                 "No se pudo completar la operación",
@@ -94,7 +128,7 @@ export function OffersWorkspace({
     <iframe
       ref={frame}
       srcDoc={html}
-      sandbox="allow-scripts allow-same-origin allow-downloads allow-modals"
+      sandbox="allow-forms allow-scripts allow-same-origin allow-downloads allow-modals allow-popups allow-popups-to-escape-sandbox"
       allow="clipboard-write"
       title="Ofertas, catálogo del cazador y simulador"
       className="w-full h-[calc(100dvh-100px)] min-h-[650px] border-0"
