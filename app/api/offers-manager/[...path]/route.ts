@@ -11,13 +11,16 @@ async function proxy(
     !/^(runtime|session|state|history|history\/\d+|approve|initialize|workbook-sync|simulation\/query|hunter\/(status|sync)|product-import\/(preview|commit))$/.test(
       route,
     )
-  )
+  ) {
     return NextResponse.json({ error: "Ruta no encontrada" }, { status: 404 });
+  }
+
   if (
     (route === "hunter/status" && req.method !== "GET") ||
     (route === "hunter/sync" && req.method !== "POST") ||
     (route === "simulation/query" && req.method !== "POST")
-  ) return NextResponse.json({ error: "Método no permitido" }, { status: 405 });
+  )
+    return NextResponse.json({ error: "Método no permitido" }, { status: 405 });
   const authorization = req.headers.get("authorization");
   if (!authorization?.startsWith("Bearer "))
     return NextResponse.json(

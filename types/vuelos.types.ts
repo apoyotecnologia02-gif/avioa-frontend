@@ -26,6 +26,7 @@ export interface OfertaVuelo {
   pct_vs_piso?: number;
   rango?: [number, number] | null;
   visto_en: string;
+  fecha_hora_captura?: string;
   nivel: string | null;
   piso: string | null;
   techo: number | null;
@@ -49,5 +50,5 @@ export interface FiltrosVuelos {
   fecha_ida_hasta?: string;
 }
 
-export const DEFAULT_LIMIT = 20;
-export const MAX_LIMIT = 100;
+export const DEFAULT_LIMIT = 100;
+export const MAX_LIMIT = 500;

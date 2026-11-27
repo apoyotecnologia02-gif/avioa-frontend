@@ -21,8 +21,7 @@ export function FilterFields() {
 
   return (
     <div className="space-y-5">
-      {/* <IataField filterKey="origen" label="Origen" /> */}
-      {/* <IataField filterKey="destino" label="Destino" /> */}
+      <IataField filterKey="origen" label="Origen (código IATA)" />
       <DestinoField />
       <AerolineaField />
 
@@ -63,6 +62,7 @@ export function FilterFields() {
           <Input
             type="date"
             value={filters.fecha_ida_desde ?? ""}
+            max={filters.fecha_ida_hasta || undefined}
             onChange={(e) =>
               setFilter("fecha_ida_desde", e.target.value || undefined)
             }
@@ -274,7 +274,8 @@ function PriceInput({
   return (
     <Input
       type="number"
-      min={0}
+      min={filterKey === "precio_max" ? (filters.precio_min ?? 0) : 0}
+      max={filterKey === "precio_min" ? filters.precio_max : undefined}
       placeholder={placeholder}
       value={input}
       onChange={(e) => setInput(e.target.value)}

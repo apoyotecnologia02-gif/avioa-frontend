@@ -330,6 +330,15 @@ export const NAV_SECTIONS: NavSection[] = [
             href: "/portal-offers/catalogo-cazador",
             label: "Portal de Ofertas",
           },
+          {
+            href: "/portal-offers",
+            label: "Ofertas y Catálogo",
+            exact: true,
+          },
+          {
+            href: "/portal-offers/simulador-bot",
+            label: "Simulador BOT",
+          },
         ],
       },
 
