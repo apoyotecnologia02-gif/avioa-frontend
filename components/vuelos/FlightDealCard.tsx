@@ -5,8 +5,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
 const formatHora = (fechaHora?: string) => {
   if (!fechaHora) return "--:--";
-  const parts = fechaHora.split(" ");
-  return parts.length > 1 ? parts[1] : fechaHora;
+  return fechaHora.match(/(?:T|\s)(\d{2}:\d{2})/)?.[1] ?? fechaHora;
 };
 
 const textoEscalas = (escalas?: number) => {
@@ -16,7 +15,19 @@ const textoEscalas = (escalas?: number) => {
     : `${escalas} escala${escalas > 1 ? "s" : ""}`;
 };
 
+const formatCaptura = (captura?: string) => {
+  if (!captura) return null;
+  const date = new Date(captura);
+  if (Number.isNaN(date.getTime())) return null;
+  return new Intl.DateTimeFormat("es-CO", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "America/Bogota",
+  }).format(date);
+};
+
 export function FlightDealCard({ deal }: { deal: OfertaVuelo }) {
+  const captura = formatCaptura(deal.fecha_hora_captura ?? deal.visto_en);
   return (
     <article className="group overflow-hidden rounded-2xl border bg-card shadow-sm transition hover:shadow-md">
       <div className="relative h-36 bg-gradient-to-br from-sky-500 to-indigo-600">
@@ -47,7 +58,7 @@ export function FlightDealCard({ deal }: { deal: OfertaVuelo }) {
             <MapPin className="h-3.5 w-3.5" />
             {deal.origen} → {deal.destino}
           </p>
-          <p className="text-xs opacity-90">{deal.hoja}</p>
+          <p className="text-xs opacity-90">{deal.hoja || "Vuelo ida y regreso"}</p>
         </div>
       </div>
 
@@ -146,6 +157,13 @@ export function FlightDealCard({ deal }: { deal: OfertaVuelo }) {
             </TooltipContent>
           </Tooltip>
         </div>
+
+        {captura && (
+          <p className="flex items-center justify-end gap-1 text-[10px] text-muted-foreground">
+            <Clock className="h-3 w-3" />
+            Capturado: {captura}
+          </p>
+        )}
 
         <p className="flex items-center justify-end gap-1 text-[10px] leading-tight text-muted-foreground">
           <Info className="h-3 w-3 shrink-0" />
