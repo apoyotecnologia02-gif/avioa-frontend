@@ -669,9 +669,9 @@ export function useFlightBlockings(options: UseFlightBlockingsOptions = {}) {
     [post],
   );
 
-  const linkReservation = useCallback(
-    (service: Service, blockId: string, seats: number | null) =>
-      post(
+   const linkReservation = useCallback(
+    async (service: Service, blockId: string, seats: number | null) => {
+      const success = await post(
         {
           action: "link",
           serviceId: service.id,
@@ -680,8 +680,15 @@ export function useFlightBlockings(options: UseFlightBlockingsOptions = {}) {
           signature: service.sourceSignature,
         },
         "Reserva vinculada. Cupos recalculados sin duplicar.",
-      ),
-    [post],
+      );
+      
+      if (success) {
+        void load();
+      }
+      
+      return success;
+    },
+    [post, load],
   );
 
   const splitReservation = useCallback(
@@ -729,6 +736,15 @@ export function useFlightBlockings(options: UseFlightBlockingsOptions = {}) {
       );
     },
     [askConfirmation, board?.edit, post],
+  );
+
+  const deleteReservations = useCallback(
+    (serviceIds: string[]) =>
+      post(
+        { action: "deleteReservations", serviceIds } as any,
+        "Reservas eliminadas correctamente.",
+      ),
+    [post],
   );
 
   const deleteManualReservation = useCallback(
@@ -1017,6 +1033,7 @@ export function useFlightBlockings(options: UseFlightBlockingsOptions = {}) {
     completeTask,
     importBlocks,
     settleConfirmation,
+    deleteReservations,
     clearFeedback: () => {
       setError("");
       setMessage("");
