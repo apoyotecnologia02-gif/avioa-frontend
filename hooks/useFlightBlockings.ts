@@ -669,7 +669,7 @@ export function useFlightBlockings(options: UseFlightBlockingsOptions = {}) {
     [post],
   );
 
-   const linkReservation = useCallback(
+  const linkReservation = useCallback(
     async (service: Service, blockId: string, seats: number | null) => {
       const success = await post(
         {
@@ -681,11 +681,11 @@ export function useFlightBlockings(options: UseFlightBlockingsOptions = {}) {
         },
         "Reserva vinculada. Cupos recalculados sin duplicar.",
       );
-      
+
       if (success) {
         void load();
       }
-      
+
       return success;
     },
     [post, load],
@@ -843,18 +843,18 @@ export function useFlightBlockings(options: UseFlightBlockingsOptions = {}) {
       )
       .sort((a, b) => a.departDate.localeCompare(b.departDate));
     const allServices = (board?.services ?? []).filter((service) => {
+      if (service.deletedAt) return false;
+
       const departure =
         allBlocks.find((block) => block.id === service.blockId)?.departDate ||
         service.date;
       return (
-        (!service.deletedAt ||
-          (control && service.reviewState === "changed")) &&
-        (filters.allDates ||
-          (control && service.reviewState === "changed") ||
-          ((!service.cancelled ||
-            (control && service.reviewState !== "reviewed")) &&
-            !!departure &&
-            departure >= today))
+        filters.allDates ||
+        (control && service.reviewState === "changed") ||
+        ((!service.cancelled ||
+          (control && service.reviewState !== "reviewed")) &&
+          !!departure &&
+          departure >= today)
       );
     });
     const scope = allServices.filter(
