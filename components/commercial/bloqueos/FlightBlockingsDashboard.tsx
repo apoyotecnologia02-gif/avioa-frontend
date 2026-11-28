@@ -133,6 +133,7 @@ export function FlightBlockingsDashboard({
           events={h.board?.events || []}
           blocks={h.board?.blocks || []}
           files={h.board?.files || []}
+          onDeleteReservations={(ids) => h.deleteReservations(ids)}
           canEdit={true}
           canAdmin={true}
           today={h.board?.today || ""}
